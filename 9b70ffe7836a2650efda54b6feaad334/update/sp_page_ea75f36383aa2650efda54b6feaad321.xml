@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_page">
+    <sp_page action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <css>body {
+  background-color: var(--scm-color-horizon-tint-2);
+}</css>
+        <draft>false</draft>
+        <dynamic_title_structure/>
+        <human_readable_url_structure/>
+        <id>contracts</id>
+        <internal>false</internal>
+        <omit_watcher>false</omit_watcher>
+        <public>false</public>
+        <roles/>
+        <seo_script/>
+        <short_description>List of contracts</short_description>
+        <sys_class_name>sp_page</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:18:12</sys_created_on>
+        <sys_id>ea75f36383aa2650efda54b6feaad321</sys_id>
+        <sys_mod_count>3</sys_mod_count>
+        <sys_name>contracts</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_page_ea75f36383aa2650efda54b6feaad321</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:35:09</sys_updated_on>
+        <title>contracts</title>
+        <use_seo_script>false</use_seo_script>
+    </sp_page>
+    <sys_translated_text action="delete_multiple" query="documentkey=ea75f36383aa2650efda54b6feaad321"/>
+</record_update>

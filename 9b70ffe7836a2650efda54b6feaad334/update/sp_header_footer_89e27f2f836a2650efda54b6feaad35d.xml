@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_header_footer">
+    <sp_header_footer action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function() {
+    const c = this;
+
+    // Load the menu
+    c.server.get({
+        action: 'loadMenu'
+    }).then((response) => {
+        c.menuWidget = response.data.menu;
+    });
+
+    // Get the user initials
+    c.server.get({
+        action: 'getUserInitials'
+    }).then((response) => {
+        c.userInitials = response.data.userInitials;
+    });
+};]]></client_script>
+        <controller_as>c</controller_as>
+        <css>.nav {
+  height: var(--scm-spacing-7);
+  background-color: var(--scm-color-sc-white);
+  z-index: auto !important;
+}
+
+.nav-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-left: 3vw;
+  margin-right: 3vw;
+  height: inherit;
+}
+
+.nav-logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  transform: translateY(-10px);
+  height: inherit;
+  margin-right: var(--scm-spacing-3) !important;
+  margin-left: 0 !important;
+}
+
+.nav-user {
+  margin-left: auto;
+  background-color: var(--scm-color-sc-navy);
+  color: var(--scm-color-sc-white);
+  border-radius: 50%;
+  border: 0;
+  padding: var(--scm-padding-1);
+  font-weight: var(--scm-font-weight-semibold);
+}</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-header</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-header</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+	if (input && input.action === 'getUserInitials') {
+		data.userInitials = 'AA';
+		return;
+	}
+
+	if (input && input.action === 'loadMenu') {
+		const instance = $sp.getValue("sp_rectangle_menu");
+		const menu = $sp.getWidgetFromInstance(instance);
+
+		data.menu = JSON.parse(JSON.stringify(menu));
+		return;
+	}
+})();]]></script>
+        <servicenow>false</servicenow>
+        <static>false</static>
+        <sys_class_name>sp_header_footer</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:07:08</sys_created_on>
+        <sys_id>89e27f2f836a2650efda54b6feaad35d</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scm-header</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_header_footer_89e27f2f836a2650efda54b6feaad35d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:38:01</sys_updated_on>
+        <template><![CDATA[<nav class="nav">
+  <div class="nav-container">
+    <div class="nav-logo logo">
+      <div
+        class="logo-lifeform"
+        aria-label="Swisscom Logo"
+      ></div>
+    </div>
+    <sp-widget widget="c.menuWidget"></sp-widget>
+    <div class="nav-user">{{::c.userInitials}}</div>
+  </div>
+</nav>
+]]></template>
+    </sp_header_footer>
+</record_update>

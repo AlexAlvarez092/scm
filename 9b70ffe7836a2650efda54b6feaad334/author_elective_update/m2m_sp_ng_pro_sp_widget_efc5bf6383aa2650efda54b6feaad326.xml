@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_widget">
+    <m2m_sp_ng_pro_sp_widget action="DELETE">
+        <sp_angular_provider display_value="sdxReference">5f6179e4835a2650efda54b6feaad36f</sp_angular_provider>
+        <sp_widget display_value="Copy of Contract details">27c5bf6383aa2650efda54b6feaad324</sp_widget>
+        <sys_class_name>m2m_sp_ng_pro_sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:19:38</sys_created_on>
+        <sys_id>efc5bf6383aa2650efda54b6feaad326</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>sdxReference.Copy of Contract details</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_ng_pro_sp_widget_efc5bf6383aa2650efda54b6feaad326</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:19:38</sys_updated_on>
+    </m2m_sp_ng_pro_sp_widget>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>9054e391dbbaf19405ef172913961927</instance_id>
+        <instance_name>dev227288</instance_name>
+        <name>m2m_sp_ng_pro_sp_widget_efc5bf6383aa2650efda54b6feaad326</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_widget"><m2m_sp_ng_pro_sp_widget action="INSERT_OR_UPDATE"><sp_angular_provider display_value="sdxReference">5f6179e4835a2650efda54b6feaad36f</sp_angular_provider><sp_widget display_value="Copy of Contract details">27c5bf6383aa2650efda54b6feaad324</sp_widget><sys_class_name>m2m_sp_ng_pro_sp_widget</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-07-11 18:19:38</sys_created_on><sys_id>efc5bf6383aa2650efda54b6feaad326</sys_id><sys_mod_count>0</sys_mod_count><sys_name>sdxReference.Copy of Contract details</sys_name><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>m2m_sp_ng_pro_sp_widget_efc5bf6383aa2650efda54b6feaad326</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-07-11 18:19:38</sys_updated_on></m2m_sp_ng_pro_sp_widget></record_update>]]></payload>
+        <payload_hash>-568842160</payload_hash>
+        <record_name>sdxReference.Copy of Contract details</record_name>
+        <reverted_from/>
+        <source>5370f72b836a2650efda54b6feaad3c7</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:19:38</sys_created_on>
+        <sys_id>63c5bf6383aa2650efda54b6feaad329</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>197fab6e0210000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:19:38</sys_updated_on>
+        <type>Angular Providers</type>
+        <update_guid>67c5bf63deaa2650f90d1009be63e728</update_guid>
+        <update_guid_history>67c5bf63deaa2650f90d1009be63e728:-568842160</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="sdxReference.Copy of Contract details">c2c6f7e383aa2650efda54b6feaad3da</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:23:54</sys_created_on>
+        <sys_db_object display_value="" name="m2m_sp_ng_pro_sp_widget">m2m_sp_ng_pro_sp_widget</sys_db_object>
+        <sys_id>3d2a9414e1d345d0ba26e26b6e2d7ff1</sys_id>
+        <sys_metadata>efc5bf6383aa2650efda54b6feaad326</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>sdxReference.Copy of Contract details</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>m2m_sp_ng_pro_sp_widget_efc5bf6383aa2650efda54b6feaad326</sys_update_name>
+        <sys_update_version display_value="m2m_sp_ng_pro_sp_widget_efc5bf6383aa2650efda54b6feaad326">63c5bf6383aa2650efda54b6feaad329</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:23:54</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -1,0 +1,1155 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function (spUtil) {
+  const c = this;
+
+  init();
+
+  c.setLimit = function () {
+    savePreference(c.data.limitPreferenceName, c.data.limit).then(() => {});
+  };
+
+  c.goToFirstPage = function () {
+    c.page = 1;
+    getTableData();
+  };
+
+  c.goToPreviousPage = function () {
+    if (c.page > 1) {
+      c.page -= 1;
+      getTableData();
+    }
+  };
+
+  c.goToNextPage = function () {
+    if (c.page < c.totalPages) {
+      c.page += 1;
+      getTableData();
+    }
+  };
+
+  c.goToLastPage = function () {
+    c.page = c.totalPages;
+    getTableData();
+  };
+
+  c.sort = function (fieldName) {
+    c.page = 1;
+    let savePromise;
+
+    if (c.data.orderBy === fieldName) {
+      const orderDirection = c.data.orderDirection === 'ASC' ? 'DESC' : 'ASC';
+      savePromise = savePreference(c.data.orderDirectionPreferenceName, orderDirection);
+    } else {
+      savePromise = savePreference(c.data.orderByPreferenceName, fieldName).then(() => {
+        savePreference(c.data.orderDirectionPreferenceName, 'ASC');
+      });
+    }
+
+    savePromise.then(() => {
+      getTableData();
+    });
+  };
+
+  c.addField = function () {
+    // Add to selected fields list
+    c.selectedFieldsList.push(c.fieldToAdd);
+    // Remove from unselected fields list
+    const index = c.unselectedFieldsList.findIndex((field) => field.name === c.fieldToAdd.name);
+    c.unselectedFieldsList.splice(index, 1);
+    // Reset the field to add
+    c.fieldToAdd = null;
+  };
+
+  c.removeField = function () {
+    // Add to unselected fields list
+    c.unselectedFieldsList.push(c.fieldToRemove);
+    // Remove from selected fields list
+    const index = c.selectedFieldsList.findIndex((field) => field.name === c.fieldToRemove.name);
+    c.selectedFieldsList.splice(index, 1);
+    // Reset the field to remove
+    c.fieldToRemove = null;
+  };
+
+  c.moveFieldUp = function () {
+    const index = c.selectedFieldsList.findIndex((field) => field.name === c.fieldToRemove.name);
+    if (index > 0) {
+      const temp = c.selectedFieldsList[index - 1];
+      c.selectedFieldsList[index - 1] = c.selectedFieldsList[index];
+      c.selectedFieldsList[index] = temp;
+    }
+  };
+
+  c.moveFieldDown = function () {
+    const index = c.selectedFieldsList.findIndex((field) => field.name === c.fieldToRemove.name);
+    if (index < c.selectedFieldsList.length - 1) {
+      const temp = c.selectedFieldsList[index + 1];
+      c.selectedFieldsList[index + 1] = c.selectedFieldsList[index];
+      c.selectedFieldsList[index] = temp;
+    }
+  };
+
+  c.saveListView = function () {
+    c.savingListView = true;
+    savePreference(c.data.fieldsPreferenceName, JSON.stringify(c.selectedFieldsList)).then(() => {
+      getTableColumns().then(() => {
+        c.savingListView = false;
+        document.getElementById(c.columnsSelectorId).close();
+      });
+      getTableData();
+    });
+  };
+
+  c.cancelListView = function () {
+    c.cancelingListView = true;
+    c.selectedFieldsList = angular.copy(c.data.fields);
+    c.unselectedFieldsList = angular.copy(c.data.allFielsdAvailable);
+    c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
+      return !c.selectedFieldsList.some((selectedField) => selectedField.name === field.name);
+    });
+    c.fieldToAdd = null;
+    c.fieldToRemove = null;
+    c.cancelingListView = false;
+    document.getElementById(c.columnsSelectorId).close();
+  };
+
+  c.revertListViewToDefault = function () {
+    c.revertingListView = true;
+    c.server
+      .get({
+        action: 'revertListViewToDefault',
+      })
+      .then((response) => {
+        c.data.fields = response.data.fields;
+        c.revertingListView = false;
+        document.getElementById(c.columnsSelectorId).close();
+        getTableData();
+      });
+  };
+
+  c.getFirstRecordIndex = function () {
+    return (c.page - 1) * parseInt(c.data.limit, 10) + 1;
+  };
+
+  c.getLastRecordIndex = function () {
+    const last = c.page * parseInt(c.data.limit, 10);
+    return last > c.totalRecords ? c.totalRecords : last;
+  };
+
+  c.toggleFilters = function () {
+    c.showFilters = !c.showFilters;
+  };
+
+  c.getFilterDisplayValue = function (appliedFilter) {
+    const filter = c.filters.find((f) => f.field === appliedFilter.field);
+    if (!filter) return appliedFilter.value;
+
+    if (filter.type === 'choice') {
+      const choice = filter.choiceValues.find((choice) => choice.value === appliedFilter.value);
+      return choice ? choice.label : appliedFilter.value;
+    }
+
+    if (filter.type === 'reference') {
+      const ref = filter.referenceValues.find((ref) => ref.value === appliedFilter.value);
+      return ref ? ref.label : appliedFilter.value;
+    }
+
+    return appliedFilter.value;
+  };
+
+  c.applyFilters = function () {
+    c.appliedFilters = c.filters.filter((filter) => {
+      return filter.value && filter.value !== '';
+    });
+
+    c.page = 1;
+    getTotalRecords();
+    getTableData();
+  };
+
+  c.clearFilters = function () {
+    c.filters.forEach((filter) => {
+      filter.value = '';
+    });
+
+    c.appliedFilters = [];
+    c.page = 1;
+    getTotalRecords();
+    getTableData();
+  };
+
+  c.onReferenceSearch = function (filter, searchTerm) {
+    if (filter.type === 'reference') {
+      loadReferenceValues(filter, searchTerm);
+    }
+  };
+
+  function getTableColumns() {
+    return c.server
+      .get({
+        action: 'getTableColumns',
+      })
+      .then((response) => {
+        c.data.fields = response.data.fields;
+      });
+  }
+
+  function getTableData() {
+    c.showSpinner = true;
+    c.server
+      .get({
+        action: 'getTableData',
+        page: c.page,
+        filters: c.appliedFilters || [],
+      })
+      .then((response) => {
+        c.records = response.data.records;
+        c.data.orderBy = response.data.orderBy;
+        c.data.orderDirection = response.data.orderDirection;
+        c.showSpinner = false;
+      });
+  }
+
+  function getTotalRecords() {
+    c.server
+      .get({
+        action: 'getTotalRecords',
+        filters: c.appliedFilters || [],
+      })
+      .then((response) => {
+        c.totalRecords = response.data.totalRecords;
+        c.totalPages = Math.ceil(c.totalRecords / c.data.limit);
+      });
+  }
+
+  function initializeFilters() {
+    c.filters = [];
+
+    if (c.data.filterFields.length > 0) {
+      c.data.filterFields.forEach((fieldConfig) => {
+        const filter = {
+          field: fieldConfig.field,
+          label: fieldConfig.label,
+          type: fieldConfig.type,
+          value: '',
+          choiceValues: [],
+          referenceValues: [],
+          loading: false,
+          id: spUtil.createUid('xxxx-xxxx'),
+        };
+
+        // Preload choice values for choice type filters
+        if (filter.type === 'choice') {
+          loadChoiceValues(filter);
+        }
+
+        c.filters.push(filter);
+      });
+    }
+  }
+
+  function loadChoiceValues(filter) {
+    filter.loading = true;
+    c.server
+      .get({
+        action: 'getChoiceValues',
+        fieldName: filter.field,
+      })
+      .then((response) => {
+        filter.choiceValues = response.data.choiceValues || [];
+        filter.loading = false;
+      })
+      .catch(() => {
+        filter.loading = false;
+      });
+  }
+
+  function loadReferenceValues(filter, searchTerm) {
+    c.server
+      .get({
+        action: 'getReferenceValues',
+        fieldName: filter.field,
+        searchTerm: searchTerm || '',
+      })
+      .then((response) => {
+        filter.referenceValues = response.data.referenceValues || [];
+      });
+  }
+
+  function savePreference(preferenceName, preferenceValue) {
+    return c.server.get({
+      action: 'savePreference',
+      preferenceName: preferenceName,
+      preferenceValue: preferenceValue,
+    });
+  }
+
+  function init() {
+    c.totalRecords = 0;
+    c.totalPages = 0;
+    c.page = 1;
+    c.records = [];
+
+    getTotalRecords();
+    getTableData();
+
+    c.columnsSelectorId = spUtil.createUid('xxxx-xxxx');
+    c.selectedFieldsList = angular.copy(c.data.fields);
+    c.unselectedFieldsList = angular.copy(c.data.allFielsdAvailable);
+    c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
+      return !c.selectedFieldsList.some((selectedField) => selectedField.name === field.name);
+    });
+
+    c.fieldToAdd = null;
+    c.fieldToRemove = null;
+    c.showFilters = false;
+
+    c.limitSelectId = spUtil.createUid('xxxx-xxxx');
+
+    if (c.data.enableFilters) {
+      c.filters = [];
+      c.appliedFilters = [];
+      initializeFilters();
+    }
+  }
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css>#table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+
+  table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: separate;
+    border-spacing: 0 var(--scm-spacing-2);
+    table-layout: fixed;
+
+    thead {
+      tr {
+        background-color: var(--scm-color-horizon);
+        height: var(--scm-spacing-5);
+        border-radius: var(--scm-border-radius-small);
+
+        th {
+          margin: 0;
+          text-align: left;
+          vertical-align: middle;
+          font-weight: var(--scm-font-weight-semibold);
+          font-size: var(--scm-icon-size-xsmall);
+          color: var(--scm-color-gray);
+          background-color: var(--scm-color-horizon);
+          height: var(--scm-spacing-5);
+          width: 200px;
+          min-width: 200px;
+          padding-left: var(--scm-padding-2);
+          padding-right: var(--scm-padding-2);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+
+          &amp;:first-child {
+            border-top-left-radius: var(--scm-border-radius-small);
+            border-bottom-left-radius: var(--scm-border-radius-small);
+          }
+
+          &amp;:last-child {
+            border-top-right-radius: var(--scm-border-radius-small);
+            border-bottom-right-radius: var(--scm-border-radius-small);
+          }
+        }
+      }
+    }
+
+    tbody {
+      tr {
+        &amp;:hover {
+          td {
+            background-color: var(--scm-color-blue-tint-3);
+
+            &amp;:hover {
+              background-color: var(--scm-color-blue-tint-2);
+            }
+          }
+        }
+
+        td {
+          margin: 0;
+          text-align: left;
+          vertical-align: middle;
+          font-weight: var(--scm-font-weight-regular);
+          font-size: var(--scm-icon-size-xsmall);
+          background-color: var(--scm-color-sc-white);
+          height: var(--scm-spacing-5);
+          width: 200px;
+          min-width: 200px;
+          padding-left: var(--scm-padding-2);
+          padding-right: var(--scm-padding-2);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          a {
+            text-decoration: none !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            color: inherit !important;
+
+            &amp;:visited,
+            &amp;:focus,
+            &amp;:active {
+              text-decoration: none !important;
+              border: none !important;
+              outline: none !important;
+              box-shadow: none !important;
+              color: inherit !important;
+            }
+
+            &amp;:hover {
+              text-decoration: none !important;
+              border: none !important;
+              outline: none !important;
+              box-shadow: none !important;
+              font-weight: var(--scm-font-weight-semibold);
+              color: inherit !important;
+            }
+          }
+
+          &amp;:first-child {
+            border-top-left-radius: var(--scm-border-radius-medium);
+            border-bottom-left-radius: var(--scm-border-radius-medium);
+          }
+
+          &amp;:last-child {
+            border-top-right-radius: var(--scm-border-radius-medium);
+            border-bottom-right-radius: var(--scm-border-radius-medium);
+          }
+        }
+      }
+    }
+  }
+}
+
+#controller-wrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: var(--scm-padding-2);
+  padding-right: var(--scm-padding-2);
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: var(--scm-spacing-2);
+  }
+
+  #metadata-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    div {
+      color: var(--scm-color-gray);
+      font-weight: var(--scm-font-weight-light);
+      font-size: var(--scm-font-size-xsmall);
+      margin-right: var(--scm-spacing-4);
+    }
+  }
+
+  sdx-dialog sdx-dialog-toggle sdx-icon {
+    color: var(--scm-color-int-blue);
+    cursor: pointer;
+  }
+
+  sdx-dialog sdx-dialog-toggle sdx-icon:hover {
+    color: var(--scm-color-int-blue-active);
+  }
+}
+
+#filters-wrapper {
+  margin-top: var(--scm-spacing-6);
+  margin-bottom: var(--scm-spacing-6);
+
+  #filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--scm-spacing-3);
+    gap: var(--scm-spacing-4);
+  }
+
+  #filters-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--scm-spacing-3);
+  }
+}
+
+#applied-filters-wrapper {
+  margin-top: var(--scm-spacing-3);
+  margin-bottom: var(--scm-spacing-3);
+
+  #applied-filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--scm-spacing-1);
+    font-weight: var(--scm-font-weight-semibold);
+    font-size: var(--scm-icon-size-xsmall);
+    color: var(--scm-color-gray);
+  }
+
+  #applied-filters-list {
+    color: var(--scm-color-gray);
+    font-weight: var(--scm-font-weight-light);
+    font-size: var(--scm-font-size-xsmall);
+
+    .filter-separator {
+      margin: 0 var(--scm-spacing-2);
+      font-weight: var(--scm-font-weight-semibold);
+      color: var(--scm-color-int-blue);
+    }
+  }
+}
+</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-table</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  $(document).on('keydown', function (event) {
+    if (event.keyCode === 27 /* escape */) {
+      debugger;
+      const columnSelectorElement = document.getElementById(controller.columnsSelectorId);
+      if (columnSelectorElement) {
+        columnSelectorElement.close();
+      }
+
+      if (controller.showFilters) {
+        scope.$apply(function() {
+          controller.showFilters = false;
+        });
+      }
+    }
+  });
+
+  $(document).on('keydown', function (event) {
+    if (event.keyCode === 13 /* enter */) {
+      controller.saveListView();
+    }
+  });
+}
+]]></link>
+        <name>scm-table</name>
+        <option_schema>[
+  { "hint": "Table name", "name": "table", "section": "Data", "label": "Table", "type": "string" },
+  {
+    "hint": "Default fields",
+    "name": "default_fields",
+    "section": "Data",
+    "label": "Default fields",
+    "type": "string"
+  },
+  { "hint": "Default sorting field", "name": "order_by", "section": "Behavior", "label": "Order by", "type": "string" },
+  {
+    "hint": "Default sorting direction",
+    "name": "order_direction",
+    "section": "Behavior",
+    "label": "Order  direction",
+    "type": "choice",
+    "choices": [
+      { "label": "ASC", "value": "ASC" },
+      { "label": "DESC", "value": "DESC" }
+    ]
+  },
+  { "hint": "Page header", "name": "page_title", "section": "Presentation", "label": "Page title", "type": "string" },
+  {
+    "hint": "Default number of records per page",
+    "name": "limit",
+    "section": "Behavior",
+    "label": "Limit",
+    "type": "integer"
+  },
+  {
+    "hint": "Name of the preference containing the list of fields",
+    "name": "fields_preference_name",
+    "section": "Behavior",
+    "label": "Fields preference name",
+    "type": "string"
+  },
+  {
+    "hint": "Name of the preference containing the order by",
+    "name": "order_by_preference_name",
+    "section": "Behavior",
+    "label": "Order by preference name",
+    "type": "string"
+  },
+  {
+    "hint": "Name of the preference containing the order direction",
+    "name": "order_direction_preference_name",
+    "section": "Behavior",
+    "label": "Order direction preference name",
+    "type": "string"
+  },
+  {
+    "hint": "Name of the preference containing the limit",
+    "name": "limit_preference_name",
+    "section": "Behavior",
+    "label": "Limit preference name",
+    "type": "string"
+  },
+  {
+    "hint": "All the fields available by the user to be shown in the table",
+    "name": "all_fields_available",
+    "section": "Data",
+    "label": "All fields available",
+    "type": "string"
+  },
+  {
+    "hint": "ID of the detail view page of the records",
+    "name": "detail_view_page",
+    "section": "Behavior",
+    "label": "Detail view page",
+    "type": "string"
+  },
+  {
+    "hint": "Enable filters for the table",
+    "section": "Behavior",
+    "name": "enable_filters",
+    "label": "Enable Filters",
+    "type": "boolean"
+  },
+  {
+    "hint": "Configuration for the filter fields",
+    "section": "Behavior",
+    "name": "filter_fields",
+    "label": "Filter Fields Configuration",
+    "type": "string"
+  }
+]
+</option_schema>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+  const tableName = options.table;
+
+  if (input && input.action === 'savePreference') {
+    const preferenceName = input.preferenceName;
+    const preferenceValue = input.preferenceValue;
+
+    gs.getUser().savePreference(preferenceName, String(preferenceValue));
+    return;
+  }
+
+  if (input && input.action === 'getTotalRecords') {
+    const filters = input.filters || [];
+
+    const gaRecord = new GlideAggregate(tableName);
+
+    applyFilters(gaRecord, filters);
+
+    gaRecord.addAggregate('COUNT');
+    gaRecord.query();
+
+    gaRecord.next();
+    data.totalRecords = gaRecord.getAggregate('COUNT');
+    return;
+  }
+
+  if (input && input.action === 'getChoiceValues') {
+    const fieldName = input.fieldName;
+    const choices = [];
+
+    const grTable = new GlideRecord('sys_choice');
+    grTable.addQuery('name', tableName);
+    grTable.addQuery('element', fieldName);
+    grTable.addQuery('inactive', false);
+    grTable.query();
+
+    while (grTable.next()) {
+      choices.push({
+        value: grTable.getValue('value'),
+        label: grTable.getValue('label') || grTable.getValue('value'),
+      });
+    }
+
+    data.choiceValues = choices;
+    return;
+  }
+
+  // TODO: Not tested
+  if (input && input.action === 'getReferenceValues') {
+    const fieldName = input.fieldName;
+    const searchTerm = input.searchTerm || '';
+    const references = [];
+
+    const grDict = new GlideRecord('sys_dictionary');
+    grDict.addQuery('name', tableName);
+    grDict.addQuery('element', fieldName);
+    grDict.query();
+
+    if (grDict.next()) {
+      const refTable = grDict.getValue('reference');
+      if (refTable) {
+        const grRef = new GlideRecord(refTable);
+        if (searchTerm) {
+          grRef.addQuery('name', 'CONTAINS', searchTerm);
+        }
+        grRef.setLimit(20);
+        grRef.orderBy('name');
+        grRef.query();
+
+        while (grRef.next()) {
+          references.push({
+            value: grRef.getUniqueValue(),
+            label: grRef.getDisplayValue('name') || grRef.getDisplayValue(),
+          });
+        }
+      }
+    }
+
+    data.referenceValues = references;
+    return;
+  }
+
+  data.fieldsPreferenceName = options.fields_preference_name;
+
+  if (input && input.action === 'getTableColumns') {
+    const fieldsPreferencedByUser = gs.getUser().getPreference(data.fieldsPreferenceName);
+    if (fieldsPreferencedByUser) {
+      data.fields = JSON.parse(fieldsPreferencedByUser);
+    } else {
+      data.fields = JSON.parse(options.default_fields);
+    }
+
+    return;
+  }
+
+  if (input && input.action === 'revertListViewToDefault') {
+    gs.getUser().savePreference(data.fieldsPreferenceName, options.default_fields);
+    data.fields = JSON.parse(options.default_fields);
+    return;
+  }
+
+  data.allFielsdAvailable = JSON.parse(options.all_fields_available);
+  data.orderByPreferenceName = options.order_by_preference_name;
+  data.orderDirectionPreferenceName = options.order_direction_preference_name;
+  data.limitPreferenceName = options.limit_preference_name;
+  data.detailViewPage = options.detail_view_page;
+  data.title = options.page_title;
+  data.enableFilters = options.enable_filters === 'true';
+  data.filterFields = options.filter_fields ? JSON.parse(options.filter_fields) : [];
+
+  const fieldsPreferencedByUser = gs.getUser().getPreference(data.fieldsPreferenceName);
+  data.fields = fieldsPreferencedByUser ? JSON.parse(fieldsPreferencedByUser) : JSON.parse(options.default_fields);
+
+  data.orderBy = gs.getUser().getPreference(data.orderByPreferenceName) || options.order_by;
+  data.orderDirection = gs.getUser().getPreference(data.orderDirectionPreferenceName) || options.order_direction;
+  data.limit = gs.getUser().getPreference(data.limitPreferenceName) || options.limit;
+
+  if (input && input.action === 'getTableData') {
+    const records = [];
+    const filters = input.filters || [];
+
+    const firstRow = (parseInt(input.page, 10) - 1) * parseInt(data.limit, 10);
+    const lastRow = firstRow + parseInt(data.limit, 10);
+
+    const grRecord = new GlideRecord(tableName);
+
+    // Apply filters
+    applyFilters(grRecord, filters);
+
+    grRecord.setLimit(parseInt(data.limit, 10));
+    grRecord.chooseWindow(firstRow, lastRow);
+
+    if (data.orderDirection === 'ASC') {
+      grRecord.orderBy(data.orderBy);
+    } else {
+      grRecord.orderByDesc(data.orderBy);
+    }
+
+    grRecord.query();
+
+    while (grRecord.next()) {
+      const record = {};
+
+      for (const field of data.fields) {
+        const fieldName = field.name;
+        record[fieldName] = grRecord.getDisplayValue(fieldName) || '';
+      }
+
+      record.sys_id = grRecord.getUniqueValue();
+
+      records.push(record);
+    }
+
+    data.records = records;
+    return;
+  }
+
+  function applyFilters(grRecord, filters) {
+    for (const filter of filters) {
+      switch (filter.type) {
+        case 'choice':
+          grRecord.addQuery(filter.field, filter.value);
+          break;
+      }
+    }
+  }
+})();
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:21:31</sys_created_on>
+        <sys_id>c736f3a383aa2650efda54b6feaad3f2</sys_id>
+        <sys_mod_count>5</sys_mod_count>
+        <sys_name>scm-table</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_c736f3a383aa2650efda54b6feaad3f2</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:46:58</sys_updated_on>
+        <template><![CDATA[<div>
+  <h1 class="h1">{{::data.title}}</h1>
+  <div id="controller-wrapper">
+    <div>
+      <!-- Settings -->
+      <sdx-dialog
+        label="Please, choose the columns to include in the list"
+        id="{{c.columnsSelectorId}}"
+        class="align-header-center">
+        <sdx-dialog-toggle>
+          <sdx-icon
+            icon-name="icon-settings"
+            size="1"
+            sr-hind="Columns selector"
+            id="scm-table-columns-selector-settings-icon"></sdx-icon>
+        </sdx-dialog-toggle>
+        <sdx-dialog-content>
+          <!-- Fields selected / unselected -->
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              align-items: stretch;
+              justify-content: space-between;
+              height: 400px;
+            ">
+            <!-- Not selected fields -->
+            <div
+              style="
+                flex: 0 0 40%;
+                box-sizing: border-box;
+                padding: var(--scm-padding-2);
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+              ">
+              <h3
+                style="
+                  font-weight: var(--scm-font-weight-regular);
+                  font-size: var(--scm-font-size-medium);
+                  color: var(--scm-color-gray-tint-4);
+                  margin-bottom: var(--scm-spacing-1);
+                  flex: 0 0 auto;
+                ">
+                Available fields
+              </h3>
+              <ul
+                style="
+                  list-style: none;
+                  padding: 0;
+                  margin: 0;
+                  flex: 1 1 0;
+                  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+                  border-radius: 5px;
+                  overflow-y: auto;
+                ">
+                <li
+                  style="padding: var(--scm-padding-2) var(--scm-padding-3); cursor: pointer"
+                  ng-repeat="field in c.unselectedFieldsList"
+                  ng-click="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null;"
+                  ng-dblclick="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null; c.addField();"
+                  ng-class="{'scm-table-fields-selector-selected': c.fieldToAdd.name === field.name}">
+                  {{ field.label }}
+                </li>
+              </ul>
+            </div>
+            <!-- Move to selected / available buttons -->
+            <div
+              style="
+                display: flex;
+                flex: 0 0 10%;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: var(--scm-padding-2);
+              ">
+              <sdx-button
+                theme="transparent"
+                icon-name="icon-chevron-normal-right"
+                icon-size="3"
+                sr-hint="Add the selected field to the list"
+                ng-click="c.addField()"
+                ng-disabled="!c.fieldToAdd"></sdx-button>
+              <sdx-button
+                theme="transparent"
+                icon-name="icon-chevron-normal-left"
+                icon-size="3"
+                sr-hint="Remove the selected field from the list"
+                ng-click="c.removeField()"
+                ng-disabled="!c.fieldToRemove"></sdx-button>
+            </div>
+            <!-- Selected fields -->
+            <div
+              style="
+                flex: 0 0 40%;
+                box-sizing: border-box;
+                padding: var(--scm-padding-2);
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+              ">
+              <h3
+                style="
+                  font-weight: var(--scm-font-weight-regular);
+                  font-size: var(--scm-font-size-medium);
+                  color: var(--scm-color-gray-tint-4);
+                  margin-bottom: var(--scm-spacing-1);
+                  flex: 0 0 auto;
+                ">
+                Selected fields
+              </h3>
+              <ul
+                style="
+                  list-style: none;
+                  padding: 0;
+                  margin: 0;
+                  flex: 1 1 0;
+                  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+                  border-radius: 5px;
+                  overflow-y: auto;
+                ">
+                <li
+                  style="padding: var(--scm-padding-2) var(--scm-padding-3); cursor: pointer"
+                  ng-repeat="field in c.selectedFieldsList"
+                  ng-click="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null;"
+                  ng-dblclick="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null; c.removeField()"
+                  ng-class="{'scm-table-fields-selector-selected': c.fieldToRemove.name === field.name}">
+                  {{ field.label }}
+                </li>
+              </ul>
+            </div>
+            <!-- Sorting selected fields buttons -->
+            <div
+              style="
+                display: flex;
+                flex: 0 0 10%;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                box-sizing: border-box;
+                padding: var(--scm-padding-2);
+              ">
+              <sdx-button
+                theme="transparent"
+                icon-name="icon-chevron-normal-up"
+                icon-size="3"
+                sr-hint="Move the selected field up in the list"
+                ng-click="c.moveFieldUp()"
+                ng-disabled="!c.fieldToRemove"></sdx-button>
+              <sdx-button
+                theme="transparent"
+                icon-name="icon-chevron-normal-down"
+                icon-size="3"
+                sr-hint="Move the selected field down in the list"
+                ng-click="c.moveFieldDown()"
+                ng-disabled="!c.fieldToRemove"></sdx-button>
+            </div>
+          </div>
+          <!-- Fields limit -->
+          <div style="box-sizing: border-box; margin-left: var(--scm-spacing-2); width: 50%">
+            <label for="{{c.limitSelectId}}">Records per page:</label>
+            <select id="{{c.limitSelectId}}" ng-model="c.data.limit" ng-change="c.setLimit()">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <!-- Save, cancel, and revert buttons-->
+          <div
+            style="
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: space-between;
+              margin-top: var(--scm-spacing-3);
+            ">
+            <!-- Revert button-->
+            <sdx-button
+              theme="transparent"
+              icon-name="icon-reply-message"
+              icon-size="2"
+              sr-hint="Revert list view to default values"
+              ng-click="c.revertListViewToDefault()"
+              ng-if="!c.revertingListView"
+              ng-disabled="c.savingListView || c.cancelingListView"
+              label="Revert to default"></sdx-button>
+            <sdx-loading-spinner ng-if="c.revertingListView"></sdx-loading-spinner>
+            <div style="display: flex; flex-direction: row; align-items: flex-end; gap: var(--scm-spacing-3)">
+              <!-- Cancel -->
+              <sdx-button
+                id="scm-table-columns-selector-cancel-changes"
+                theme="transparent"
+                icon-name="icon-close"
+                icon-size="2"
+                sr-hint="Cancel changes in the list view"
+                ng-click="c.cancelListView()"
+                ng-if="!c.cancelingListView"
+                ng-disabled="c.revertingListView || c.savingListView"
+                label="Cancel"></sdx-button>
+              <sdx-loading-spinner ng-if="c.cancelingListView"></sdx-loading-spinner>
+              <!-- Save -->
+              <sdx-button
+                theme="transparent"
+                icon-name="icon-save"
+                icon-size="2"
+                sr-hint="Save list view"
+                ng-click="c.saveListView()"
+                ng-if="!c.savingListView"
+                ng-disabled="c.revertingListView || c.cancelingListView"
+                label="Save"></sdx-button>
+              <sdx-loading-spinner ng-if="c.savingListView"></sdx-loading-spinner>
+            </div>
+          </div>
+        </sdx-dialog-content>
+      </sdx-dialog>
+      <!-- Filters -->
+      <sdx-button
+        ng-if="c.data.enableFilters"
+        theme="transparent"
+        icon-name="icon-filter"
+        icon-size="1"
+        sr-hint="Toogle filters"
+        ng-click="c.toggleFilters()"></sdx-button>
+    </div>
+    <!-- Metadata -->
+    <div id="metadata-wrapper">
+      <div>Total records: {{c.totalRecords}}</div>
+      <div>Records per page: {{c.data.limit}}</div>
+      <div>Displaying records {{c.getFirstRecordIndex()}} to {{c.getLastRecordIndex()}}</div>
+      <div>Page: {{c.page}}</div>
+    </div>
+    <!-- Table pagination -->
+    <div>
+      <sdx-button
+        theme="transparent"
+        icon-name="icon-rewind-filled"
+        icon-size="1"
+        sr-hint="Go to first page"
+        ng-click="c.goToFirstPage()"
+        ng-disabled="c.page === 1"></sdx-button>
+      <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        sr-hint="Go to previous page page"
+        ng-click="c.goToPreviousPage()"
+        style="transform: scaleX(-1)"
+        ng-disabled="c.page === 1"></sdx-button>
+      <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        sr-hint="Go to next page"
+        ng-click="c.goToNextPage()"
+        ng-disabled="c.totalPages === c.page"></sdx-button>
+      <sdx-button
+        theme="transparent"
+        icon-name="icon-forward-filled"
+        icon-size="1"
+        sr-hint="Go to last page"
+        ng-click="c.goToLastPage()"
+        ng-disabled="c.totalPages === c.page"></sdx-button>
+    </div>
+  </div>
+  <div id="filters-wrapper" ng-if="c.showFilters">
+    <div id="filters-header">
+      <sdx-button label="Apply filters" theme="transparent" ng-click="c.applyFilters()"></sdx-button>
+      <sdx-button label="Clear all" theme="transparent" ng-click="c.clearFilters()"></sdx-button>
+    </div>
+    <div id="filters-form">
+      <div class="filters-field" ng-repeat="filter in c.filters">
+        <!-- Choice fields -->
+        <div ng-if="filter.type === 'choice'" class="filter-input-group">
+          <label for="{{filter.id}}">{{filter.label}}</label>
+          <select id="{{filter.id}}" ng-model="filter.value" class="filter-select" ng-disabled="filter.loading">
+            <option value="" ng-if="!filter.loading">-- Select {{filter.label}} --</option>
+            <option value="" ng-if="filter.loading">-- Loading options... --</option>
+            <option ng-repeat="choice in filter.choiceValues" value="{{choice.value}}">{{choice.label}}</option>
+          </select>
+          <sdx-loading-spinner
+            ng-if="filter.loading"
+            style="display: inline-block; margin-left: 8px"></sdx-loading-spinner>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="applied-filters-wrapper" ng-if="c.appliedFilters && c.appliedFilters.length > 0">
+    <div id="applied-filters-header">
+      <span>Applied filters:</span>
+    </div>
+    <div id="applied-filters-list">
+      <span ng-repeat="filter in c.appliedFilters track by $index">
+        <span>{{filter.label}} = {{c.getFilterDisplayValue(filter)}}</span>
+        <span ng-if="!$last" class="filter-separator"> > </span>
+      </span>
+    </div>
+  </div>
+  <div id="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th ng-repeat="field in c.data.fields">
+            <span ng-click="c.sort(field.name)">{{ ::field.label }}</span>
+            <sdx-icon
+              ng-show="c.data.orderBy === field.name && c.data.orderDirection === 'ASC'"
+              icon-name="icon-chevron-small-up"
+              size="1"
+              sr-hint="Sort ascending"></sdx-icon>
+            <sdx-icon
+              ng-show="c.data.orderBy === field.name && c.data.orderDirection === 'DESC'"
+              icon-name="icon-chevron-small-down"
+              size="1"
+              sr-hint="Sort descending"></sdx-icon>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="record in c.records track by $index" ng-if="!c.showSpinner">
+          <td ng-if="$index === 0" ng-repeat-start="field in c.data.fields" title="{{ record[field.name] }}">
+            <a ng-href="?id={{data.detailViewPage}}&sys_id={{record.sys_id}}" target="_blank" rel="noopener">
+              {{ record[field.name] }}
+            </a>
+          </td>
+          <td ng-if="$index !== 0" ng-repeat-end title="{{ record[field.name] }}">{{ record[field.name] }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

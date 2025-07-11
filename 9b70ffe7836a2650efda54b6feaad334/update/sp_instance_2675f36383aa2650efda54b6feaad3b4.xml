@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_instance">
+    <sp_instance action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <class_name/>
+        <color>default</color>
+        <css/>
+        <glyph>empty</glyph>
+        <id/>
+        <order>1</order>
+        <roles/>
+        <short_description/>
+        <size>md</size>
+        <sp_column display_value="1">2275f36383aa2650efda54b6feaad329</sp_column>
+        <sp_widget display_value="scm-table">c736f3a383aa2650efda54b6feaad3f2</sp_widget>
+        <sys_class_name>sp_instance</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:18:12</sys_created_on>
+        <sys_id>2675f36383aa2650efda54b6feaad3b4</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>Contracts table</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_instance_2675f36383aa2650efda54b6feaad3b4</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:21:58</sys_updated_on>
+        <title>Contracts table</title>
+        <url/>
+        <widget_parameters><![CDATA[{
+  "table": "x_680259_cm_contract",
+  "default_fields": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Title\", \"name\": \"title\" }]",
+  "page_title": "Contracts",
+  "order_by": "number",
+  "order_direction": "DESC",
+  "limit": "10",
+  "fields_preference_name": "x_680259_cm_contract.cm_portal.fields",
+  "order_by_preference_name": "x_680259_cm_contract.cm_portal.order_by",
+  "order_direction_preference_name": "x_680259_cm_contract.cm_portal.order_direction",
+  "limit_preference_name": "x_680259_cm_contract.cm_portal.limit",
+  "detail_view_page": "contract_details",
+  "all_fields_available": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Title\", \"name\": \"title\" }, { \"label\": \"Type\", \"name\": \"type\" }, { \"label\": \"Start date\", \"name\": \"start_date\" }, { \"label\": \"End date\", \"name\": \"end_date\" }, { \"label\": \"Term type\", \"name\": \"term_type\" }, { \"label\": \"Owner\", \"name\": \"owner\" }, { \"label\": \"Customer\", \"name\": \"customer\" }, { \"label\": \"Cancellation term\", \"name\": \"cancellation_term\" }]",
+  "enable_filters": "true",
+  "filter_fields": "[{ \"field\": \"state\", \"label\": \"State\", \"type\": \"choice\" }, { \"field\": \"type\", \"label\": \"Type\", \"type\": \"choice\" }]"
+}
+]]></widget_parameters>
+    </sp_instance>
+    <sys_translated_text action="delete_multiple" query="documentkey=2675f36383aa2650efda54b6feaad3b4"/>
+</record_update>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function ($scope, $location) {
+  const c = this;
+
+  c.title = 'Contract Management - DEV';
+
+  c.navItems = [
+    { label: 'Contracts', pageId: 'contracts', active: false },
+  ];
+
+  updateActiveNavItem();
+
+  // Watch for changes in the URL path to update the active navigation item
+  $scope.$on('$locationChangeSuccess', function () {
+    updateActiveNavItem();
+  });
+
+  /**
+   * Updates the active state of navigation items based on the current path.
+   * This function checks the current URL path and sets the 'active' property
+   * of each navigation item to true if its href is included in the current path.
+   */
+  function updateActiveNavItem() {
+    const params = $location.search();
+    const pageId = params.id || '';
+    c.navItems.forEach((item) => {
+      item.active = item.pageId === pageId;
+    });
+  }
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css>.nav-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  height: inherit;
+}
+
+.nav-title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-weight: var(--scm-font-weight-bold);
+  font-size: var(--scm-font-size-xxlarge);
+  color: var(--scm-color-sc-navy);
+  margin-right: var(--scm-spacing-7);
+  height: inherit;
+}
+
+.nav-title:hover {
+  cursor: pointer;
+}
+
+.nav-title a {
+  color: inherit;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: var(--scm-font-size-medium);
+  color: var(--scm-color-sc-navy);
+  margin-right: var(--scm-spacing-5);
+  height: inherit;
+  cursor: pointer;
+}
+
+.nav-item-active {
+  color: var(--scm-color-int-azure-active);
+}
+
+.nav-item a,
+.nav-item a:visited,
+.nav-item a:hover,
+.nav-item a:focus,
+.nav-item a:active {
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: inherit;
+}
+
+.nav-item:hover {
+  font-weight: var(--scm-font-weight-semibold);
+}
+</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-menu-instance</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-menu-instance</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:11:08</sys_created_on>
+        <sys_id>05d33baf836a2650efda54b6feaad3c0</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scm-menu-instance</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_05d33baf836a2650efda54b6feaad3c0</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:38:30</sys_updated_on>
+        <template><![CDATA[<div class="nav-content">
+  <div class="nav-title">
+    <a href="?">{{::c.title}}</a>
+  </div>
+  <div
+    class="nav-item"
+    ng-repeat="item in c.navItems"
+    ng-class="{'nav-item-active': item.active}"
+  >
+    <a href="?id={{::item.pageId}}">{{::item.label}}</a>
+  </div>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

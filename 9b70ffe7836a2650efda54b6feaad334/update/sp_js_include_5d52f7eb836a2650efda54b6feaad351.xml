@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_js_include">
+    <sp_js_include action="INSERT_OR_UPDATE">
+        <display_name>scm_helpers.js</display_name>
+        <source>local</source>
+        <sys_class_name>sp_js_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:05:03</sys_created_on>
+        <sys_id>5d52f7eb836a2650efda54b6feaad351</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm_helpers.js</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_ui_script display_value="x_680259_scm.scm_helpers.js">7862ffeb836a2650efda54b6feaad38e</sys_ui_script>
+        <sys_update_name>sp_js_include_5d52f7eb836a2650efda54b6feaad351</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:05:03</sys_updated_on>
+        <url/>
+    </sp_js_include>
+</record_update>

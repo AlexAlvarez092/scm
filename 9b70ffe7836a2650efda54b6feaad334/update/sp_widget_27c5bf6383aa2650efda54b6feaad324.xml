@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function () {
+  const c = this;
+
+  c.showSpinner = true;
+
+  c.server
+    .get({
+      action: 'getContractDetails',
+    })
+    .then(function (response) {
+      c.number = response.data.number;
+      c.startDate = response.data.startDate;
+      c.endDate = response.data.endDate;
+      c.frameworkAgreement = response.data.frameworkAgreement;
+      const customerData =  response.data.customer;
+      c.customer = customerData.sysId;
+      c.customerDisplay = customerData.display;
+      c.showSpinner = false;
+    });
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>contract-details</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>contract-details</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+  const sysId = String($sp.getParameter('sys_id'));
+
+  if (input && input.action === 'getContractDetails') {
+    var grContract = new GlideRecord('x_680259_cm_contract');
+    grContract.get(sysId);
+
+    data.number = grContract.number.getDisplayValue();
+    data.startDate = grContract.start_date.getDisplayValue();
+    data.endDate = grContract.end_date.getDisplayValue();
+    data.frameworkAgreement = grContract.framework.toString();
+    data.customer = { sysId: grContract.customer.toString(), display: grContract.customer.getDisplayValue() };
+
+    return;
+  }
+})();
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:19:38</sys_created_on>
+        <sys_id>27c5bf6383aa2650efda54b6feaad324</sys_id>
+        <sys_mod_count>14</sys_mod_count>
+        <sys_name>contract-details</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_27c5bf6383aa2650efda54b6feaad324</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 19:19:24</sys_updated_on>
+        <template><![CDATA[<div class="scm-container">
+  <div class="row margin-bottom-3">
+    <div class="col">
+      <h1 class="h1">Contract details</h1>
+    </div>
+  </div>
+
+  <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+
+  <div ng-if="!c.showSpinner">
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="Number"
+          sr-hint="Contract number"
+          ng-model="c.number"
+          ng-value="c.number"
+          ng-disabled="true"></sdx-input>
+      </div>
+      <div class="col-md-6 margin-bottom-2">
+        <scm-reference
+          table="core_company"
+          search-fields="name"
+          placeholder="Select the customer"
+          label="Customer"
+          reference-qualifier="nameISNOTEMPTY"
+          ng-model="c.customer"
+          initial-display-value="c.customerDisplay"></scm-reference>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          type="date"
+          label="Start date"
+          flatpickr-options='{"locale": "en"}'
+          placeholder="Start date..."
+          sr-hint="Introduce the start date of the contract"
+          ng-model="c.startDate"
+          ng-value="c.startDate"
+          change-callback="sdxInputHandler(this)"
+          scm-model-provider></sdx-input>
+      </div>
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          type="date"
+          label="End date"
+          flatpickr-options='{"locale": "en"}'
+          placeholder="End date..."
+          sr-hint="Introduce the end date of the contract"
+          ng-model="c.endDate"
+          ng-value="c.endDate"
+          change-callback="sdxInputHandler(this)"
+          scm-model-provider></sdx-input>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <scm-reference
+          table="x_680259_cm_contract"
+          search-fields="number,title"
+          placeholder="Select the framework agreement"
+          label="Framework agreement"
+          reference-qualifier="type=base^ORtype=master^state=active"
+          ng-model="c.frameworkAgreement"></scm-reference>
+      </div>
+    </div>
+  </div>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

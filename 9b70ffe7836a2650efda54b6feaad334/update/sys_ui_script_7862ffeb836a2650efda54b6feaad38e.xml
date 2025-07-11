@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_script">
+    <sys_ui_script action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <description/>
+        <global>false</global>
+        <ignore_in_now_experience>false</ignore_in_now_experience>
+        <name>x_680259_scm.scm_helpers.js</name>
+        <script><![CDATA[function sdxInputHandler(element) {
+  var value = element.value || '';
+  var sdxElement = element.el;
+  sdxElement.setAttribute('value', value);
+}
+
+function sdxSelectHandler(element) {
+  var value = element.value[0] || '';
+  var sdxElement = element.el;
+  sdxElement.setAttribute('value', value);
+}
+]]></script>
+        <script_name>scm_helpers.js</script_name>
+        <sys_class_name>sys_ui_script</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:04:57</sys_created_on>
+        <sys_id>7862ffeb836a2650efda54b6feaad38e</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>x_680259_scm.scm_helpers.js</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_ui_script_7862ffeb836a2650efda54b6feaad38e</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:06:14</sys_updated_on>
+        <ui_type>0</ui_type>
+        <use_scoped_format>false</use_scoped_format>
+    </sys_ui_script>
+</record_update>

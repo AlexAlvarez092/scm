@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmReference</name>
+        <script><![CDATA[/**
+ * scmReference Directive
+ * This directive provides a reference input field that allows users to search and
+ * select records from a specified table.
+ * It supports searching by multiple fields, displaying results, and handling
+ * selections.
+ */
+function scmReference($http, spUtil, $timeout) {
+    'use_strict';
+    return {
+        restrict: 'E',
+        replace: true,
+        require: 'ngModel',
+        scope: {
+            table: '@',
+            searchFields: '@',
+            placeholder: '@?',
+            label: '@',
+            referenceQualifier: '@?',
+            pageSize: '@?',
+            minimumInputLength: '@?',
+            delay: '@?',
+            displayFields: '@?',
+            initialDisplayValue: '@?',
+        },
+
+        /**
+         * The tag li uses the event ng-mousedown to select the item.
+         * Usually, the event ng-click is used, but in this case,
+         * it does not work because
+         * the event ng-blur of the input is triggered before the ng-click of the li.
+         */
+        template: `
+            <div class="scm-reference-wrapper">
+                <label
+                  ng-if="label"
+                  for="{{uid}}">
+                  {{ label }}
+                </label>
+                <div class="scm-reference-input-wrapper">
+                    <a
+                      ng-if="ngModelCtrl.$viewValue"
+                      ng-click="clearSelection()"
+                      class="scm-reference-clear-icon">
+                        <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
+                    </a>
+                    <input
+                      id="{{uid}}"
+                      type="text"
+                      ng-model="searchTerm"
+                      ng-focus="openList()"
+                      ng-blur="closeList()"
+                      ng-change="onSearch()"
+                      placeholder="{{ placeholder || 'Search...' }}"
+                      class="input scm-reference-input"
+                      ng-class="{ 'scm-reference-value': ngModelCtrl.$viewValue, 'scm-reference-list-open': showResults }"
+                    />
+                    <sdx-icon 
+                      class="scm-reference-magnifying-glass-icon" 
+                      icon-name="icon-search" size="3">
+                    </sdx-icon>
+                </div>
+                <ul
+                  class="scm-autocomplete-list"
+                  ng-show="showResults">
+                    <li 
+                      class="scm-autocomplete-item"
+                      ng-repeat="item in results track by item.display"
+                      ng-mousedown="selectItem(item)"
+                      ng-mouseenter="hoverIndex = $index"
+                      ng-class="{ 'scm-item-hover': hoverIndex === $index }">
+                        {{ item.display }}
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-load-more"
+                      ng-if="moreResults"
+                      ng-mousedown="loadMore()">
+                      Load more results…
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-no-results"
+                      ng-if="results.length == 0">
+                      No results…
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-no-more"
+                      ng-if="!moreResults && results.length">
+                      No more results…
+                    </li>
+                </ul>
+            </div>
+        `,
+        link: (scope, element, attrs, ngModelCtrl) => {
+            // We have to expose the ngModelCtrl to the scope so that we can use it
+            // in the template.
+            scope.ngModelCtrl = ngModelCtrl;
+
+            // Unique ID for label-for and input
+            scope.uid = attrs.id || spUtil.createUid('xxxx-xxxx');
+
+            // Used to calculata the "start" parameter sent to the http service
+            scope.page = 0;
+
+            // Flag used to determine if there are more results to load
+            scope.moreResults = false;
+
+            const input = element.find('input')[0];
+
+            // Model binding
+            ngModelCtrl.$render = (displayValue) =>
+                (scope.searchTerm = displayValue);
+
+            // Configuration values
+            const pageSize = scope.pageSize
+                ? parseInt(scope.pageSize, 10)
+                : NOW.ac_max_search_matches;
+            const minCharts = scope.minimumInputLength
+                ? parseInt(scope.minimumInputLength, 10)
+                : 2;
+            const delay = scope.delay
+                ? parseInt(scope.delay, 10)
+                : NOW.ac_wait_time;
+
+            // Internal state
+            scope.searchTerm = null;
+            scope.results = [];
+            scope.showResults = false;
+            scope.hoverIndex = -1;
+            let timer;
+
+            if (scope.initialDisplayValue) {
+                // If initial display value is provided, set it as the view value
+                ngModelCtrl.$render(scope.initialDisplayValue);
+            }
+
+            /**
+             * Loads more results when the user clicks on "Load more results…".
+             * It increments the page number and fetches the next set of results.
+             * This function is called when the user clicks on the "Load more results…" item in
+             * the list.
+             */
+            scope.loadMore = () => {
+                scope.page++;
+                fetchPage();
+            };
+
+            /**
+             * Handles the search input change.
+             * It checks if the search term is valid and triggers a search after a delay.
+             * If the search term is empty or shorter than the minimum length, it hides the
+             * results.
+             */
+            scope.onSearch = () => {
+                if (timer) $timeout.cancel(timer);
+
+                scope.results = [];
+
+                if (!scope.searchTerm || scope.searchTerm.length < minCharts) {
+                    scope.showResults = false;
+                    return;
+                }
+
+                timer = $timeout(() => {
+                    scope.page = 0;
+                    fetchPage();
+                }, delay);
+            };
+
+            /**
+             * Opens the list of results.
+             * It clears the input placeholder and resets the results.
+             * This function is called when the input field is focused.
+             * It also resets the search term and results.
+             * If the input is empty, it sets the placeholder to the default value.
+             */
+            scope.openList = () => {
+                input.setAttribute('placeholder', '');
+
+                scope.results = [];
+                ngModelCtrl.$setViewValue('');
+                ngModelCtrl.$render('');
+            };
+
+            /**
+             * Closes the list of results.
+             * It hides the results and resets the hover index.
+             * This function is called when the input field loses focus.
+             * If the input is empty, it resets the placeholder to the default value.
+             * It also resets the search term and results.
+             */
+            scope.closeList = () => {
+                // If the input is empty, reset placeholder
+                if (!scope.searchTerm) {
+                    input.setAttribute(
+                        'placeholder',
+                        scope.placeholder || 'Search...'
+                    );
+                }
+                scope.showResults = false;
+                scope.hoverIndex = -1;
+            };
+
+            /**
+             * Selects an item from the results.
+             * It sets the view value to the selected item's sys_id and updates the display.
+             * It also hides the results and resets the hover index.
+             * This function is called when the user clicks on an item in the results list.
+             * @param {Object} item - The selected item from the results list.
+             */
+            scope.selectItem = (item) => {
+                ngModelCtrl.$setViewValue(item.sysId);
+                ngModelCtrl.$render(item.display);
+                scope.showResults = false;
+                scope.hoverIndex = -1;
+            };
+
+            /**
+             * Clears the current selection.
+             * It sets the view value to an empty string, clears the display, and hides the
+             * results.
+             * It also resets the input placeholder to the default value.
+             * This function is called when the user clicks on the clear icon.
+             */
+            scope.clearSelection = () => {
+                ngModelCtrl.$setViewValue('');
+                ngModelCtrl.$render(undefined);
+                scope.showResults = false;
+                input.setAttribute(
+                    'placeholder',
+                    scope.placeholder || 'Search...'
+                );
+            };
+
+            /**
+             * Constructs the query string based on the search term and fields.
+             * It formats the search fields and applies the reference qualifier if provided.
+             * @param {String} term
+             * @returns {String} the formatted query string
+             */
+            function buildQuery(term) {
+                let parts = scope.searchFields
+                    .split(';')
+                    .map((f) => f.trim() + 'LIKE' + term);
+                if (scope.referenceQualifier)
+                    parts = parts.map(
+                        (p) => p + '^' + scope.referenceQualifier
+                    );
+                return parts.join('^NQ');
+            }
+
+            /**
+             * Fetches a page of results from the server.
+             * It sends a POST request to the server with the search term, page number, and page
+             * size.
+             * The results are then processed and displayed in the directive.
+             * This function is called when the user types in the input field or clicks on
+             * "Load more results…".
+             */
+            function fetchPage() {
+                $http
+                    .post(spUtil.getURL({ sysparm_type: 'sp_ref_list_data' }), {
+                        table: scope.table,
+                        q: buildQuery(scope.searchTerm),
+                        start: scope.page * pageSize,
+                        count: pageSize,
+                        attributes: 'description',
+                    })
+                    .then((response) => {
+                        console.log('scmReference: response', response);
+                        const items = response.data.items || [];
+                        scope.results = scope.results.concat(
+                            items.map((item) => {
+                                return {
+                                    sysId: item.sys_id,
+                                    display: item.$$displayValue,
+                                };
+                            })
+                        );
+                        scope.moreResults = items.length === pageSize;
+                        scope.showResults = true;
+                    });
+            }
+        },
+    };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:22:59</sys_created_on>
+        <sys_id>a096ffa383aa2650efda54b6feaad3b1</sys_id>
+        <sys_mod_count>6</sys_mod_count>
+        <sys_name>scmReference</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_a096ffa383aa2650efda54b6feaad3b1</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 19:20:27</sys_updated_on>
+        <type>directive</type>
+    </sp_angular_provider>
+</record_update>

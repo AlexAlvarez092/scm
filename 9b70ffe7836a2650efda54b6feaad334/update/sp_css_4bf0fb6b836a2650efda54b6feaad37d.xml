@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css">
+    <sp_css action="INSERT_OR_UPDATE">
+        <css>:root {
+  /* Primary colors */
+  --scm-color-sc-navy: rgb(0, 17, 85);
+  --scm-color-sc-blue: rgb(17, 170, 255);
+  --scm-color-sc-red: rgb(221, 17, 34);
+  --scm-color-sc-white: rgb(255, 255, 255);
+
+  /* Support colours */
+  --scm-color-gray: rgb(51, 51, 51);
+  --scm-color-gray-tint-2: rgb(71, 71, 71);
+  --scm-color-gray-tint-3: rgb(92, 92, 92);
+  --scm-color-gray-tint-4: rgb(102, 102, 102);
+  --scm-color-gray-tint-45: rgb(102, 6, 0);
+  --scm-color-gray-tint-5: rgb(133, 133, 133);
+  --scm-color-gray-tint-6: rgb(173, 173, 173);
+  --scm-color-gray-tint-7: rgb(187, 187, 187);
+  --scm-color-gray-tint-8: rgb(214, 214, 214);
+  --scm-color-blue-tint-2: rgb(162, 205, 244);
+  --scm-color-blue-tint-3: rgb(209, 230, 249);
+  --scm-color-aluminimum: rgb(221, 227, 231);
+  --scm-color-aluminimum-tint-2: rgb(228, 233, 236);
+  --scm-color-horizon: rgb(238, 243, 246);
+  --scm-color-horizon-tint-2: rgb(248, 250, 251);
+
+  /* Interaction colours */
+  --scm-color-int-blue: rgb(8, 106, 219);
+  --scm-color-int-blue-active: rgb(0, 72, 207);
+  --scm-color-int-gray: rgb(207, 213, 217);
+  --scm-color-int-gray-active: rgb(190, 177, 182);
+  --scm-color-int-green: rgb(27, 135, 18);
+  --scm-color-int-green-active: rgb(13, 111, 44);
+  --scm-color-int-red: rgb(227, 17, 34);
+  --scm-color-int-red-active: rgb(190, 0, 0);
+  --scm-color-int-orange: rgb(207, 74, 12);
+  --scm-color-int-orange-active: rgb(186, 62, 6);
+
+  /* Accent colours */
+  --scm-color-int-turquoise: rgb(14, 171, 169);
+  --scm-color-int-turquoise-active: rgb(12, 132, 126);
+  --scm-color-int-azure: rgb(23, 129, 227);
+  --scm-color-int-azure-active: rgb(8, 81, 218);
+  --scm-color-int-iris: rgb(89, 68, 198);
+  --scm-color-int-iris-active: rgb(66, 56, 158);
+  --scm-color-int-orchid: rgb(166, 50, 151);
+  --scm-color-int-orchid-active: rgb(127, 40, 121);
+  --scm-color-int-pink: rgb(225, 25, 95);
+  --scm-color-int-pink-active: rgb(191, 27, 90);
+
+  /* Breakpoints */
+  --scm-breakpoint-mobile-default: 360px;
+  --scm-breakpoint-mobile-wide: 480px;
+  --scm-breakpoint-tablet-default: 768px;
+  --scm-breakpoint-tablet-wide: 1024px;
+  --scm-breakpoint-desktop-default: 1440px;
+  --scm-breakpoint-desktop-wide: 1920px;
+
+  /* Border */
+  --scm-border-style-default: solid;
+  --scm-border-width-thin: 1px;
+  --scm-border-width-medium: 2px;
+  --scm-border-width-thick: 4px;
+  --scm-border-radius-small: 4px;
+  --scm-border-radius-medium: 8px;
+  --scm-border-radius-large: 16px;
+  --scm-border-radius-input: 5px;
+
+  /* Spacing and padding */
+  --scm-spacing-1: 4px;
+  --scm-spacing-2: 8px;
+  --scm-spacing-3: 16px;
+  --scm-spacing-4: 24px;
+  --scm-spacing-5: 32px;
+  --scm-spacing-6: 64px;
+  --scm-spacing-7: 80px;
+
+  --scm-padding-1: 4px;
+  --scm-padding-2: 8px;
+  --scm-padding-3: 16px;
+  --scm-padding-4: 24px;
+  --scm-padding-5: 32px;
+  --scm-padding-6: 48px;
+
+  /* Icon sizes */
+  --scm-icon-size-xsmall: 16px;
+  --scm-icon-size-small: 24px;
+  --scm-icon-size-medium: 32px;
+  --scm-icon-size-large: 40px;
+  --scm-icon-size-xlarge: 48px;
+  --scm-icon-size-xxlarge: 56px;
+
+  /* Font weights */
+  --scm-font-weight-regular: 400;
+  --scm-font-weight-medium: 500;
+  --scm-font-weight-semibold: 600;
+  --scm-font-weight-bold: 700;
+
+  /* Font sizes */
+  --scm-font-size-xxxsmall: 8px;
+  --scm-font-size-xxsmall: 10px;
+  --scm-font-size-xsmall: 12px;
+  --scm-font-size-small: 14px;
+  --scm-font-size-medium: 16px;
+  --scm-font-size-large: 18px;
+  --scm-font-size-xlarge: 20px;
+  --scm-font-size-xxlarge: 24px;
+  --scm-font-size-xxxlarge: 32px;
+}
+
+.scm-container {
+  background-color: var(--scm-color-sc-white);
+  border-radius: var(--scm-border-radius-large);
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-8);
+  padding: var(--scm-padding-4);
+  margin-top: var(--scm-spacing-3);
+}
+
+.h1 {
+  font-size: var(--scm-font-size-xxxlarge);
+  font-weight: var(--scm-font-weight-bold);
+  color: var(--scm-color-sc-navy);
+  margin-bottom: var(--scm-spacing-3);
+}
+
+select {
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+select:focus,
+select:active,
+select:hover,
+select:focus-within,
+select:focus-visible,
+select:target {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: var(--scm-color-gray-tint-4) !important;
+}
+
+option {
+  background-color: var(--scm-color-sc-white) !important;
+}
+
+option:hover {
+  background-color: var(--scm-color-int-blue) !important;
+}
+
+.scm-table-fields-selector-selected {
+  background-color: var(--scm-color-int-blue);
+  color: var(--scm-color-sc-white);
+}
+</css>
+        <name>scm</name>
+        <sys_class_name>sp_css</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 17:58:40</sys_created_on>
+        <sys_id>4bf0fb6b836a2650efda54b6feaad37d</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>scm</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_css_4bf0fb6b836a2650efda54b6feaad37d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:43:23</sys_updated_on>
+        <turn_off_scss_compilation>false</turn_off_scss_compilation>
+    </sp_css>
+</record_update>
