@@ -3,302 +3,238 @@
         <name>scmReference</name>
         <script><![CDATA[/**
  * scmReference Directive
- * This directive provides a reference input field that allows users to search and
- * select records from a specified table.
- * It supports searching by multiple fields, displaying results, and handling
- * selections.
  */
-function scmReference($http, spUtil, $timeout) {
-    'use_strict';
-    return {
-        restrict: 'E',
-        replace: true,
-        require: 'ngModel',
-        scope: {
-            table: '@',
-            searchFields: '@',
-            placeholder: '@?',
-            label: '@',
-            referenceQualifier: '@?',
-            pageSize: '@?',
-            minimumInputLength: '@?',
-            delay: '@?',
-            displayFields: '@?',
-            initialDisplayValue: '@?',
-        },
+function scmReference() {
+  "use_strict";
+  return {
+    restrict: "E",
+    replace: true,
+    require: "ngModel",
+    scope: {
+      table: "@",
+      searchFields: "@",
+      label: "@",
+      placeholder: "@",
+      referenceQualifier: "@?",
+      displayFields: "@?",
+    },
 
-        /**
-         * The tag li uses the event ng-mousedown to select the item.
-         * Usually, the event ng-click is used, but in this case,
-         * it does not work because
-         * the event ng-blur of the input is triggered before the ng-click of the li.
-         */
-        template: `
-            <div class="scm-reference-wrapper">
-                <label
-                  ng-if="label"
-                  for="{{uid}}">
-                  {{ label }}
-                </label>
-                <div class="scm-reference-input-wrapper">
-                    <a
-                      ng-if="ngModelCtrl.$viewValue"
-                      ng-click="clearSelection()"
-                      class="scm-reference-clear-icon">
-                        <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
-                    </a>
-                    <input
-                      id="{{uid}}"
-                      type="text"
-                      ng-model="searchTerm"
-                      ng-focus="openList()"
-                      ng-blur="closeList()"
-                      ng-change="onSearch()"
-                      placeholder="{{ placeholder || 'Search...' }}"
-                      class="input scm-reference-input"
-                      ng-class="{ 'scm-reference-value': ngModelCtrl.$viewValue, 'scm-reference-list-open': showResults }"
-                    />
-                    <sdx-icon 
-                      class="scm-reference-magnifying-glass-icon" 
-                      icon-name="icon-search" size="3">
-                    </sdx-icon>
-                </div>
-                <ul
-                  class="scm-autocomplete-list"
-                  ng-show="showResults">
-                    <li 
-                      class="scm-autocomplete-item"
-                      ng-repeat="item in results track by item.display"
-                      ng-mousedown="selectItem(item)"
-                      ng-mouseenter="hoverIndex = $index"
-                      ng-class="{ 'scm-item-hover': hoverIndex === $index }">
-                        {{ item.display }}
-                    </li>
-                    <li
-                      class="scm-autocomplete-item scm-autocomplete-load-more"
-                      ng-if="moreResults"
-                      ng-mousedown="loadMore()">
-                      Load more results…
-                    </li>
-                    <li
-                      class="scm-autocomplete-item scm-autocomplete-no-results"
-                      ng-if="results.length == 0">
-                      No results…
-                    </li>
-                    <li
-                      class="scm-autocomplete-item scm-autocomplete-no-more"
-                      ng-if="!moreResults && results.length">
-                      No more results…
-                    </li>
-                </ul>
-            </div>
-        `,
-        link: (scope, element, attrs, ngModelCtrl) => {
-            // We have to expose the ngModelCtrl to the scope so that we can use it
-            // in the template.
-            scope.ngModelCtrl = ngModelCtrl;
+    template: `
+    <sdx-select
+        label="{{label}}"
+        placeholder="{{placeholder}}"
+        loading="{{isLoading}}"
+        keyboard-behavior="filter"
+        filter-min-length="2">
 
-            // Unique ID for label-for and input
-            scope.uid = attrs.id || spUtil.createUid('xxxx-xxxx');
+        <sdx-select-option 
+            ng-repeat="option in options" 
+            value="{{option.value}}">
+            {{option.label}}
+        </sdx-select-option>
+    </sdx-select>
+    `,
+    link: (scope, element, attrs, ngModelCtrl) => {
+      // Function to mark the selected option with the 'selected' attribute
+      function setSelectedOption(value) {
+        setTimeout(() => {
+          const sdxSelectOptions =
+            element[0].querySelectorAll("sdx-select-option");
 
-            // Used to calculata the "start" parameter sent to the http service
-            scope.page = 0;
+          // Remove 'selected' attribute from all options
+          sdxSelectOptions.forEach((option) => {
+            option.removeAttribute("selected");
+          });
 
-            // Flag used to determine if there are more results to load
-            scope.moreResults = false;
+          // Add 'selected' attribute to the option that matches the value
+          if (value) {
+            sdxSelectOptions.forEach((option) => {
+              if (option.getAttribute("value") === value) {
+                option.setAttribute("selected", "true");
+              }
+            });
+          }
+        }, 50);
+      }
 
-            const input = element.find('input')[0];
+      // Function to set up event listeners for sdx-select component
+      function setupEventListener() {
+        const sdxSelect = element[0].querySelector("sdx-select") || element[0];
 
-            // Model binding
-            ngModelCtrl.$render = (displayValue) =>
-                (scope.searchTerm = displayValue);
+        if (sdxSelect) {
+          console.log(
+            "Setting up event listeners for sdx-select and child elements:",
+            sdxSelect
+          );
 
-            // Configuration values
-            const pageSize = scope.pageSize
-                ? parseInt(scope.pageSize, 10)
-                : NOW.ac_max_search_matches;
-            const minCharts = scope.minimumInputLength
-                ? parseInt(scope.minimumInputLength, 10)
-                : 2;
-            const delay = scope.delay
-                ? parseInt(scope.delay, 10)
-                : NOW.ac_wait_time;
+          sdxSelect.changeCallback = function (value) {
+            setTimeout(() => {
+              scope.$apply(function () {
+                const currentValue = sdxSelect.value;
+                const newValue =
+                  currentValue && currentValue.length > 0
+                    ? currentValue[0]
+                    : null;
+                // Update the ng-model with the new value
+                ngModelCtrl.$setViewValue(newValue);
+                ngModelCtrl.$setDirty();
+                ngModelCtrl.$setTouched();
+                // Mark the selected option in the DOM
+                setSelectedOption(newValue);
+              });
+            }, 100);
+          };
 
-            // Internal state
-            scope.searchTerm = null;
-            scope.results = [];
-            scope.showResults = false;
-            scope.hoverIndex = -1;
-            let timer;
+          return true;
+        }
+        return false;
+      }
 
-            if (scope.initialDisplayValue) {
-                // If initial display value is provided, set it as the view value
-                ngModelCtrl.$render(scope.initialDisplayValue);
-            }
+      // Set up event listener, retry if element not ready
+      if (!setupEventListener()) {
+        setTimeout(() => setupEventListener(), 100);
+      }
 
-            /**
-             * Loads more results when the user clicks on "Load more results…".
-             * It increments the page number and fetches the next set of results.
-             * This function is called when the user clicks on the "Load more results…" item in
-             * the list.
-             */
-            scope.loadMore = () => {
-                scope.page++;
-                fetchPage();
-            };
+      // Set up the ng-model binding for rendering values
+      ngModelCtrl.$render = function () {
+        const modelValue = ngModelCtrl.$viewValue;
+        const sdxSelect = element[0].querySelector("sdx-select") || element[0];
 
-            /**
-             * Handles the search input change.
-             * It checks if the search term is valid and triggers a search after a delay.
-             * If the search term is empty or shorter than the minimum length, it hides the
-             * results.
-             */
-            scope.onSearch = () => {
-                if (timer) $timeout.cancel(timer);
+        if (modelValue) {
+          // Set the value property of sdx-select (expects array format)
+          if (sdxSelect && sdxSelect.value !== undefined) {
+            sdxSelect.value = [modelValue];
+          }
+          // Mark the corresponding option as selected in the DOM
+          setSelectedOption(modelValue);
+        } else {
+          // Clear selection when no value
+          if (sdxSelect && sdxSelect.value !== undefined) {
+            sdxSelect.value = [];
+          }
+          // Clear selected option
+          setSelectedOption(null);
+        }
+      };
 
-                scope.results = [];
+      // Watch for when options are loaded and there's an initial value
+      scope.$watch("options", function (newOptions) {
+        if (newOptions && newOptions.length > 0 && ngModelCtrl.$viewValue) {
+          // Mark the selected option when options are loaded
+          setSelectedOption(ngModelCtrl.$viewValue);
+        }
+      });
+    },
+    controller: ($scope, $http) => {
+      // Initialize options array for dropdown
+      $scope.options = [];
 
-                if (!scope.searchTerm || scope.searchTerm.length < minCharts) {
-                    scope.showResults = false;
-                    return;
+      // Initialize loading state
+      $scope.isLoading = false;
+
+      // Function to load options from ServiceNow table via REST API
+      $scope.loadOptions = function () {
+        if (!$scope.table) {
+          console.warn("scmReference: table parameter is required");
+          return;
+        }
+
+        // Set loading state to true when starting to load options
+        $scope.isLoading = true;
+
+        // Build the ServiceNow REST API URL for the specified table
+        let apiUrl = "/api/now/table/" + $scope.table;
+
+        // Build query parameters array
+        let params = [];
+
+        // Add reference qualifier for filtering records if provided
+        if ($scope.referenceQualifier) {
+          params.push(
+            "sysparm_query=" + encodeURIComponent($scope.referenceQualifier)
+          );
+        }
+
+        // Include both value and display_value in response
+        params.push("sysparm_display_value=all");
+
+        // Build fields parameter - always include sys_id, plus displayFields if specified
+        let fields = ["sys_id"];
+        if ($scope.displayFields) {
+          fields = fields.concat($scope.displayFields.split(","));
+        }
+        params.push("sysparm_fields=" + encodeURIComponent(fields.join(",")));
+
+        // Limit number of results returned
+        params.push("sysparm_limit=10");
+
+        // Append parameters to URL
+        if (params.length > 0) {
+          apiUrl += "?" + params.join("&");
+        }
+
+        // Make HTTP GET request to ServiceNow REST API
+        $http
+          .get(apiUrl)
+          .then(function (response) {
+            if (response.data && response.data.result) {
+              // Transform API response into options array for dropdown
+              $scope.options = response.data.result.map(function (record) {
+                let label = "";
+
+                if ($scope.displayFields) {
+                  // Handle multiple display fields - concatenate with comma
+                  let displayFields = $scope.displayFields
+                    .split(",")
+                    .map((field) => field.trim());
+                  let displayValues = [];
+
+                  displayFields.forEach(function (field) {
+                    if (record[field] && record[field].display_value) {
+                      displayValues.push(record[field].display_value);
+                    }
+                  });
+
+                  label = displayValues.join(", ");
+                } else {
+                  // Fallback to sys_id if no display fields specified
+                  label = record.sys_id.value;
                 }
 
-                timer = $timeout(() => {
-                    scope.page = 0;
-                    fetchPage();
-                }, delay);
-            };
-
-            /**
-             * Opens the list of results.
-             * It clears the input placeholder and resets the results.
-             * This function is called when the input field is focused.
-             * It also resets the search term and results.
-             * If the input is empty, it sets the placeholder to the default value.
-             */
-            scope.openList = () => {
-                input.setAttribute('placeholder', '');
-
-                scope.results = [];
-                ngModelCtrl.$setViewValue('');
-                ngModelCtrl.$render('');
-            };
-
-            /**
-             * Closes the list of results.
-             * It hides the results and resets the hover index.
-             * This function is called when the input field loses focus.
-             * If the input is empty, it resets the placeholder to the default value.
-             * It also resets the search term and results.
-             */
-            scope.closeList = () => {
-                // If the input is empty, reset placeholder
-                if (!scope.searchTerm) {
-                    input.setAttribute(
-                        'placeholder',
-                        scope.placeholder || 'Search...'
-                    );
-                }
-                scope.showResults = false;
-                scope.hoverIndex = -1;
-            };
-
-            /**
-             * Selects an item from the results.
-             * It sets the view value to the selected item's sys_id and updates the display.
-             * It also hides the results and resets the hover index.
-             * This function is called when the user clicks on an item in the results list.
-             * @param {Object} item - The selected item from the results list.
-             */
-            scope.selectItem = (item) => {
-                ngModelCtrl.$setViewValue(item.sysId);
-                ngModelCtrl.$render(item.display);
-                scope.showResults = false;
-                scope.hoverIndex = -1;
-            };
-
-            /**
-             * Clears the current selection.
-             * It sets the view value to an empty string, clears the display, and hides the
-             * results.
-             * It also resets the input placeholder to the default value.
-             * This function is called when the user clicks on the clear icon.
-             */
-            scope.clearSelection = () => {
-                ngModelCtrl.$setViewValue('');
-                ngModelCtrl.$render(undefined);
-                scope.showResults = false;
-                input.setAttribute(
-                    'placeholder',
-                    scope.placeholder || 'Search...'
-                );
-            };
-
-            /**
-             * Constructs the query string based on the search term and fields.
-             * It formats the search fields and applies the reference qualifier if provided.
-             * @param {String} term
-             * @returns {String} the formatted query string
-             */
-            function buildQuery(term) {
-                let parts = scope.searchFields
-                    .split(';')
-                    .map((f) => f.trim() + 'LIKE' + term);
-                if (scope.referenceQualifier)
-                    parts = parts.map(
-                        (p) => p + '^' + scope.referenceQualifier
-                    );
-                return parts.join('^NQ');
+                return {
+                  value: record.sys_id.value, // Use sys_id as the value
+                  label: label || record.sys_id.value, // Use constructed label or fallback to sys_id
+                };
+              });
             }
+          })
+          .catch(function (error) {
+            console.error("scmReference: Error loading options", error);
+          })
+          .finally(function () {
+            // Set loading state to false when request completes (success or error)
+            $scope.isLoading = false;
+          });
+      };
 
-            /**
-             * Fetches a page of results from the server.
-             * It sends a POST request to the server with the search term, page number, and page
-             * size.
-             * The results are then processed and displayed in the directive.
-             * This function is called when the user types in the input field or clicks on
-             * "Load more results…".
-             */
-            function fetchPage() {
-                $http
-                    .post(spUtil.getURL({ sysparm_type: 'sp_ref_list_data' }), {
-                        table: scope.table,
-                        q: buildQuery(scope.searchTerm),
-                        start: scope.page * pageSize,
-                        count: pageSize,
-                        attributes: 'description',
-                    })
-                    .then((response) => {
-                        console.log('scmReference: response', response);
-                        const items = response.data.items || [];
-                        scope.results = scope.results.concat(
-                            items.map((item) => {
-                                return {
-                                    sysId: item.sys_id,
-                                    display: item.$$displayValue,
-                                };
-                            })
-                        );
-                        scope.moreResults = items.length === pageSize;
-                        scope.showResults = true;
-                    });
-            }
-        },
-    };
+      // Load options when directive initializes
+      $scope.loadOptions();
+    },
+  };
 }
 ]]></script>
         <sys_class_name>sp_angular_provider</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:22:59</sys_created_on>
         <sys_id>a096ffa383aa2650efda54b6feaad3b1</sys_id>
-        <sys_mod_count>6</sys_mod_count>
+        <sys_mod_count>120</sys_mod_count>
         <sys_name>scmReference</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_a096ffa383aa2650efda54b6feaad3b1</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-07-11 19:20:27</sys_updated_on>
+        <sys_updated_on>2025-08-28 20:17:17</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

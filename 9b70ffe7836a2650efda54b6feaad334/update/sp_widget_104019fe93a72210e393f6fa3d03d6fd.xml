@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function ($scope) {
+  const c = this;
+
+  c.showSpinner = true;
+  c.canSubmit = false;
+
+  // Handle VCF file parsing
+  c.onVcfParsed = function (vcfData) {
+    // Map VCF data to form fields
+    if (vcfData.firstName) c.firstName = vcfData.firstName;
+    if (vcfData.lastName) c.lastName = vcfData.lastName;
+    if (vcfData.email) c.email = vcfData.email;
+    if (vcfData.mobilePhone || vcfData.workPhone)
+      c.phone = vcfData.mobilePhone || vcfData.workPhone;
+    if (vcfData.jobTitle) c.title = vcfData.jobTitle;
+
+    // Clear any previous errors
+    c.dropzoneError = null;
+  };
+
+  if (!c.data.isNewRecord) {
+    c.server
+      .get({
+        action: "getRecord",
+      })
+      .then(function (response) {
+        c.userName = response.data.userName;
+        c.firstName = response.data.firstName;
+        c.lastName = response.data.lastName;
+        c.email = response.data.email;
+        c.phone = response.data.phone;
+        c.title = response.data.title;
+        c.department = response.data.department;
+        c.departmentDv = response.data.departmentDv;
+        c.company = response.data.company;
+        c.companyDv = response.data.companyDv;
+        c.showSpinner = false;
+      });
+  } else {
+    c.showSpinner = false;
+  }
+
+  $scope.$watchGroup(
+    ["c.userName", "c.firstName", "c.lastName", "c.email", "c.phone"], // mandatory fields
+    function (newValues) {
+      c.canSubmit = newValues.every((value) => !!value);
+    }
+  );
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>contact-details</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>contact-details</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+  const sysId = String($sp.getParameter("sys_id"));
+
+  data.isNewRecord = sysId === "-1";
+
+  if (input && input.action === "getRecord") {
+    var grRecord = new GlideRecord("sys_user");
+    grRecord.get(sysId);
+
+    data.userName = grRecord.user_name.getValue();
+    data.firstName = grRecord.first_name.getValue();
+    data.lastName = grRecord.last_name.getValue();
+    data.email = grRecord.email.getValue();
+    data.phone = grRecord.phone.getValue();
+    data.title = grRecord.title.getValue();
+    data.department = grRecord.department.getValue();
+    data.departmentDv = grRecord.department.getDisplayValue();
+    data.company = grRecord.company.getValue();
+    data.companyDv = grRecord.company.getDisplayValue();
+    return;
+  }
+})();
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-27 15:23:40</sys_created_on>
+        <sys_id>104019fe93a72210e393f6fa3d03d6fd</sys_id>
+        <sys_mod_count>36</sys_mod_count>
+        <sys_name>contact-details</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_104019fe93a72210e393f6fa3d03d6fd</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-28 20:18:23</sys_updated_on>
+        <template><![CDATA[<div class="scm-container">
+  <div class="row margin-bottom-3">
+    <div class="col">
+      <h1 class="h1">Contact details</h1>
+    </div>
+  </div>
+
+  <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+
+  <!-- Dropzone -->
+  <div ng-if="!c.showSpinner && data.isNewRecord">
+    <scm-vcf-dropzone on-vcf-parsed="c.onVcfParsed(vcfData)"></scm-vcf-dropzone>
+  </div>
+
+  <div ng-if="!c.showSpinner" class="margin-top-3">
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="User name"
+          sr-hint="User name"
+          ng-model="c.userName"
+          ng-value="c.userName"
+          ng-required="true"
+        ></sdx-input>
+      </div>
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="Email"
+          sr-hint="Email"
+          ng-model="c.email"
+          ng-value="c.email"
+          ng-required="true"
+        ></sdx-input>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="First name"
+          sr-hint="First name"
+          ng-model="c.firstName"
+          ng-value="c.firstName"
+          ng-required="true"
+        ></sdx-input>
+      </div>
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="Last name"
+          sr-hint="Last name"
+          ng-model="c.lastName"
+          ng-value="c.lastName"
+          ng-required="true"
+        ></sdx-input>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="Phone"
+          sr-hint="Phone"
+          ng-model="c.phone"
+          ng-value="c.phone"
+          ng-required="true"
+        ></sdx-input>
+      </div>
+      <div class="col-md-6 margin-bottom-2">
+        <scm-reference
+          table="cmn_department"
+          search-fields="name"
+          label="Department"
+          placeholder="Select a department"
+          reference-qualifier="nameISNOTEMPTY"
+          ng-model="c.department"
+          display-fields="name"
+        ></scm-reference>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-6 margin-bottom-2">
+        <sdx-input
+          label="Title"
+          sr-hint="Title"
+          ng-model="c.title"
+          ng-value="c.title"
+        ></sdx-input>
+      </div>
+      <div class="col-md-6 margiin-bottom-2">
+        <scm-ref-picker
+          table="core_company"
+          search-fields="name"
+          placeholder="Select the core company"
+          label="Core company"
+          reference-qualifier="nameISNOTEMPTY"
+          ng-model="c.company"
+        ></scm-ref-picker>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 margin-bottom-2">
+        <sdx-button
+          label="Submit"
+          ng-click="c.submitContact()"
+          ng-disabled="!c.canSubmit"
+        ></sdx-button>
+      </div>
+    </div>
+  </div>
+
+  <pre>{{ c.department | json }}</pre>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

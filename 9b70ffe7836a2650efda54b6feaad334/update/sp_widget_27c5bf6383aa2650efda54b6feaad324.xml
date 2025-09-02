@@ -8,16 +8,10 @@
 
   c.server
     .get({
-      action: 'getContractDetails',
+      action: 'getRecord',
     })
     .then(function (response) {
       c.number = response.data.number;
-      c.startDate = response.data.startDate;
-      c.endDate = response.data.endDate;
-      c.frameworkAgreement = response.data.frameworkAgreement;
-      const customerData =  response.data.customer;
-      c.customer = customerData.sysId;
-      c.customerDisplay = customerData.display;
       c.showSpinner = false;
     });
 };
@@ -30,28 +24,23 @@
         <docs/>
         <field_list/>
         <has_preview>false</has_preview>
-        <id>contract-details</id>
+        <id>incident-details</id>
         <internal>false</internal>
         <link><![CDATA[function link(scope, element, attrs, controller) {
   
 }]]></link>
-        <name>contract-details</name>
+        <name>incident-details</name>
         <option_schema/>
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
   const sysId = String($sp.getParameter('sys_id'));
 
-  if (input && input.action === 'getContractDetails') {
-    var grContract = new GlideRecord('x_680259_cm_contract');
-    grContract.get(sysId);
+  if (input && input.action === 'getRecord') {
+    var grRecord = new GlideRecord('incident');
+    grRecord.get(sysId);
 
-    data.number = grContract.number.getDisplayValue();
-    data.startDate = grContract.start_date.getDisplayValue();
-    data.endDate = grContract.end_date.getDisplayValue();
-    data.frameworkAgreement = grContract.framework.toString();
-    data.customer = { sysId: grContract.customer.toString(), display: grContract.customer.getDisplayValue() };
-
+    data.number = grRecord.number.getDisplayValue();
     return;
   }
 })();
@@ -61,18 +50,18 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:19:38</sys_created_on>
         <sys_id>27c5bf6383aa2650efda54b6feaad324</sys_id>
-        <sys_mod_count>14</sys_mod_count>
-        <sys_name>contract-details</sys_name>
+        <sys_mod_count>15</sys_mod_count>
+        <sys_name>incident-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_27c5bf6383aa2650efda54b6feaad324</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-07-11 19:19:24</sys_updated_on>
+        <sys_updated_on>2025-08-22 11:27:51</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
   <div class="row margin-bottom-3">
     <div class="col">
-      <h1 class="h1">Contract details</h1>
+      <h1 class="h1">Incident details</h1>
     </div>
   </div>
 
@@ -83,11 +72,12 @@
       <div class="col-md-6 margin-bottom-2">
         <sdx-input
           label="Number"
-          sr-hint="Contract number"
+          sr-hint="Incident number"
           ng-model="c.number"
           ng-value="c.number"
           ng-disabled="true"></sdx-input>
       </div>
+      <!--
       <div class="col-md-6 margin-bottom-2">
         <scm-reference
           table="core_company"
@@ -98,8 +88,9 @@
           ng-model="c.customer"
           initial-display-value="c.customerDisplay"></scm-reference>
       </div>
+	  -->
     </div>
-
+	<!--
     <div class="row">
       <div class="col-md-6 margin-bottom-2">
         <sdx-input
@@ -126,7 +117,9 @@
           scm-model-provider></sdx-input>
       </div>
     </div>
-
+	-->
+	
+    <!--
     <div class="row">
       <div class="col-md-6 margin-bottom-2">
         <scm-reference
@@ -138,6 +131,7 @@
           ng-model="c.frameworkAgreement"></scm-reference>
       </div>
     </div>
+	-->
   </div>
 </div>
 ]]></template>

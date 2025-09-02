@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmVcfDropzone</name>
+        <script><![CDATA[/**
+ * This directive is used to upload and parse VCF (vCard) files
+ */
+function scmVcfUDropzone(spUtil) {
+  return {
+    restrict: "E",
+    scope: {
+      onVcfParsed: "&",
+    },
+    replace: true,
+    controller: function ($element, $scope) {
+      $scope.directiveId = "vcf-upload-dropzone-" + spUtil.createUid("xxxx");
+
+      /**
+       * Validate if file is a valid VCF file
+       */
+      function isValidVcfFile(file) {
+        // Validate extension
+        var fileName = file.name.toLowerCase();
+        if (!fileName.endsWith(".vcf") && !fileName.endsWith(".vcard")) {
+          return false;
+        }
+
+        // Validate MIME type if available
+        var validMimeTypes = ["text/vcard", "text/x-vcard", "text/directory"];
+        if (file.type && validMimeTypes.indexOf(file.type) === -1) {
+          // Allow text/plain as some systems don't set correct MIME type
+          if (file.type !== "text/plain" && file.type !== "") {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      /**
+       * Validate VCF content structure
+       */
+      function isValidVcfContent(content) {
+        var lines = content.split(/\r?\n/);
+        var hasBegin = false;
+        var hasEnd = false;
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim().toUpperCase();
+          if (line === "BEGIN:VCARD") {
+            hasBegin = true;
+          }
+          if (line === "END:VCARD") {
+            hasEnd = true;
+          }
+        }
+
+        return hasBegin && hasEnd;
+      }
+
+      /**
+       * Get phone type from VCF parameters
+       */
+      function getPhoneType(parameters) {
+        for (var i = 0; i < parameters.length; i++) {
+          var param = parameters[i].toUpperCase();
+          if (param === "CELL" || param === "MOBILE") {
+            return "mobile";
+          }
+          if (param === "WORK") {
+            return "work";
+          }
+          if (param.startsWith("TYPE=")) {
+            var type = param.substring(5).toLowerCase();
+            if (type === "cell" || type === "mobile") {
+              return "mobile";
+            }
+            if (type === "work") {
+              return "work";
+            }
+          }
+        }
+        return "unknown";
+      }
+
+      /**
+       * Clean phone number formatting
+       */
+      function cleanPhoneNumber(phoneNumber) {
+        // Remove common VCF phone number formatting, keep +, digits, spaces, (), -
+        return phoneNumber.replace(/[^\+\d\s\(\)-]/g, "").trim();
+      }
+
+      /**
+       * Process individual VCF property
+       */
+      function processVcfProperty(property, vcfData) {
+        var colonIndex = property.indexOf(":");
+        if (colonIndex === -1) return;
+
+        var propertyName = property.substring(0, colonIndex).toUpperCase();
+        var propertyValue = property.substring(colonIndex + 1);
+
+        // Parse property parameters (everything before the colon)
+        var propertyParts = propertyName.split(";");
+        var mainProperty = propertyParts[0];
+        var parameters = propertyParts.slice(1);
+
+        switch (mainProperty) {
+          case "FN":
+            // Full name - split into first and last (only if N property not already processed)
+            if (!vcfData.firstName && !vcfData.lastName) {
+              var nameParts = propertyValue.split(" ");
+              vcfData.firstName = nameParts[0] || "";
+              vcfData.lastName = nameParts.slice(1).join(" ") || "";
+            }
+            // Store full name for reference
+            vcfData.fullName = propertyValue;
+            break;
+
+          case "N":
+            // Structured name: Family;Given;Additional;Honorific;Suffix (has priority over FN)
+            var nameParts = propertyValue.split(";");
+            vcfData.lastName = nameParts[0] || "";
+            vcfData.firstName = nameParts[1] || "";
+            // Mark that structured name was processed
+            vcfData.hasStructuredName = true;
+            break;
+
+          case "EMAIL":
+            if (!vcfData.email) {
+              // Take first email found
+              vcfData.email = propertyValue;
+            }
+            break;
+
+          case "TEL":
+            var phoneNumber = cleanPhoneNumber(propertyValue);
+            var phoneType = getPhoneType(parameters);
+
+            if (phoneType === "mobile" && !vcfData.mobilePhone) {
+              vcfData.mobilePhone = phoneNumber;
+            } else if (phoneType === "work" && !vcfData.workPhone) {
+              vcfData.workPhone = phoneNumber;
+            } else if (!vcfData.mobilePhone && phoneType === "unknown") {
+              // If no type specified, put in mobile as fallback
+              vcfData.mobilePhone = phoneNumber;
+            }
+            break;
+
+          case "TITLE":
+            vcfData.jobTitle = propertyValue;
+            break;
+
+          case "ORG":
+            // Organization can contain job title
+            if (!vcfData.jobTitle) {
+              var orgParts = propertyValue.split(";");
+              vcfData.jobTitle = orgParts[1] || ""; // Second part is often the title
+            }
+            break;
+        }
+      }
+
+      /**
+       * Parse VCF content and extract contact data
+       */
+      function parseVcfContent(vcfContent) {
+        var lines = vcfContent.split(/\r?\n/);
+        var vcfData = {
+          firstName: "",
+          lastName: "",
+          email: "",
+          mobilePhone: "",
+          workPhone: "",
+          jobTitle: "",
+        };
+
+        var currentProperty = "";
+
+        for (var i = 0; i < lines.length; i++) {
+          var line = lines[i].trim();
+
+          // Skip empty lines and BEGIN/END
+          if (
+            !line ||
+            line.toUpperCase().startsWith("BEGIN:") ||
+            line.toUpperCase().startsWith("END:")
+          ) {
+            continue;
+          }
+
+          // Handle line continuations (lines starting with space or tab)
+          if (line.startsWith(" ") || line.startsWith("\t")) {
+            currentProperty += line.substring(1);
+            continue;
+          }
+
+          // Process previous property if we have one
+          if (currentProperty) {
+            processVcfProperty(currentProperty, vcfData);
+          }
+
+          currentProperty = line;
+        }
+
+        // Process last property
+        if (currentProperty) {
+          processVcfProperty(currentProperty, vcfData);
+        }
+        return vcfData;
+      }
+
+      /**
+       * Parse VCF file and return promise with contact data
+       */
+      function parseVcfFile(file) {
+        return new Promise(function (resolve, reject) {
+          var reader = new FileReader();
+
+          reader.onload = function (e) {
+            try {
+              var vcfContent = e.target.result;
+
+              // Validate VCF content structure
+              if (!isValidVcfContent(vcfContent)) {
+                reject(new Error("Invalid VCF content format"));
+                return;
+              }
+
+              var parsedData = parseVcfContent(vcfContent);
+              resolve(parsedData);
+            } catch (error) {
+              reject(error);
+            }
+          };
+
+          reader.onerror = function () {
+            reject(new Error("Error reading file"));
+          };
+
+          reader.readAsText(file, "UTF-8");
+        });
+      }
+
+      /**
+       * Handle file added to dropzone
+       */
+      $scope.fileAdded = function (files) {
+        var file = files[0];
+
+        // Immediate file validation
+        if (!isValidVcfFile(file)) {
+          $scope.file = undefined;
+          $scope.$applyAsync();
+          return;
+        }
+
+        // File is valid - show in UI
+        var fileName = file.name
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        $scope.file = new File([file], fileName, { type: file.type });
+        $scope.file.sizeKb = file.size;
+
+        // Auto-parse VCF file
+        parseVcfFile(file)
+          .then(function (vcfData) {
+            // Send parsed data to parent widget
+            console.log("Parsed VCF Data:", JSON.stringify(vcfData));
+            console.log("First Name:", vcfData.firstName);
+            console.log("Last Name:", vcfData.lastName);
+
+            // Ensure we have the callback function
+            if ($scope.onVcfParsed) {
+              $scope.onVcfParsed({ vcfData: vcfData });
+            } else {
+              console.error("onVcfParsed callback not provided");
+            }
+            $scope.$applyAsync();
+          })
+          .catch(function (error) {
+            console.error("Error parsing VCF file:", error);
+            $scope.errorMessage = "Error parsing VCF file: " + error.message;
+            $scope.file = undefined;
+            $scope.$applyAsync();
+          });
+      };
+
+      /**
+       * Reset/remove file from dropzone
+       */
+      $scope.resetFile = function () {
+        $scope.file = undefined;
+        $scope.$applyAsync();
+      };
+    },
+    link: function (scope, element, attrs, ngModel) {},
+    template: `
+    <div class="row">
+      <div class="col-md-12">
+        <div ng-file-drop="fileAdded($files)" ng-if="!file">
+          <label for="vcfUploadInput-{{::directiveId}}" class="dropzone-label">
+            <sdx-icon icon-name="icon-upload" size="2"></sdx-icon> Drop VCF file here or click to upload
+          </label>
+          <input type="file" accept=".vcf,.vcard,text/vcard,text/x-vcard" data-testid="vcf-upload-input" id="vcfUploadInput-{{::directiveId}}" name="vcfUploadInput-{{::directiveId}}" ng-file-select="fileAdded($files)">
+        </div>
+        <div ng-if="file">
+          <sdx-icon icon-name="icon-idcard" size="2"></sdx-icon> {{file.name}} ({{file.sizeKb}} Bytes)
+          <sdx-button theme="transparent" ng-click="resetFile()" icon-name="icon-bin" icon-size="2"></sdx-button>
+        </div>
+      </div>
+    </div>`,
+  };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-27 15:20:06</sys_created_on>
+        <sys_id>cd5f01be93a72210e393f6fa3d03d6b3</sys_id>
+        <sys_mod_count>17</sys_mod_count>
+        <sys_name>scmVcfDropzone</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_cd5f01be93a72210e393f6fa3d03d6b3</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-27 20:15:23</sys_updated_on>
+        <type>directive</type>
+    </sp_angular_provider>
+</record_update>

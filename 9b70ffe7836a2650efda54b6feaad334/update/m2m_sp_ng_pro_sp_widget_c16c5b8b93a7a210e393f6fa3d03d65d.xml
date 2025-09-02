@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_widget">
+    <m2m_sp_ng_pro_sp_widget action="INSERT_OR_UPDATE">
+        <sp_angular_provider display_value="scmRefPicker">5f7b574b93a7a210e393f6fa3d03d678</sp_angular_provider>
+        <sp_widget display_value="contact-details">104019fe93a72210e393f6fa3d03d6fd</sp_widget>
+        <sys_class_name>m2m_sp_ng_pro_sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-28 20:14:25</sys_created_on>
+        <sys_id>c16c5b8b93a7a210e393f6fa3d03d65d</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scmRefPicker.contact-details</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_ng_pro_sp_widget_c16c5b8b93a7a210e393f6fa3d03d65d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-28 20:14:25</sys_updated_on>
+    </m2m_sp_ng_pro_sp_widget>
+</record_update>
