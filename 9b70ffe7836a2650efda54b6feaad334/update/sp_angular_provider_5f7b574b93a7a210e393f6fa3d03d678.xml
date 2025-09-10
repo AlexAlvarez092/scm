@@ -365,29 +365,6 @@ function scmRefPicker($http, $timeout) {
 
         $timeout(() => {
           angular.element("#" + scope.searchUid).focus();
-
-          const wrapper = element[0];
-          const dropdownContainer = element[0].querySelector(".scm-reference-dropdown-container");
-          const searchList = element[0].querySelector(".scm-autocomplete-list");
-          const searchWrapper = element[0].querySelector(".scm-reference-search-wrapper");
-
-          if (wrapper && searchList) {
-            const rect = wrapper.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-            const spaceBelow = windowHeight - rect.bottom;
-            const listHeight = 240; // max-height del CSS
-
-            // If there is not enough space below, open upwards
-            if (spaceBelow < listHeight && rect.top > listHeight) {
-              dropdownContainer.classList.add("dropdown-up");
-              searchList.classList.add("dropdown-up");
-              searchWrapper.classList.add("dropdown-up");
-            } else {
-              dropdownContainer.classList.remove("dropdown-up");
-              searchList.classList.remove("dropdown-up");
-              searchWrapper.classList.remove("dropdown-up");
-            }
-          }
         }, 0);
       };
 
@@ -453,14 +430,14 @@ function scmRefPicker($http, $timeout) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>136</sys_mod_count>
+        <sys_mod_count>138</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-06 11:32:13</sys_updated_on>
+        <sys_updated_on>2025-09-10 16:46:37</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>
