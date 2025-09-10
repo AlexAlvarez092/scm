@@ -1,0 +1,822 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="DELETE">
+        <name>scmReferenceField</name>
+        <script><![CDATA[/**
+ * scmReference Directive
+ * This directive provides a reference input field that allows users to search and
+ * select records from a specified table.
+ * It supports searching by multiple fields, displaying results, and handling
+ * selections.
+ */
+function scmRefPicker($http, spUtil, $timeout) {
+  "use_strict";
+  return {
+    restrict: "E",
+    replace: true,
+    require: "ngModel",
+    scope: {
+      table: "@",
+      searchFields: "@",
+      placeholder: "@?",
+      label: "@",
+      referenceQualifier: "@?",
+      pageSize: "@?",
+      minimumInputLength: "@?",
+      delay: "@?",
+      displayFields: "@?",
+      initialDisplayValue: "@?",
+    },
+
+    /**
+     * The tag li uses the event ng-mousedown to select the item.
+     * Usually, the event ng-click is used, but in this case,
+     * it does not work because
+     * the event ng-blur of the input is triggered before the ng-click of the li.
+     */
+    template: `
+            <div class="scm-reference-wrapper">
+                <label
+                  ng-if="label"
+                  for="{{uid}}">
+                  {{ label }}
+                </label>
+                <div class="scm-reference-input-wrapper">
+                    <a
+                      ng-if="ngModelCtrl.$viewValue"
+                      ng-click="clearSelection()"
+                      class="scm-reference-clear-icon">
+                        <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
+                    </a>
+                    <input
+                      id="{{uid}}"
+                      type="text"
+                      ng-model="searchTerm"
+                      ng-focus="openList()"
+                      ng-blur="closeList()"
+                      ng-change="onSearch()"
+                      placeholder="{{ placeholder || 'Search...' }}"
+                      class="input scm-reference-input"
+                      ng-class="{ 'scm-reference-value': ngModelCtrl.$viewValue, 'scm-reference-list-open': showResults }"
+                    />
+                    <sdx-icon 
+                      class="scm-reference-magnifying-glass-icon" 
+                      icon-name="icon-search" size="3">
+                    </sdx-icon>
+                </div>
+                <ul
+                  class="scm-autocomplete-list"
+                  ng-show="showResults">
+                    <li 
+                      class="scm-autocomplete-item"
+                      ng-repeat="item in results track by item.display"
+                      ng-mousedown="selectItem(item)"
+                      ng-mouseenter="hoverIndex = $index"
+                      ng-class="{ 'scm-item-hover': hoverIndex === $index }">
+                        {{ item.display }}
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-load-more"
+                      ng-if="moreResults"
+                      ng-mousedown="loadMore()">
+                      Load more results…
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-no-results"
+                      ng-if="results.length == 0">
+                      No results…
+                    </li>
+                    <li
+                      class="scm-autocomplete-item scm-autocomplete-no-more"
+                      ng-if="!moreResults && results.length">
+                      No more results…
+                    </li>
+                </ul>
+            </div>
+        `,
+    link: (scope, element, attrs, ngModelCtrl) => {
+      // We have to expose the ngModelCtrl to the scope so that we can use it
+      // in the template.
+      scope.ngModelCtrl = ngModelCtrl;
+
+      // Unique ID for label-for and input
+      scope.uid = attrs.id || spUtil.createUid("xxxx-xxxx");
+
+      // Used to calculata the "start" parameter sent to the http service
+      scope.page = 0;
+
+      // Flag used to determine if there are more results to load
+      scope.moreResults = false;
+
+      const input = element.find("input")[0];
+
+      // Model binding - if we receive a sys_id, keep it but don't show it
+      ngModelCtrl.$render = (displayValue) => {
+        // Only update searchTerm if it's actually a display value, not a sys_id
+        if (
+          displayValue &&
+          displayValue.length === 32 &&
+          displayValue.match(/^[a-f0-9]+$/i)
+        ) {
+          // This looks like a sys_id, don't show it in the input
+          scope.searchTerm = "";
+        } else {
+          scope.searchTerm = displayValue;
+        }
+      };
+
+      // Configuration values
+      const pageSize = scope.pageSize
+        ? parseInt(scope.pageSize, 10)
+        : NOW.ac_max_search_matches;
+      const minCharts = scope.minimumInputLength
+        ? parseInt(scope.minimumInputLength, 10)
+        : 2;
+      const delay = scope.delay ? parseInt(scope.delay, 10) : NOW.ac_wait_time;
+
+      // Internal state
+      scope.searchTerm = null;
+      scope.results = [];
+      scope.showResults = false;
+      scope.hoverIndex = -1;
+      let timer;
+
+      /**
+       * Loads more results when the user clicks on "Load more results…".
+       * It increments the page number and fetches the next set of results.
+       * This function is called when the user clicks on the "Load more results…" item in
+       * the list.
+       */
+      scope.loadMore = () => {
+        scope.page++;
+        fetchPage();
+      };
+
+      /**
+       * Handles the search input change.
+       * It checks if the search term is valid and triggers a search after a delay.
+       * If the search term is empty or shorter than the minimum length, it hides the
+       * results.
+       * If the user is typing something different from the current display value,
+       * it clears the model value to indicate a new search.
+       */
+      scope.onSearch = () => {
+        if (timer) $timeout.cancel(timer);
+
+        scope.results = [];
+
+        if (!scope.searchTerm || scope.searchTerm.length < minCharts) {
+          scope.showResults = false;
+          return;
+        }
+
+        timer = $timeout(() => {
+          scope.page = 0;
+          fetchPage();
+        }, delay);
+      };
+
+      /**
+       * Opens the list of results.
+       * It clears the input placeholder and resets the results.
+       * This function is called when the input field is focused.
+       * It prepares for search but keeps the current display value visible.
+       */
+      scope.openList = () => {
+        input.setAttribute("placeholder", "");
+        scope.results = [];
+        ngModelCtrl.$setViewValue("");
+        ngModelCtrl.$render("");
+      };
+
+      /**
+       * Closes the list of results.
+       * It hides the results and resets the hover index.
+       * This function is called when the input field loses focus.
+       * If there's a selected value, it restores the display value.
+       * If the input is empty, it resets the placeholder to the default value.
+       */
+      scope.closeList = () => {
+        // If the input is empty, reset placeholder
+        if (!scope.searchTerm) {
+          input.setAttribute("placeholder", scope.placeholder || "Search...");
+        }
+        scope.showResults = false;
+        scope.hoverIndex = -1;
+      };
+
+      /**
+       * Selects an item from the results.
+       * It sets the view value to the selected item's sys_id and updates the display.
+       * It also hides the results and resets the hover index.
+       * This function is called when the user clicks on an item in the results list.
+       * @param {Object} item - The selected item from the results list.
+       */
+      scope.selectItem = (item) => {
+        ngModelCtrl.$setViewValue(item.sysId);
+        ngModelCtrl.$render(item.display);
+        scope.showResults = false;
+        scope.hoverIndex = -1;
+      };
+
+      /**
+       * Clears the current selection.
+       * It sets the view value to an empty string, clears the display, and hides the
+       * results.
+       * It also resets the input placeholder to the default value.
+       * This function is called when the user clicks on the clear icon.
+       */
+      scope.clearSelection = () => {
+        ngModelCtrl.$setViewValue("");
+        ngModelCtrl.$render(undefined);
+        scope.showResults = false;
+        input.setAttribute("placeholder", scope.placeholder || "Search...");
+      };
+
+      /**
+       * Constructs the query string based on the search term and fields.
+       * It formats the search fields using CONTAINS and applies the reference qualifier if provided.
+       * @param {String} term
+       * @returns {String} the formatted query string
+       */
+      function buildQuery(term) {
+        let searchConditions = [];
+
+        if (scope.searchFields) {
+          // Split searchFields by semicolon and create CONTAINS conditions
+          const fields = scope.searchFields.split(";").map((f) => f.trim());
+          searchConditions = fields.map((field) => `${field}CONTAINS${term}`);
+        } else {
+          // Fallback to searching in common fields if no searchFields specified
+          searchConditions = [`nameCONTAINS${term}`, `numberCONTAINS${term}`];
+        }
+
+        let finalQuery = searchConditions.join("^OR");
+
+        // Add reference qualifier if provided
+        if (scope.referenceQualifier) {
+          finalQuery = `${scope.referenceQualifier}^${finalQuery}`;
+        }
+
+        return finalQuery;
+      }
+
+      /**
+       * Fetches a page of results from the server using ServiceNow REST API.
+       * It sends a GET request to the standard REST API endpoint with proper query parameters.
+       * The results are then processed and displayed in the directive.
+       * This function is called when the user types in the input field or clicks on
+       * "Load more results…".
+       */
+      function fetchPage() {
+        if (!scope.table) {
+          console.warn("scmRefPicker: table parameter is required");
+          return;
+        }
+
+        // Build the ServiceNow REST API URL for the specified table
+        let apiUrl = "/api/now/table/" + scope.table;
+
+        // Build query parameters array
+        let params = [];
+
+        // Add search query
+        if (scope.searchTerm) {
+          params.push(
+            "sysparm_query=" + encodeURIComponent(buildQuery(scope.searchTerm))
+          );
+        }
+
+        // Include both value and display_value in response
+        params.push("sysparm_display_value=all");
+
+        // Build fields parameter - always include sys_id, plus displayFields if specified
+        let fields = ["sys_id"];
+        if (scope.displayFields) {
+          fields = fields.concat(
+            scope.displayFields.split(",").map((f) => f.trim())
+          );
+        } else if (scope.searchFields) {
+          // Include search fields in response
+          fields = fields.concat(
+            scope.searchFields.split(";").map((f) => f.trim())
+          );
+        }
+        params.push("sysparm_fields=" + encodeURIComponent(fields.join(",")));
+
+        // Pagination parameters
+        params.push("sysparm_limit=" + pageSize);
+        params.push("sysparm_offset=" + scope.page * pageSize);
+
+        // Append parameters to URL
+        if (params.length > 0) {
+          apiUrl += "?" + params.join("&");
+        }
+
+        console.log("scmRefPicker: API URL:", apiUrl);
+
+        // Make HTTP GET request to ServiceNow REST API
+        $http
+          .get(apiUrl)
+          .then((response) => {
+            console.log("scmRefPicker: response", response);
+
+            if (response.data && response.data.result) {
+              const items = response.data.result;
+
+              const newResults = items.map((record) => {
+                let display = "";
+
+                if (scope.displayFields) {
+                  // Handle multiple display fields - concatenate with comma
+                  let displayFields = scope.displayFields
+                    .split(",")
+                    .map((field) => field.trim());
+                  let displayValues = [];
+
+                  displayFields.forEach(function (field) {
+                    if (record[field] && record[field].display_value) {
+                      displayValues.push(record[field].display_value);
+                    }
+                  });
+
+                  display = displayValues.join(", ");
+                } else {
+                  // Fallback to using search fields for display
+                  if (scope.searchFields) {
+                    let searchFields = scope.searchFields
+                      .split(";")
+                      .map((field) => field.trim());
+                    let displayValues = [];
+
+                    searchFields.forEach(function (field) {
+                      if (record[field] && record[field].display_value) {
+                        displayValues.push(record[field].display_value);
+                      }
+                    });
+
+                    display = displayValues.join(", ");
+                  } else {
+                    // Final fallback to sys_id
+                    display = record.sys_id.value;
+                  }
+                }
+
+                return {
+                  sysId: record.sys_id.value, // Use sys_id as the value
+                  display: display || record.sys_id.value, // Use constructed display or fallback to sys_id
+                };
+              });
+
+              scope.results = scope.results.concat(newResults);
+              scope.moreResults = items.length === pageSize;
+              scope.showResults = true;
+            }
+          })
+          .catch((error) => {
+            console.error("scmRefPicker: Error loading results", error);
+            scope.showResults = false;
+          });
+      }
+    },
+  };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-02 19:50:23</sys_created_on>
+        <sys_id>1fc60d7c933b2a10e393f6fa3d03d6f8</sys_id>
+        <sys_mod_count>8</sys_mod_count>
+        <sys_name>scmReferenceField</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_1fc60d7c933b2a10e393f6fa3d03d6f8</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-05 18:44:29</sys_updated_on>
+        <type>directive</type>
+    </sp_angular_provider>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>7b03d460fb53aa9485daf3585eefdc20</instance_id>
+        <instance_name>dev355014</instance_name>
+        <name>sp_angular_provider_1fc60d7c933b2a10e393f6fa3d03d6f8</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_angular_provider"&gt;&lt;sp_angular_provider action="INSERT_OR_UPDATE"&gt;&lt;name&gt;scmReferenceField&lt;/name&gt;&lt;script&gt;&lt;![CDATA[/**
+ * scmReference Directive
+ * This directive provides a reference input field that allows users to search and
+ * select records from a specified table.
+ * It supports searching by multiple fields, displaying results, and handling
+ * selections.
+ */
+function scmRefPicker($http, spUtil, $timeout) {
+  "use_strict";
+  return {
+    restrict: "E",
+    replace: true,
+    require: "ngModel",
+    scope: {
+      table: "@",
+      searchFields: "@",
+      placeholder: "@?",
+      label: "@",
+      referenceQualifier: "@?",
+      pageSize: "@?",
+      minimumInputLength: "@?",
+      delay: "@?",
+      displayFields: "@?",
+      initialDisplayValue: "@?",
+    },
+
+    /**
+     * The tag li uses the event ng-mousedown to select the item.
+     * Usually, the event ng-click is used, but in this case,
+     * it does not work because
+     * the event ng-blur of the input is triggered before the ng-click of the li.
+     */
+    template: `
+            &lt;div class="scm-reference-wrapper"&gt;
+                &lt;label
+                  ng-if="label"
+                  for="{{uid}}"&gt;
+                  {{ label }}
+                &lt;/label&gt;
+                &lt;div class="scm-reference-input-wrapper"&gt;
+                    &lt;a
+                      ng-if="ngModelCtrl.$viewValue"
+                      ng-click="clearSelection()"
+                      class="scm-reference-clear-icon"&gt;
+                        &lt;sdx-icon icon-name="icon-close" size="1"&gt;&lt;/sdx-icon&gt;
+                    &lt;/a&gt;
+                    &lt;input
+                      id="{{uid}}"
+                      type="text"
+                      ng-model="searchTerm"
+                      ng-focus="openList()"
+                      ng-blur="closeList()"
+                      ng-change="onSearch()"
+                      placeholder="{{ placeholder || 'Search...' }}"
+                      class="input scm-reference-input"
+                      ng-class="{ 'scm-reference-value': ngModelCtrl.$viewValue, 'scm-reference-list-open': showResults }"
+                    /&gt;
+                    &lt;sdx-icon 
+                      class="scm-reference-magnifying-glass-icon" 
+                      icon-name="icon-search" size="3"&gt;
+                    &lt;/sdx-icon&gt;
+                &lt;/div&gt;
+                &lt;ul
+                  class="scm-autocomplete-list"
+                  ng-show="showResults"&gt;
+                    &lt;li 
+                      class="scm-autocomplete-item"
+                      ng-repeat="item in results track by item.display"
+                      ng-mousedown="selectItem(item)"
+                      ng-mouseenter="hoverIndex = $index"
+                      ng-class="{ 'scm-item-hover': hoverIndex === $index }"&gt;
+                        {{ item.display }}
+                    &lt;/li&gt;
+                    &lt;li
+                      class="scm-autocomplete-item scm-autocomplete-load-more"
+                      ng-if="moreResults"
+                      ng-mousedown="loadMore()"&gt;
+                      Load more results…
+                    &lt;/li&gt;
+                    &lt;li
+                      class="scm-autocomplete-item scm-autocomplete-no-results"
+                      ng-if="results.length == 0"&gt;
+                      No results…
+                    &lt;/li&gt;
+                    &lt;li
+                      class="scm-autocomplete-item scm-autocomplete-no-more"
+                      ng-if="!moreResults &amp;&amp; results.length"&gt;
+                      No more results…
+                    &lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/div&gt;
+        `,
+    link: (scope, element, attrs, ngModelCtrl) =&gt; {
+      // We have to expose the ngModelCtrl to the scope so that we can use it
+      // in the template.
+      scope.ngModelCtrl = ngModelCtrl;
+
+      // Unique ID for label-for and input
+      scope.uid = attrs.id || spUtil.createUid("xxxx-xxxx");
+
+      // Used to calculata the "start" parameter sent to the http service
+      scope.page = 0;
+
+      // Flag used to determine if there are more results to load
+      scope.moreResults = false;
+
+      const input = element.find("input")[0];
+
+      // Model binding - if we receive a sys_id, keep it but don't show it
+      ngModelCtrl.$render = (displayValue) =&gt; {
+        // Only update searchTerm if it's actually a display value, not a sys_id
+        if (
+          displayValue &amp;&amp;
+          displayValue.length === 32 &amp;&amp;
+          displayValue.match(/^[a-f0-9]+$/i)
+        ) {
+          // This looks like a sys_id, don't show it in the input
+          scope.searchTerm = "";
+        } else {
+          scope.searchTerm = displayValue;
+        }
+      };
+
+      // Configuration values
+      const pageSize = scope.pageSize
+        ? parseInt(scope.pageSize, 10)
+        : NOW.ac_max_search_matches;
+      const minCharts = scope.minimumInputLength
+        ? parseInt(scope.minimumInputLength, 10)
+        : 2;
+      const delay = scope.delay ? parseInt(scope.delay, 10) : NOW.ac_wait_time;
+
+      // Internal state
+      scope.searchTerm = null;
+      scope.results = [];
+      scope.showResults = false;
+      scope.hoverIndex = -1;
+      let timer;
+
+      /**
+       * Loads more results when the user clicks on "Load more results…".
+       * It increments the page number and fetches the next set of results.
+       * This function is called when the user clicks on the "Load more results…" item in
+       * the list.
+       */
+      scope.loadMore = () =&gt; {
+        scope.page++;
+        fetchPage();
+      };
+
+      /**
+       * Handles the search input change.
+       * It checks if the search term is valid and triggers a search after a delay.
+       * If the search term is empty or shorter than the minimum length, it hides the
+       * results.
+       * If the user is typing something different from the current display value,
+       * it clears the model value to indicate a new search.
+       */
+      scope.onSearch = () =&gt; {
+        if (timer) $timeout.cancel(timer);
+
+        scope.results = [];
+
+        if (!scope.searchTerm || scope.searchTerm.length &lt; minCharts) {
+          scope.showResults = false;
+          return;
+        }
+
+        timer = $timeout(() =&gt; {
+          scope.page = 0;
+          fetchPage();
+        }, delay);
+      };
+
+      /**
+       * Opens the list of results.
+       * It clears the input placeholder and resets the results.
+       * This function is called when the input field is focused.
+       * It prepares for search but keeps the current display value visible.
+       */
+      scope.openList = () =&gt; {
+        input.setAttribute("placeholder", "");
+        scope.results = [];
+        ngModelCtrl.$setViewValue("");
+        ngModelCtrl.$render("");
+      };
+
+      /**
+       * Closes the list of results.
+       * It hides the results and resets the hover index.
+       * This function is called when the input field loses focus.
+       * If there's a selected value, it restores the display value.
+       * If the input is empty, it resets the placeholder to the default value.
+       */
+      scope.closeList = () =&gt; {
+        // If the input is empty, reset placeholder
+        if (!scope.searchTerm) {
+          input.setAttribute("placeholder", scope.placeholder || "Search...");
+        }
+        scope.showResults = false;
+        scope.hoverIndex = -1;
+      };
+
+      /**
+       * Selects an item from the results.
+       * It sets the view value to the selected item's sys_id and updates the display.
+       * It also hides the results and resets the hover index.
+       * This function is called when the user clicks on an item in the results list.
+       * @param {Object} item - The selected item from the results list.
+       */
+      scope.selectItem = (item) =&gt; {
+        ngModelCtrl.$setViewValue(item.sysId);
+        ngModelCtrl.$render(item.display);
+        scope.showResults = false;
+        scope.hoverIndex = -1;
+      };
+
+      /**
+       * Clears the current selection.
+       * It sets the view value to an empty string, clears the display, and hides the
+       * results.
+       * It also resets the input placeholder to the default value.
+       * This function is called when the user clicks on the clear icon.
+       */
+      scope.clearSelection = () =&gt; {
+        ngModelCtrl.$setViewValue("");
+        ngModelCtrl.$render(undefined);
+        scope.showResults = false;
+        input.setAttribute("placeholder", scope.placeholder || "Search...");
+      };
+
+      /**
+       * Constructs the query string based on the search term and fields.
+       * It formats the search fields using CONTAINS and applies the reference qualifier if provided.
+       * @param {String} term
+       * @returns {String} the formatted query string
+       */
+      function buildQuery(term) {
+        let searchConditions = [];
+
+        if (scope.searchFields) {
+          // Split searchFields by semicolon and create CONTAINS conditions
+          const fields = scope.searchFields.split(";").map((f) =&gt; f.trim());
+          searchConditions = fields.map((field) =&gt; `${field}CONTAINS${term}`);
+        } else {
+          // Fallback to searching in common fields if no searchFields specified
+          searchConditions = [`nameCONTAINS${term}`, `numberCONTAINS${term}`];
+        }
+
+        let finalQuery = searchConditions.join("^OR");
+
+        // Add reference qualifier if provided
+        if (scope.referenceQualifier) {
+          finalQuery = `${scope.referenceQualifier}^${finalQuery}`;
+        }
+
+        return finalQuery;
+      }
+
+      /**
+       * Fetches a page of results from the server using ServiceNow REST API.
+       * It sends a GET request to the standard REST API endpoint with proper query parameters.
+       * The results are then processed and displayed in the directive.
+       * This function is called when the user types in the input field or clicks on
+       * "Load more results…".
+       */
+      function fetchPage() {
+        if (!scope.table) {
+          console.warn("scmRefPicker: table parameter is required");
+          return;
+        }
+
+        // Build the ServiceNow REST API URL for the specified table
+        let apiUrl = "/api/now/table/" + scope.table;
+
+        // Build query parameters array
+        let params = [];
+
+        // Add search query
+        if (scope.searchTerm) {
+          params.push(
+            "sysparm_query=" + encodeURIComponent(buildQuery(scope.searchTerm))
+          );
+        }
+
+        // Include both value and display_value in response
+        params.push("sysparm_display_value=all");
+
+        // Build fields parameter - always include sys_id, plus displayFields if specified
+        let fields = ["sys_id"];
+        if (scope.displayFields) {
+          fields = fields.concat(
+            scope.displayFields.split(",").map((f) =&gt; f.trim())
+          );
+        } else if (scope.searchFields) {
+          // Include search fields in response
+          fields = fields.concat(
+            scope.searchFields.split(";").map((f) =&gt; f.trim())
+          );
+        }
+        params.push("sysparm_fields=" + encodeURIComponent(fields.join(",")));
+
+        // Pagination parameters
+        params.push("sysparm_limit=" + pageSize);
+        params.push("sysparm_offset=" + scope.page * pageSize);
+
+        // Append parameters to URL
+        if (params.length &gt; 0) {
+          apiUrl += "?" + params.join("&amp;");
+        }
+
+        console.log("scmRefPicker: API URL:", apiUrl);
+
+        // Make HTTP GET request to ServiceNow REST API
+        $http
+          .get(apiUrl)
+          .then((response) =&gt; {
+            console.log("scmRefPicker: response", response);
+
+            if (response.data &amp;&amp; response.data.result) {
+              const items = response.data.result;
+
+              const newResults = items.map((record) =&gt; {
+                let display = "";
+
+                if (scope.displayFields) {
+                  // Handle multiple display fields - concatenate with comma
+                  let displayFields = scope.displayFields
+                    .split(",")
+                    .map((field) =&gt; field.trim());
+                  let displayValues = [];
+
+                  displayFields.forEach(function (field) {
+                    if (record[field] &amp;&amp; record[field].display_value) {
+                      displayValues.push(record[field].display_value);
+                    }
+                  });
+
+                  display = displayValues.join(", ");
+                } else {
+                  // Fallback to using search fields for display
+                  if (scope.searchFields) {
+                    let searchFields = scope.searchFields
+                      .split(";")
+                      .map((field) =&gt; field.trim());
+                    let displayValues = [];
+
+                    searchFields.forEach(function (field) {
+                      if (record[field] &amp;&amp; record[field].display_value) {
+                        displayValues.push(record[field].display_value);
+                      }
+                    });
+
+                    display = displayValues.join(", ");
+                  } else {
+                    // Final fallback to sys_id
+                    display = record.sys_id.value;
+                  }
+                }
+
+                return {
+                  sysId: record.sys_id.value, // Use sys_id as the value
+                  display: display || record.sys_id.value, // Use constructed display or fallback to sys_id
+                };
+              });
+
+              scope.results = scope.results.concat(newResults);
+              scope.moreResults = items.length === pageSize;
+              scope.showResults = true;
+            }
+          })
+          .catch((error) =&gt; {
+            console.error("scmRefPicker: Error loading results", error);
+            scope.showResults = false;
+          });
+      }
+    },
+  };
+}
+]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sp_angular_provider&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-09-02 19:50:23&lt;/sys_created_on&gt;&lt;sys_id&gt;1fc60d7c933b2a10e393f6fa3d03d6f8&lt;/sys_id&gt;&lt;sys_mod_count&gt;8&lt;/sys_mod_count&gt;&lt;sys_name&gt;scmReferenceField&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_angular_provider_1fc60d7c933b2a10e393f6fa3d03d6f8&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2025-09-05 18:44:29&lt;/sys_updated_on&gt;&lt;type&gt;directive&lt;/type&gt;&lt;/sp_angular_provider&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-14553836</payload_hash>
+        <record_name>scmReferenceField</record_name>
+        <reverted_from/>
+        <source>3ec8524d93e7e650e393f6fa3d03d6e5</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-05 18:44:30</sys_created_on>
+        <sys_id>f984d43593332210e393f6fa3d03d6ac</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1991b31c38a0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-05 18:44:30</sys_updated_on>
+        <type>Widget Angular Provider</type>
+        <update_guid>3184d435bd3322104ea0d8ac9bbb11ac</update_guid>
+        <update_guid_history>3184d435bd3322104ea0d8ac9bbb11ac:-14553836,11ee41705dfbaa10e029fe86ab51b7aa:794833124,08ee017076fbaa104b39dc5a2e650acd:-1467138092,6cdec9309bfbaa102ad44b01ce208cf4:667343460,cf6ecdfce0bbaa1010dc201af5f4d4a6:-1813057676,d91d85bc8fbbaa10beeb4e4d7a97b2ca:-842593243,9fbc01bc7cbbaa108083faa270a004e2:-8260673,91f6cdf098bbaa10271ba324aa7fe506:1157210725,71d6c5b42abbaa10663f3480283e37a9:1576112704</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scmReferenceField">5a459c7593332210e393f6fa3d03d617</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-05 18:47:49</sys_created_on>
+        <sys_db_object display_value="" name="sp_angular_provider">sp_angular_provider</sys_db_object>
+        <sys_id>5332427c16b844e0b5d531fd00f6f7a4</sys_id>
+        <sys_metadata>1fc60d7c933b2a10e393f6fa3d03d6f8</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scmReferenceField</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_angular_provider_1fc60d7c933b2a10e393f6fa3d03d6f8</sys_update_name>
+        <sys_update_version display_value="sp_angular_provider_1fc60d7c933b2a10e393f6fa3d03d6f8">f984d43593332210e393f6fa3d03d6ac</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-05 18:47:49</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

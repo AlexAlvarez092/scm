@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css_include">
+    <sp_css_include action="DELETE">
+        <lazy_load>false</lazy_load>
+        <name>scm_reference</name>
+        <rtl_css_file_url/>
+        <source>local</source>
+        <sp_css display_value="scm_reference">f62bcdf893bbaa10e393f6fa3d03d63d</sp_css>
+        <sys_class_name>sp_css_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-02 20:09:25</sys_created_on>
+        <sys_id>e03bcdf893bbaa10e393f6fa3d03d653</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm_reference</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_css_include_e03bcdf893bbaa10e393f6fa3d03d653</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-02 20:09:25</sys_updated_on>
+        <url/>
+    </sp_css_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>7b03d460fb53aa9485daf3585eefdc20</instance_id>
+        <instance_name>dev355014</instance_name>
+        <name>sp_css_include_e03bcdf893bbaa10e393f6fa3d03d653</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css_include"><sp_css_include action="INSERT_OR_UPDATE"><lazy_load>false</lazy_load><name>scm_reference</name><rtl_css_file_url/><source>local</source><sp_css display_value="scm_reference">f62bcdf893bbaa10e393f6fa3d03d63d</sp_css><sys_class_name>sp_css_include</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-09-02 20:09:25</sys_created_on><sys_id>e03bcdf893bbaa10e393f6fa3d03d653</sys_id><sys_mod_count>0</sys_mod_count><sys_name>scm_reference</sys_name><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>sp_css_include_e03bcdf893bbaa10e393f6fa3d03d653</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-09-02 20:09:25</sys_updated_on><url/></sp_css_include></record_update>]]></payload>
+        <payload_hash>-1563699487</payload_hash>
+        <record_name>scm_reference</record_name>
+        <reverted_from/>
+        <source>3ec8524d93e7e650e393f6fa3d03d6e5</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-02 20:09:25</sys_created_on>
+        <sys_id>643bcdf893bbaa10e393f6fa3d03d655</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1990c0c6df70000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-02 20:09:25</sys_updated_on>
+        <type>CSS Include</type>
+        <update_guid>e83bcdf8b7bbaa1054a96b54d4069654</update_guid>
+        <update_guid_history>e83bcdf8b7bbaa1054a96b54d4069654:-1563699487</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm_reference">d09514b593332210e393f6fa3d03d6a3</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-05 18:49:02</sys_created_on>
+        <sys_db_object display_value="" name="sp_css_include">sp_css_include</sys_db_object>
+        <sys_id>a1722f15fc8d4bdb93d64a3df0bf8e91</sys_id>
+        <sys_metadata>e03bcdf893bbaa10e393f6fa3d03d653</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm_reference</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_css_include_e03bcdf893bbaa10e393f6fa3d03d653</sys_update_name>
+        <sys_update_version display_value="sp_css_include_e03bcdf893bbaa10e393f6fa3d03d653">643bcdf893bbaa10e393f6fa3d03d655</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-05 18:49:02</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

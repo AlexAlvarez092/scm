@@ -1,0 +1,632 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css">
+    <sp_css action="DELETE">
+        <css>/* 
+ * scmReferenceV2 Styles
+ * Mimics sdx-select appearance but with custom functionality
+ */
+
+.scm-select-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+/* Label styles matching sdx-select */
+.scm-select-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+}
+
+/* Main component container */
+.scm-select-component {
+  position: relative;
+  width: 100%;
+  outline: none;
+}
+
+/* Header wrapper (like sdx-select) */
+.scm-select-header-wrapper {
+  overflow: hidden;
+  color: #666;
+  border-radius: 4px;
+  transition: all 200ms ease;
+  position: relative;
+}
+
+/* Header styles */
+.scm-select-header {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+/* Hover state */
+.scm-select-component:not(.scm-select-disabled) .scm-select-header:hover {
+  border-color: #0073e6;
+}
+
+/* Open state */
+.scm-select-component.scm-select-open .scm-select-header-wrapper {
+  box-shadow: 0 0 4px 0 rgba(102, 102, 102, 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.scm-select-component.scm-select-open .scm-select-header {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+/* Selection, placeholder, and input styles */
+.scm-select-selection,
+.scm-select-placeholder,
+.scm-select-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #333;
+}
+
+.scm-select-placeholder {
+  color: #999;
+}
+
+.scm-select-input {
+  width: 100%;
+}
+
+.scm-select-input::placeholder {
+  color: #999;
+}
+
+/* Thumb (arrow/spinner area) */
+.scm-select-thumb {
+  width: 44px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  transition: all 200ms ease;
+}
+
+/* Arrow icon rotation when open */
+.scm-select-component.scm-select-open .scm-select-thumb sdx-icon {
+  transform: rotate(180deg);
+}
+
+/* Dropdown list */
+.scm-select-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Options container */
+.scm-select-options {
+  padding: 0;
+  margin: 0;
+}
+
+/* Individual option styles */
+.scm-select-option {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #333;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 150ms ease;
+  user-select: none;
+}
+
+.scm-select-option:last-child {
+  border-bottom: none;
+}
+
+/* Option hover state */
+.scm-select-option:hover,
+.scm-select-option.scm-select-option-hover {
+  background-color: #f5f5f5;
+}
+
+/* Selected option state */
+.scm-select-option.scm-select-option-selected {
+  background-color: #e6f3ff;
+  color: #0073e6;
+  font-weight: 600;
+}
+
+/* Load more option */
+.scm-select-load-more {
+  font-style: italic;
+  color: #666;
+  background-color: #f9f9f9;
+}
+
+.scm-select-load-more:hover {
+  background-color: #f0f0f0;
+}
+
+/* No results option */
+.scm-select-no-results,
+.scm-select-loading-option {
+  color: #999;
+  font-style: italic;
+  cursor: default;
+  background-color: #f9f9f9;
+}
+
+.scm-select-no-results:hover,
+.scm-select-loading-option:hover {
+  background-color: #f9f9f9;
+}
+
+/* Disabled state */
+.scm-select-component.scm-select-disabled {
+  cursor: not-allowed;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-label {
+  color: #999;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-header {
+  background-color: #f5f5f5;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-selection,
+.scm-select-component.scm-select-disabled .scm-select-placeholder {
+  color: #999;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-thumb sdx-icon {
+  opacity: 0.5;
+}
+
+/* Loading state */
+.scm-select-component.scm-select-loading .scm-select-header {
+  cursor: wait;
+}
+
+/* Has value state */
+.scm-select-component.scm-select-has-value .scm-select-selection {
+  font-weight: 500;
+}
+
+/* Focus state for input */
+.scm-select-input:focus {
+  outline: none;
+}
+
+.scm-select-component.scm-select-open .scm-select-header {
+  border-color: #0073e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scm-select-list {
+    max-height: 250px;
+  }
+  
+  .scm-select-option {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevents zoom on mobile */
+  }
+}
+
+/* Dark theme support (if needed) */
+.scm-select-wrapper.scm-dark-theme {
+  .scm-select-label {
+    color: #f0f0f0;
+  }
+  
+  .scm-select-header {
+    background: #2a2a2a;
+    border-color: #555;
+    color: #f0f0f0;
+  }
+  
+  .scm-select-selection,
+  .scm-select-input {
+    color: #f0f0f0;
+  }
+  
+  .scm-select-placeholder {
+    color: #aaa;
+  }
+  
+  .scm-select-list {
+    background: #2a2a2a;
+    border-color: #555;
+  }
+  
+  .scm-select-option {
+    color: #f0f0f0;
+    border-bottom-color: #444;
+  }
+  
+  .scm-select-option:hover,
+  .scm-select-option.scm-select-option-hover {
+    background-color: #333;
+  }
+  
+  .scm-select-option.scm-select-option-selected {
+    background-color: #1a4d7a;
+    color: #87ceeb;
+  }
+}
+</css>
+        <name>scm_reference</name>
+        <sys_class_name>sp_css</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-02 20:09:25</sys_created_on>
+        <sys_id>f62bcdf893bbaa10e393f6fa3d03d63d</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scm_reference</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_css_f62bcdf893bbaa10e393f6fa3d03d63d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-02 20:10:12</sys_updated_on>
+        <turn_off_scss_compilation>false</turn_off_scss_compilation>
+    </sp_css>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>7b03d460fb53aa9485daf3585eefdc20</instance_id>
+        <instance_name>dev355014</instance_name>
+        <name>sp_css_f62bcdf893bbaa10e393f6fa3d03d63d</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css"><sp_css action="INSERT_OR_UPDATE"><css>/* 
+ * scmReferenceV2 Styles
+ * Mimics sdx-select appearance but with custom functionality
+ */
+
+.scm-select-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+/* Label styles matching sdx-select */
+.scm-select-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+}
+
+/* Main component container */
+.scm-select-component {
+  position: relative;
+  width: 100%;
+  outline: none;
+}
+
+/* Header wrapper (like sdx-select) */
+.scm-select-header-wrapper {
+  overflow: hidden;
+  color: #666;
+  border-radius: 4px;
+  transition: all 200ms ease;
+  position: relative;
+}
+
+/* Header styles */
+.scm-select-header {
+  position: relative;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+/* Hover state */
+.scm-select-component:not(.scm-select-disabled) .scm-select-header:hover {
+  border-color: #0073e6;
+}
+
+/* Open state */
+.scm-select-component.scm-select-open .scm-select-header-wrapper {
+  box-shadow: 0 0 4px 0 rgba(102, 102, 102, 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.scm-select-component.scm-select-open .scm-select-header {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-color: transparent;
+}
+
+/* Selection, placeholder, and input styles */
+.scm-select-selection,
+.scm-select-placeholder,
+.scm-select-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #333;
+}
+
+.scm-select-placeholder {
+  color: #999;
+}
+
+.scm-select-input {
+  width: 100%;
+}
+
+.scm-select-input::placeholder {
+  color: #999;
+}
+
+/* Thumb (arrow/spinner area) */
+.scm-select-thumb {
+  width: 44px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  pointer-events: none;
+  transition: all 200ms ease;
+}
+
+/* Arrow icon rotation when open */
+.scm-select-component.scm-select-open .scm-select-thumb sdx-icon {
+  transform: rotate(180deg);
+}
+
+/* Dropdown list */
+.scm-select-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Options container */
+.scm-select-options {
+  padding: 0;
+  margin: 0;
+}
+
+/* Individual option styles */
+.scm-select-option {
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #333;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 150ms ease;
+  user-select: none;
+}
+
+.scm-select-option:last-child {
+  border-bottom: none;
+}
+
+/* Option hover state */
+.scm-select-option:hover,
+.scm-select-option.scm-select-option-hover {
+  background-color: #f5f5f5;
+}
+
+/* Selected option state */
+.scm-select-option.scm-select-option-selected {
+  background-color: #e6f3ff;
+  color: #0073e6;
+  font-weight: 600;
+}
+
+/* Load more option */
+.scm-select-load-more {
+  font-style: italic;
+  color: #666;
+  background-color: #f9f9f9;
+}
+
+.scm-select-load-more:hover {
+  background-color: #f0f0f0;
+}
+
+/* No results option */
+.scm-select-no-results,
+.scm-select-loading-option {
+  color: #999;
+  font-style: italic;
+  cursor: default;
+  background-color: #f9f9f9;
+}
+
+.scm-select-no-results:hover,
+.scm-select-loading-option:hover {
+  background-color: #f9f9f9;
+}
+
+/* Disabled state */
+.scm-select-component.scm-select-disabled {
+  cursor: not-allowed;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-label {
+  color: #999;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-header {
+  background-color: #f5f5f5;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-selection,
+.scm-select-component.scm-select-disabled .scm-select-placeholder {
+  color: #999;
+}
+
+.scm-select-component.scm-select-disabled .scm-select-thumb sdx-icon {
+  opacity: 0.5;
+}
+
+/* Loading state */
+.scm-select-component.scm-select-loading .scm-select-header {
+  cursor: wait;
+}
+
+/* Has value state */
+.scm-select-component.scm-select-has-value .scm-select-selection {
+  font-weight: 500;
+}
+
+/* Focus state for input */
+.scm-select-input:focus {
+  outline: none;
+}
+
+.scm-select-component.scm-select-open .scm-select-header {
+  border-color: #0073e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .scm-select-list {
+    max-height: 250px;
+  }
+  
+  .scm-select-option {
+    padding: 14px 16px;
+    font-size: 16px; /* Prevents zoom on mobile */
+  }
+}
+
+/* Dark theme support (if needed) */
+.scm-select-wrapper.scm-dark-theme {
+  .scm-select-label {
+    color: #f0f0f0;
+  }
+  
+  .scm-select-header {
+    background: #2a2a2a;
+    border-color: #555;
+    color: #f0f0f0;
+  }
+  
+  .scm-select-selection,
+  .scm-select-input {
+    color: #f0f0f0;
+  }
+  
+  .scm-select-placeholder {
+    color: #aaa;
+  }
+  
+  .scm-select-list {
+    background: #2a2a2a;
+    border-color: #555;
+  }
+  
+  .scm-select-option {
+    color: #f0f0f0;
+    border-bottom-color: #444;
+  }
+  
+  .scm-select-option:hover,
+  .scm-select-option.scm-select-option-hover {
+    background-color: #333;
+  }
+  
+  .scm-select-option.scm-select-option-selected {
+    background-color: #1a4d7a;
+    color: #87ceeb;
+  }
+}
+</css><name>scm_reference</name><sys_class_name>sp_css</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-09-02 20:09:25</sys_created_on><sys_id>f62bcdf893bbaa10e393f6fa3d03d63d</sys_id><sys_mod_count>2</sys_mod_count><sys_name>scm_reference</sys_name><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>sp_css_f62bcdf893bbaa10e393f6fa3d03d63d</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-09-02 20:10:12</sys_updated_on><turn_off_scss_compilation>false</turn_off_scss_compilation></sp_css></record_update>]]></payload>
+        <payload_hash>-536025983</payload_hash>
+        <record_name>scm_reference</record_name>
+        <reverted_from/>
+        <source>3ec8524d93e7e650e393f6fa3d03d6e5</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-02 20:10:12</sys_created_on>
+        <sys_id>986b053c93bbaa10e393f6fa3d03d65f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>1990c0d28710000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-02 20:10:12</sys_updated_on>
+        <type>Style Sheet</type>
+        <update_guid>106b053c96bbaa100893cf37902d9f5f</update_guid>
+        <update_guid_history>106b053c96bbaa100893cf37902d9f5f:-536025983,245b413c9fbbaa10eabc7d3cb1961a6e:386902479,643bcdf8dbbbaa104de74841a6295e56:967146484</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm_reference">589514b593332210e393f6fa3d03d6a0</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-05 18:49:03</sys_created_on>
+        <sys_db_object display_value="" name="sp_css">sp_css</sys_db_object>
+        <sys_id>5803c336c2fe4ed1a937d2fab9fe8e99</sys_id>
+        <sys_metadata>f62bcdf893bbaa10e393f6fa3d03d63d</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm_reference</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_css_f62bcdf893bbaa10e393f6fa3d03d63d</sys_update_name>
+        <sys_update_version display_value="sp_css_f62bcdf893bbaa10e393f6fa3d03d63d">986b053c93bbaa10e393f6fa3d03d65f</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-05 18:49:03</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

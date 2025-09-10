@@ -3,6 +3,7 @@
         <css>.scm-reference-wrapper {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .scm-reference-input-wrapper {
@@ -12,16 +13,12 @@
 
 .scm-reference-input {
   border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
-  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-3);
+  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
   border-radius: var(--scm-border-radius-input);
   height: 48px;
   width: 100%;
   color: var(--scm-color-gray);
   background-color: var(--scm-color-sc-white);
-}
-
-.scm-reference-input.scm-reference-value {
-  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
 }
 
 .scm-reference-input.scm-reference-list-open {
@@ -62,9 +59,75 @@
   color: var(--scm-color-gray);
 }
 
+.scm-reference-dropdown-container {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+}
+
+.scm-reference-dropdown-container.dropdown-up {
+  top: auto;
+  bottom: 100%;
+}
+
+.scm-reference-search-wrapper,
+.scm-autocomplete-list {
+  position: static; /* Reset positioning */
+}
+
+.scm-reference-search-wrapper {
+  width: 100%;
+  padding: var(--scm-padding-2);
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
+  border-top: 0;
+  background-color: var(--scm-color-sc-white);
+}
+
+.scm-reference-search-wrapper.dropdown-up {
+  order: -1;
+  border-top: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
+}
+
+.scm-reference-search-input {
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+  border-radius: var(--scm-border-radius-input);
+  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
+  height: 48px;
+  width: 100%;
+  color: var(--scm-color-gray);
+  background-color: var(--scm-color-sc-white);
+  box-sizing: border-box;
+}
+
+.scm-reference-search-input:active,
+.scm-reference-search-input:focus {
+  border-color: var(--scm-color-int-blue) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 .scm-autocomplete-list {
   border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
   border-top: 0;
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background-color: var(--scm-color-sc-white);
+}
+
+.scm-autocomplete-list.dropdown-up {
+  top: auto;
+  bottom: 100%;
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
+  border-bottom: 0;
 }
 
 .scm-autocomplete-item {
@@ -84,7 +147,8 @@
 }
 
 .scm-autocomplete-item.scm-autocomplete-no-more,
-.scm-autocomplete-item.scm-autocomplete-no-results {
+.scm-autocomplete-item.scm-autocomplete-no-results,
+.scm-autocomplete-item.scm-autocomplete-loading {
   background-color: var(--scm-color-gray-tint-8);
   padding: var(--scm-padding-1);
 }
@@ -97,19 +161,19 @@
   pointer-events: none;
 }
 </css>
-        <name>scm_reference_field</name>
+        <name>scm_ref_picker</name>
         <sys_class_name>sp_css</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:00:39</sys_created_on>
         <sys_id>cb51f3ab836a2650efda54b6feaad37c</sys_id>
-        <sys_mod_count>2</sys_mod_count>
-        <sys_name>scm_reference_field</sys_name>
+        <sys_mod_count>33</sys_mod_count>
+        <sys_name>scm_ref_picker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_css_cb51f3ab836a2650efda54b6feaad37c</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-07-11 18:42:43</sys_updated_on>
+        <sys_updated_on>2025-09-06 11:26:17</sys_updated_on>
         <turn_off_scss_compilation>false</turn_off_scss_compilation>
     </sp_css>
 </record_update>
