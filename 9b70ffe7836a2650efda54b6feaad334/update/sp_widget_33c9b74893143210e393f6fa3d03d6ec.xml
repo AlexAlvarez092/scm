@@ -3,31 +3,51 @@
         <category>custom</category>
         <client_script><![CDATA[api.controller = function () {
 	const c = this;
-	c.data = [
-		{ id: '1', title: 'Node 1', parent: null, color: 'red' },
-		{ id: '2', title: 'Node 2', parent: null, color: 'blue' },
-		{ id: '3', title: 'Node 1.1', parent: '1', color: 'purple' },
-		{ id: '4', title: 'Node 1.2', parent: '1', color: 'turquoise' },
-		{ id: '5', title: 'Node 2.1', parent: '2', color: 'apple' },
-		{ id: '6', title: 'Node 2.2', parent: '2', color: 'petrol' },
-		{ id: '7', title: 'Node 1.1.1', parent: '3', color: 'iris' },
-		{ id: '8', title: 'Node 1.1.2', parent: '3', color: 'pink' }
-	];
+
+	// State for expanded/collapsed nodes
+	c.expandedNodes = {};
 
 	// Get root nodes (nodes without parent)
 	c.getRootNodes = function () {
-		return c.data.filter(node => !node.parent);
+		return c.data.nodes.filter(node => !node.parent);
 	};
 
 	// Get children of a specific node
 	c.getChildren = function (parentId) {
-		return c.data.filter(node => node.parent === parentId);
+		return c.data.nodes.filter(node => node.parent === parentId);
 	};
 
 	// Check if node has children
 	c.hasChildren = function (nodeId) {
-		return c.data.some(node => node.parent === nodeId);
+		return c.data.nodes.some(node => node.parent === nodeId);
 	};
+
+	// Check if node is expanded
+	c.isExpanded = function (nodeId) {
+		return c.expandedNodes[nodeId] === true;
+	};
+
+	// Toggle expand/collapse state
+	c.toggleExpanded = function (nodeId) {
+		c.expandedNodes[nodeId] = !c.expandedNodes[nodeId];
+	};
+
+	// Get expand/collapse button icon
+	c.getExpandIcon = function (nodeId) {
+		return c.isExpanded(nodeId) ? '▼' : '▶';
+	};
+
+	// Get expand/collapse button title
+	c.getExpandTitle = function (nodeId) {
+		return c.isExpanded(nodeId) ? 'Collapse' : 'Expand';
+	};
+
+	// Initialize all nodes as expanded by default (after functions are defined)
+	c.data.nodes.forEach(node => {
+		if (c.hasChildren(node.id)) {
+			c.expandedNodes[node.id] = true;
+		}
+	});
 };
 ]]></client_script>
         <controller_as>c</controller_as>
@@ -35,87 +55,143 @@
 // TREE MASTER VARIABLES
 // ================================
 $tree-indent-horizontal: 600px; // How much children move to the right (total indentation)
-$tree-indent-vertical: 8px;     // How much children move down (spacing between nodes)
+$tree-indent-vertical: 8px; // How much children move down (spacing between nodes)
 
 // Derived variables (calculated from master variables)
 $tree-border-width: 2px;
 $tree-border-color: #e0e0e0;
-$tree-vertical-line-offset: 20px;              // FIXED position for vertical line under parent
+$tree-vertical-line-offset: 20px; // FIXED position for vertical line under parent
 $tree-horizontal-line-length: ($tree-indent-horizontal - $tree-vertical-line-offset); // Length of horizontal connector
+
+// Additional derived variables for precise positioning
+$tree-horizontal-line-position: 20px; // Where horizontal lines connect to cards (align with card center)
+$tree-mask-start-position: ($tree-horizontal-line-position + $tree-border-width); // Just below horizontal line
+$tree-mask-extend-bottom: ($tree-indent-vertical * 3); // How much the mask extends below to cover excess line
+$tree-background-color: white; // Background color for masking (should match page background)
+
+// Layout and spacing variables
+$tree-container-padding: 16px; // Padding around the entire tree container
+$tree-content-gap: 8px; // Gap between card and button in tree-node-content
+$tree-card-min-width: 300px; // Minimum width for tree cards
+$tree-card-max-width: 500px; // Maximum width for tree cards
+
+// Button alignment variables
+$tree-button-alignment-offset: $tree-indent-vertical; // Align button with card header (based on spacing)
 
 // ================================
 // TREE STYLES
 // ================================
 
-// Tree container
+// Tree container - The outermost wrapper that contains the entire tree
 .tree-container {
-	padding: 16px;
+	padding: $tree-container-padding; // Creates breathing room around the entire tree structure
 }
 
-// Each tree node that HAS children gets a vertical line
+// Each tree node - Represents a single item in the tree hierarchy
 .tree-node {
-	position: relative;
-	margin-bottom: $tree-indent-vertical;
-	
-	// Vertical line under parent (only if it has children)
+	position: relative; // Enables absolute positioning of child elements (lines)
+	margin-bottom: $tree-indent-vertical; // Vertical space between sibling nodes - creates visual separation
+
+	// Vertical line under parent - Short connector line from parent to children area
+	// Only appears on nodes that have children (creates the "└" or "├" visual effect)
 	&amp;:has(.tree-children)::after {
-		content: '';
-		position: absolute;
-		left: $tree-vertical-line-offset;
-		top: 100%; // Start right after the parent card
-		width: $tree-border-width;
-		height: $tree-indent-vertical;
-		background: $tree-border-color;
-		z-index: 1;
+		content: ''; // Creates an empty pseudo-element for styling
+		position: absolute; // Positions relative to the parent node
+		left: $tree-vertical-line-offset; // Fixed distance from left edge of parent card
+		top: 100%; // Starts immediately below the parent card
+		width: $tree-border-width; // Thickness of the connector line
+		height: $tree-indent-vertical; // Length of the short connector (distance to children)
+		background: $tree-border-color; // Color of the connecting line
+		z-index: 1; // Ensures line appears above background elements
 	}
 }
 
-// Tree children container (indentation for hierarchical structure)
+// Tree children container - Groups all child nodes of a parent
+// Creates the indented hierarchy that users see as the tree structure
 .tree-children {
-	margin-left: $tree-indent-horizontal;
-	position: relative;
-	margin-top: $tree-indent-vertical;
-	
-	// Vertical line continuation (aligned with parent's vertical line)
+	margin-left: $tree-indent-horizontal; // Indents children to the right - creates hierarchy depth
+	position: relative; // Enables absolute positioning for connecting lines
+	margin-top: $tree-indent-vertical; // Vertical space between parent and its children
+
+	// Main vertical line - Connects all children in a group
+	// This is the long vertical line that runs along the left side of all children
 	&amp;::before {
-		content: '';
-		position: absolute;
-		left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
-		top: 0;
-		bottom: 0;
-		width: $tree-border-width;
-		background: $tree-border-color;
+		content: ''; // Creates pseudo-element for the vertical line
+		position: absolute; // Positioned relative to the children container
+		left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Aligns with parent's vertical line
+		top: 0; // Starts from the top of the children area
+		bottom: 0; // Extends to the bottom of the children area
+		width: $tree-border-width; // Thickness of the vertical line
+		background: $tree-border-color; // Color of the connecting line
 	}
-	
-	// Horizontal connectors for each child (they are divs that contain .tree-node)
+
+	// Mask element - Hides excess vertical line after the last child
+	// This creates the visual effect where the line stops at the last child
+	&gt; div:last-child &gt; .tree-node::before {
+		content: ''; // Creates pseudo-element for masking
+		position: absolute; // Positioned relative to the last child node
+		left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Same position as vertical line
+		top: $tree-mask-start-position; // Starts just below the child's horizontal line
+		bottom: (-$tree-mask-extend-bottom); // Extends below to cover unwanted line portions
+		width: $tree-border-width; // Same width as the line being masked
+		background: $tree-background-color; // White rectangle that "erases" the line visually
+	}
+
+	// Horizontal connector lines - Connect each child to the main vertical line
+	// These are the short horizontal lines that connect from vertical line to each card
 	&gt; div &gt; .tree-node::after {
-		content: '';
-		position: absolute;
-		left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
-		top: 20px; // Adjust to align with card center
-		width: $tree-horizontal-line-length;
-		height: $tree-border-width;
-		background: $tree-border-color;
+		content: ''; // Creates pseudo-element for horizontal line
+		position: absolute; // Positioned relative to each child node
+		left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Starts from the vertical line position
+		top: $tree-horizontal-line-position; // Aligns with center of the child card
+		width: $tree-horizontal-line-length; // Length from vertical line to card edge
+		height: $tree-border-width; // Thickness of the horizontal connector
+		background: $tree-border-color; // Color of the connecting line
 	}
 }
 
+// Progressive visual depth indicators - Cards get smaller as hierarchy gets deeper
+// This creates visual depth perception where deeper items appear "further away"
 
-
-// Progressive scaling for deeper levels (optional)
+// Second-level cards (children of root) - Slightly smaller and more transparent
 .tree-node .tree-node .card {
-	opacity: 0.95;
-	transform: scale(0.98);
+	opacity: 0.95; // 5% more transparent than root level - subtle depth indication
+	transform: scale(0.98); // 2% smaller than root level - creates depth perception
 }
 
+// Third-level cards (grandchildren) - Even smaller and more transparent
 .tree-node .tree-node .tree-node .card {
-	opacity: 0.9;
-	transform: scale(0.96);
+	opacity: 0.9; // 10% more transparent than root level - deeper depth indication
+	transform: scale(0.96); // 4% smaller than root level - stronger depth perception
 }
 
-// Override card styles for proper tree alignment
-.card {
-	margin-left: 0;
-	width: fit-content;
+// Card styling overrides - Ensures cards fit properly within the tree layout
+.tree-node .card {
+	margin-left: 0; // Removes default card left margin to align with tree structure
+	width: fit-content; // Card only takes space needed for its content
+	min-width: $tree-card-min-width; // Ensures cards aren't too narrow for readability
+	max-width: $tree-card-max-width; // Prevents cards from becoming too wide and breaking layout
+}
+
+// Flexbox layout for card + expand/collapse button arrangement
+// Creates horizontal layout where card and button sit side by side
+.tree-node-content {
+	display: flex; // Horizontal layout for card and button
+	align-items: flex-start; // Aligns card and button to top (prevents button from stretching)
+	gap: $tree-content-gap; // Space between card and button - provides visual separation
+}
+
+// Card wrapper - Controls how the card behaves in the flex layout
+.tree-card-wrapper {
+	flex-shrink: 1; // Allows card to shrink if space is limited (responsive behavior)
+	min-width: 0; // Enables proper shrinking behavior in flex containers
+}
+
+// Expand/collapse button styling - Controls the appearance and positioning of tree controls
+.tree-toggle-button {
+	flex-shrink: 0; // Prevents button from shrinking - maintains consistent size
+	align-self: flex-start; // Aligns button to top of its container
+	margin-top: $tree-button-alignment-offset; // Vertical offset to align with card header text
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -133,24 +209,113 @@ $tree-horizontal-line-length: ($tree-indent-horizontal - $tree-vertical-line-off
         <option_schema/>
         <public>false</public>
         <roles/>
-        <script><![CDATA[(function() {
-  /* populate the 'data' object */
-  /* e.g., data.table = $sp.getValue('table'); */
+        <script><![CDATA[(function () {
+	// Performance test data generator
+	function generateTestData() {
+		const nodes = [];
+		const colors = ['navy', 'blue', 'purple', 'turquoise', 'apple', 'petrol', 'iris', 'pink', 'red', 'orange'];
+		let nodeId = 1;
 
-})();]]></script>
+		// Generate hierarchical structure with max 5 levels
+		// Level 0: Root nodes (10 nodes)
+		for (let root = 1; root <= 10; root++) {
+			nodes.push({
+				id: String(nodeId++),
+				title: `Root Node ${root}`,
+				parent: null,
+				color: colors[root % colors.length]
+			});
+			const rootId = String(nodeId - 1);
+
+			// Level 1: Each root has 8-12 children
+			const level1Count = 8 + Math.floor(Math.random() * 5);
+			for (let l1 = 1; l1 <= level1Count; l1++) {
+				nodes.push({
+					id: String(nodeId++),
+					title: `Node ${root}.${l1}`,
+					parent: rootId,
+					color: colors[(root + l1) % colors.length]
+				});
+				const level1Id = String(nodeId - 1);
+
+				// Level 2: 60% of level 1 nodes have 3-8 children
+				if (Math.random() < 0.6) {
+					const level2Count = 3 + Math.floor(Math.random() * 6);
+					for (let l2 = 1; l2 <= level2Count; l2++) {
+						nodes.push({
+							id: String(nodeId++),
+							title: `Node ${root}.${l1}.${l2}`,
+							parent: level1Id,
+							color: colors[(root + l1 + l2) % colors.length]
+						});
+						const level2Id = String(nodeId - 1);
+
+						// Level 3: 40% of level 2 nodes have 2-5 children
+						if (Math.random() < 0.4) {
+							const level3Count = 2 + Math.floor(Math.random() * 4);
+							for (let l3 = 1; l3 <= level3Count; l3++) {
+								nodes.push({
+									id: String(nodeId++),
+									title: `Node ${root}.${l1}.${l2}.${l3}`,
+									parent: level2Id,
+									color: colors[(root + l1 + l2 + l3) % colors.length]
+								});
+								const level3Id = String(nodeId - 1);
+
+								// Level 4: 20% of level 3 nodes have 1-3 children
+								if (Math.random() < 0.2) {
+									const level4Count = 1 + Math.floor(Math.random() * 3);
+									for (let l4 = 1; l4 <= level4Count; l4++) {
+										nodes.push({
+											id: String(nodeId++),
+											title: `Node ${root}.${l1}.${l2}.${l3}.${l4}`,
+											parent: level3Id,
+											color: colors[(root + l1 + l2 + l3 + l4) % colors.length]
+										});
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return nodes;
+	}
+
+	// Generate the test dataset
+	data.nodes = generateTestData();
+	
+	// Log dataset info for debugging
+	gs.info('SCM Tree: Generated ' + data.nodes.length + ' test nodes');
+	
+	// Count nodes by level for performance analysis
+	const levelCounts = [0, 0, 0, 0, 0, 0];
+	data.nodes.forEach(function(node) {
+		const level = node.title.split('.').length - 1;
+		if (level < levelCounts.length) {
+			levelCounts[level]++;
+		}
+	});
+	
+	gs.info('SCM Tree: Level distribution - L0:' + levelCounts[0] + ', L1:' + levelCounts[1] + 
+		', L2:' + levelCounts[2] + ', L3:' + levelCounts[3] + ', L4:' + levelCounts[4]);
+})();
+]]></script>
         <servicenow>false</servicenow>
         <sys_class_name>sp_widget</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:28:43</sys_created_on>
         <sys_id>33c9b74893143210e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>58</sys_mod_count>
+        <sys_mod_count>83</sys_mod_count>
         <sys_name>scm-tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_33c9b74893143210e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 06:58:09</sys_updated_on>
+        <sys_updated_on>2025-09-26 07:56:42</sys_updated_on>
         <template><![CDATA[<div class="tree-container">
 	<div ng-repeat="node in c.getRootNodes() track by node.id" ng-include="'scm-tree-node-recursive.html'"></div>
 </div>
