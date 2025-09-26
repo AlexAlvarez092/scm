@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmFlyover</name>
+        <script><![CDATA[/**
+ * CAUTION: This is a very important provider. It contains the flyover service that is used in all the flyovers.
+ * Please reach out to the team in the DEV Sync in order to apply any changes.
+ */
+function scmFlyover(spUtil, $timeout, $compile, $location) {
+  var CLOSE_TIMEOUT = 300;
+  var OPEN_THROTTLE_TIMEOUT = 500;
+
+  // Throttle variable to prevent multiple flyover renderings within 500ms
+  var timeoutInstance;
+
+  // Factory function to create a flyover instance
+  return function (widgetId, scopeCtrl) {
+    // Flyover configuration object
+    this.flyover = {
+      flyoverId: spUtil.createUid("xxxx-xxxx"), // Unique ID for flyover
+      scope: scopeCtrl, // AngularJS scope controller
+      widgetId: widgetId, // Widget identifier
+      title: "", // Flyover title
+      subTitle: "", // Flyover subtitle
+      hasFullClass: false, // CSS class toggle for full width
+      options: {}, // Additional options
+      isOpen: false, // Flyover open state
+      functionOnOpen: "", // Function to execute on open
+      functionOnClose: "", // Function to execute on close
+      width: 85, // Default width percentage
+      appendToBody: false, // Whether to append flyover to body
+    };
+
+    var that = this;
+    that.childScope = null; // Child scope for flyover content
+
+    // Listen for external close event (e.g., from flyover 'X' button)
+    scopeCtrl.$on("scmFlyover-close-triggered-" + this.flyover.flyoverId, function (e) {
+      close.apply(that);
+    });
+
+    // Public API methods
+    that.open = open;
+    that.close = close;
+    that.setOptions = setOptions;
+    that.setTitle = setTitle;
+    that.setSubTitle = setSubTitle;
+    that.onOpen = onOpen;
+    that.onClose = onClose;
+    that.setTitle = setTitle;
+    that.hasFullClass = hasFullClass;
+    that.setFlyoverWidth = setFlyoverWidth;
+    that.setAppendToBody = setAppendToBody;
+    that.setWidgetId = setWidgetId;
+    that.isOpen = isOpen;
+
+    return that;
+  };
+
+  /**
+   * This method opens the flyover
+   * @returns void
+   */
+  function open() {
+    var that = this;
+
+    // If flyover is already open or throttle is active, return resolved promise
+    if (that.flyover.isOpen || timeoutInstance) {
+      return new Promise(function (resolve) {
+        resolve();
+      });
+    }
+
+    // Set throttle timeout to prevent multiple renderings
+    timeoutInstance = $timeout(function () {
+      timeoutInstance = null;
+    }, OPEN_THROTTLE_TIMEOUT);
+
+    // Mark flyover as open
+    that.flyover.isOpen = true;
+
+    // Create isolated child scope
+    that.childScope = that.flyover.scope.$new(true);
+
+    // Fetch flyover content
+    return spUtil
+      .get("scm-flyover", {
+        widgetUid: that.flyover.flyoverId,
+        widgetId: that.flyover.widgetId,
+        title: that.flyover.title,
+        subTitle: that.flyover.subTitle,
+        hasFullClass: that.flyover.hasFullClass,
+        width: that.flyover.width,
+        widgetOptions: that.flyover.options,
+      })
+      .then(function (response) {
+        // Execute onOpen callback if defined
+        if (that.flyover.functionOnOpen) {
+          _evalFunction(that, that.flyover.functionOnOpen);
+        }
+
+        // Generate and append flyover HTML
+        _generateWidgetHTML(that, response, that.flyover.scope);
+
+        return that;
+      });
+  }
+
+  function setTitle(title) {
+    this.flyover.title = title;
+  }
+
+  function setSubTitle(subTitle) {
+    this.flyover.subTitle = subTitle;
+  }
+
+  function hasFullClass(hasFullClass) {
+    this.flyover.hasFullClass = hasFullClass;
+  }
+
+  function _generateWidgetHTML(that, response, scope) {
+    // To share templates in some widgets, the template is placed in the header or footer widget
+    // To avoid this, the snippet is included in the service
+    var snippetHTML =
+      "<div ng-attr-id='flyoverContainer-{{flyOverId}}'>" +
+      "     <div ng-repeat='widget in widgetsFly'>" +
+      "         <sp-widget widget='widget'></sp-widget>" +
+      "     </div>" +
+      "</div>";
+
+    // Check if a snippet for the current FlyOver already exists
+    if (!document.querySelector("#flyoverContainer-" + that.flyover.flyoverId)) {
+      that.childScope.widgetsFly = [response]; // Contains the main widget to load in the FlyOver
+      that.childScope.flyOverId = that.flyover.flyoverId; // FlyOverId
+
+      var compiledSnippetHTML = $compile(snippetHTML)(that.childScope); // Compile the HTML snippet using the current scope
+
+      if (that.flyover.appendToBody) {
+        $("body").append(compiledSnippetHTML);
+      } else {
+        var widgetContainers = document.querySelectorAll(".v" + scope.widget.sys_id); // Search all open FlyOvers containing the same widget
+        var lastWidgetContainer = widgetContainers[widgetContainers.length - 1]; // The last container is the current FlyOver
+
+        angular.element(lastWidgetContainer).append(compiledSnippetHTML); // Include the compiledSnippetHTML as the last node of the container
+      }
+    }
+  }
+
+  function setOptions(optionsObject) {
+    this.flyover.options = optionsObject;
+  }
+
+  function onOpen(functionToBeExecuted) {
+    this.flyover.functionOnOpen = functionToBeExecuted;
+  }
+
+  function onClose(functionToBeExecuted) {
+    this.flyover.functionOnClose = functionToBeExecuted;
+  }
+
+  function _evalFunction(that, functionToEval) {
+    if (typeof functionToEval === "string") {
+      eval(functionToEval);
+    } else {
+      functionToEval(that);
+    }
+  }
+
+  function setFlyoverWidth(width) {
+    this.flyover.width = width;
+  }
+
+  function setAppendToBody(v) {
+    this.flyover.appendToBody = v;
+  }
+
+  function setWidgetId(id) {
+    this.flyover.widgetId = id;
+  }
+
+  function close() {
+    var that = this;
+
+    // Timeout to allow flyover to apply CSS transitions
+    return $timeout(function () {
+      that.flyover.isOpen = false;
+
+      // Destroy scope created for the flyover
+      if (that.childScope) {
+        that.childScope.$destroy();
+        that.childScope = null;
+      }
+
+      var widgetElement = document.querySelector("#flyoverContainer-" + that.flyover.flyoverId);
+      if (widgetElement) {
+        widgetElement.remove();
+      }
+
+      // Execute onClose function
+      var functionCloseToBeExecuted = that.flyover.functionOnClose;
+      if (functionCloseToBeExecuted) {
+        _evalFunction(that, functionCloseToBeExecuted);
+      }
+    }, CLOSE_TIMEOUT);
+  }
+
+  function isOpen() {
+    return this.flyover.isOpen;
+  }
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-10 16:54:06</sys_created_on>
+        <sys_id>432b29d393732a10e393f6fa3d03d662</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>scmFlyover</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_432b29d393732a10e393f6fa3d03d662</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-10 17:00:51</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>

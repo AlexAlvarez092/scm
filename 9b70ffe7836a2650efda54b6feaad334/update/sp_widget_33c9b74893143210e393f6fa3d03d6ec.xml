@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function () {
+	const c = this;
+	c.data = [
+		{ id: '1', title: 'Node 1', parent: null, color: 'red' },
+		{ id: '2', title: 'Node 2', parent: null, color: 'blue' },
+		{ id: '3', title: 'Node 1.1', parent: '1', color: 'purple' },
+		{ id: '4', title: 'Node 1.2', parent: '1', color: 'turquoise' },
+		{ id: '5', title: 'Node 2.1', parent: '2', color: 'apple' },
+		{ id: '6', title: 'Node 2.2', parent: '2', color: 'petrol' },
+		{ id: '7', title: 'Node 1.1.1', parent: '3', color: 'iris' },
+		{ id: '8', title: 'Node 1.1.2', parent: '3', color: 'pink' }
+	];
+
+	// Get root nodes (nodes without parent)
+	c.getRootNodes = function () {
+		return c.data.filter(node => !node.parent);
+	};
+
+	// Get children of a specific node
+	c.getChildren = function (parentId) {
+		return c.data.filter(node => node.parent === parentId);
+	};
+
+	// Check if node has children
+	c.hasChildren = function (nodeId) {
+		return c.data.some(node => node.parent === nodeId);
+	};
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css>// ================================
+// TREE MASTER VARIABLES
+// ================================
+$tree-indent-horizontal: 600px; // How much children move to the right (total indentation)
+$tree-indent-vertical: 8px;     // How much children move down (spacing between nodes)
+
+// Derived variables (calculated from master variables)
+$tree-border-width: 2px;
+$tree-border-color: #e0e0e0;
+$tree-vertical-line-offset: 20px;              // FIXED position for vertical line under parent
+$tree-horizontal-line-length: ($tree-indent-horizontal - $tree-vertical-line-offset); // Length of horizontal connector
+
+// ================================
+// TREE STYLES
+// ================================
+
+// Tree container
+.tree-container {
+	padding: 16px;
+}
+
+// Each tree node that HAS children gets a vertical line
+.tree-node {
+	position: relative;
+	margin-bottom: $tree-indent-vertical;
+	
+	// Vertical line under parent (only if it has children)
+	&amp;:has(.tree-children)::after {
+		content: '';
+		position: absolute;
+		left: $tree-vertical-line-offset;
+		top: 100%; // Start right after the parent card
+		width: $tree-border-width;
+		height: $tree-indent-vertical;
+		background: $tree-border-color;
+		z-index: 1;
+	}
+}
+
+// Tree children container (indentation for hierarchical structure)
+.tree-children {
+	margin-left: $tree-indent-horizontal;
+	position: relative;
+	margin-top: $tree-indent-vertical;
+	
+	// Vertical line continuation (aligned with parent's vertical line)
+	&amp;::before {
+		content: '';
+		position: absolute;
+		left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
+		top: 0;
+		bottom: 0;
+		width: $tree-border-width;
+		background: $tree-border-color;
+	}
+	
+	// Horizontal connectors for each child (they are divs that contain .tree-node)
+	&gt; div &gt; .tree-node::after {
+		content: '';
+		position: absolute;
+		left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
+		top: 20px; // Adjust to align with card center
+		width: $tree-horizontal-line-length;
+		height: $tree-border-width;
+		background: $tree-border-color;
+	}
+}
+
+
+
+// Progressive scaling for deeper levels (optional)
+.tree-node .tree-node .card {
+	opacity: 0.95;
+	transform: scale(0.98);
+}
+
+.tree-node .tree-node .tree-node .card {
+	opacity: 0.9;
+	transform: scale(0.96);
+}
+
+// Override card styles for proper tree alignment
+.card {
+	margin-left: 0;
+	width: fit-content;
+}
+</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-tree</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-tree</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function() {
+  /* populate the 'data' object */
+  /* e.g., data.table = $sp.getValue('table'); */
+
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-25 21:28:43</sys_created_on>
+        <sys_id>33c9b74893143210e393f6fa3d03d6ec</sys_id>
+        <sys_mod_count>58</sys_mod_count>
+        <sys_name>scm-tree</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_33c9b74893143210e393f6fa3d03d6ec</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-26 06:58:09</sys_updated_on>
+        <template><![CDATA[<div class="tree-container">
+	<div ng-repeat="node in c.getRootNodes() track by node.id" ng-include="'scm-tree-node-recursive.html'"></div>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

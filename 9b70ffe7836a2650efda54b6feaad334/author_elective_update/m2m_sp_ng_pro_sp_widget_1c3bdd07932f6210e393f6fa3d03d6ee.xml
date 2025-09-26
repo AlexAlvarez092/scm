@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_widget">
+    <m2m_sp_ng_pro_sp_widget action="DELETE">
+        <sp_angular_provider display_value="scmReference">a096ffa383aa2650efda54b6feaad3b1</sp_angular_provider>
+        <sp_widget display_value="scm-table">c736f3a383aa2650efda54b6feaad3f2</sp_widget>
+        <sys_class_name>m2m_sp_ng_pro_sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-28 10:49:56</sys_created_on>
+        <sys_id>1c3bdd07932f6210e393f6fa3d03d6ee</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scmReference.scm-table</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_ng_pro_sp_widget_1c3bdd07932f6210e393f6fa3d03d6ee</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-28 10:49:56</sys_updated_on>
+    </m2m_sp_ng_pro_sp_widget>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>7b03d460fb53aa9485daf3585eefdc20</instance_id>
+        <instance_name>dev355014</instance_name>
+        <name>m2m_sp_ng_pro_sp_widget_1c3bdd07932f6210e393f6fa3d03d6ee</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_widget"><m2m_sp_ng_pro_sp_widget action="INSERT_OR_UPDATE"><sp_angular_provider display_value="scmReference">a096ffa383aa2650efda54b6feaad3b1</sp_angular_provider><sp_widget display_value="scm-table">c736f3a383aa2650efda54b6feaad3f2</sp_widget><sys_class_name>m2m_sp_ng_pro_sp_widget</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-08-28 10:49:56</sys_created_on><sys_id>1c3bdd07932f6210e393f6fa3d03d6ee</sys_id><sys_mod_count>0</sys_mod_count><sys_name>scmReference.scm-table</sys_name><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>m2m_sp_ng_pro_sp_widget_1c3bdd07932f6210e393f6fa3d03d6ee</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-08-28 10:49:56</sys_updated_on></m2m_sp_ng_pro_sp_widget></record_update>]]></payload>
+        <payload_hash>650879902</payload_hash>
+        <record_name>scmReference.scm-table</record_name>
+        <reverted_from/>
+        <source>3ec8524d93e7e650e393f6fa3d03d6e5</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-28 10:49:56</sys_created_on>
+        <sys_id>d83bdd07932f6210e393f6fa3d03d6f0</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>198f04c68cc0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-28 10:49:56</sys_updated_on>
+        <type>Angular Providers</type>
+        <update_guid>503bdd077d2f621058f7fd11c989b1f0</update_guid>
+        <update_guid_history>503bdd077d2f621058f7fd11c989b1f0:650879902</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scmReference.scm-table">9a552a5f93772a10e393f6fa3d03d6c4</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-10 21:08:07</sys_created_on>
+        <sys_db_object display_value="" name="m2m_sp_ng_pro_sp_widget">m2m_sp_ng_pro_sp_widget</sys_db_object>
+        <sys_id>4bb53411a3104080a71b3f3a7ae25219</sys_id>
+        <sys_metadata>1c3bdd07932f6210e393f6fa3d03d6ee</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scmReference.scm-table</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>m2m_sp_ng_pro_sp_widget_1c3bdd07932f6210e393f6fa3d03d6ee</sys_update_name>
+        <sys_update_version display_value="m2m_sp_ng_pro_sp_widget_1c3bdd07932f6210e393f6fa3d03d6ee">d83bdd07932f6210e393f6fa3d03d6f0</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-10 21:08:07</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

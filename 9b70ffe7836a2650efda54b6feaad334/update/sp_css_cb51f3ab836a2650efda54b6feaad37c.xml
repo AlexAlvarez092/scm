@@ -3,6 +3,7 @@
         <css>:root {
   --scm-dropdown-max-height: 120px;
   --scm-reference-input-height: 48px;
+  --scm-zindex-dropdown: 20;
 }
 
 .scm-reference-wrapper {
@@ -69,7 +70,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--scm-zindex-dropdown);
 }
 
 .scm-reference-search-wrapper,
@@ -114,7 +115,7 @@
   top: 100%;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--scm-zindex-dropdown);
   background-color: var(--scm-color-sc-white);
 }
 
@@ -149,19 +150,19 @@
   pointer-events: none;
 }
 </css>
-        <name>scm_ref_picker</name>
+        <name>scm-ref-picker</name>
         <sys_class_name>sp_css</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:00:39</sys_created_on>
         <sys_id>cb51f3ab836a2650efda54b6feaad37c</sys_id>
-        <sys_mod_count>38</sys_mod_count>
-        <sys_name>scm_ref_picker</sys_name>
+        <sys_mod_count>42</sys_mod_count>
+        <sys_name>scm-ref-picker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_css_cb51f3ab836a2650efda54b6feaad37c</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-10 16:48:53</sys_updated_on>
+        <sys_updated_on>2025-09-12 13:19:06</sys_updated_on>
         <turn_off_scss_compilation>false</turn_off_scss_compilation>
     </sp_css>
 </record_update>

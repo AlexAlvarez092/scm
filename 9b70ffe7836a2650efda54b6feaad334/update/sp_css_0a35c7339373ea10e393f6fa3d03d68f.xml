@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css">
+    <sp_css action="INSERT_OR_UPDATE">
+        <css>h1 {
+  font-size: var(--scm-font-size-xxxlarge);
+  font-weight: var(--scm-font-weight-bold);
+  color: var(--scm-color-sc-navy);
+}
+
+h2 {
+  font-size: var(--scm-font-size-xxlarge);
+  font-weight: var(--scm-font-weight-semibold);
+  color: var(--scm-color-sc-navy);
+}
+
+h3 {
+  font-size: var(--scm-font-size-xlarge);
+  font-weight: var(--scm-font-weight-medium);
+}
+
+h4 {
+  font-size: var(--scm-font-size-large);
+  font-weight: var(--scm-font-weight-regular);
+}
+
+.scm-table-fields-selector-selected {
+  background-color: var(--scm-color-int-blue);
+  color: var(--scm-color-sc-white);
+}
+
+.scm-container {
+  background-color: var(--scm-color-sc-white);
+  border-radius: var(--scm-border-radius-large);
+  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-8);
+  margin: var(--scm-spacing-4) var(--scm-spacing-4);
+  padding: var(--scm-padding-4) var(--scm-padding-4);
+  box-shadow: var(--scm-box-shadow-small);
+}
+</css>
+        <name>scm-main</name>
+        <sys_class_name>sp_css</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-12 12:44:19</sys_created_on>
+        <sys_id>0a35c7339373ea10e393f6fa3d03d68f</sys_id>
+        <sys_mod_count>11</sys_mod_count>
+        <sys_name>scm-main</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_css_0a35c7339373ea10e393f6fa3d03d68f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-12 13:32:01</sys_updated_on>
+        <turn_off_scss_compilation>false</turn_off_scss_compilation>
+    </sp_css>
+</record_update>

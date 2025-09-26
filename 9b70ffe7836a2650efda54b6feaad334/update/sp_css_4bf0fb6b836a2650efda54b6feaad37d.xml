@@ -58,13 +58,14 @@
 
   /* Border */
   --scm-border-style-default: solid;
+
   --scm-border-width-thin: 1px;
   --scm-border-width-medium: 2px;
   --scm-border-width-thick: 4px;
+
   --scm-border-radius-small: 4px;
   --scm-border-radius-medium: 8px;
   --scm-border-radius-large: 16px;
-  --scm-border-radius-input: 5px;
 
   /* Spacing and padding */
   --scm-spacing-1: 4px;
@@ -106,44 +107,31 @@
   --scm-font-size-xlarge: 20px;
   --scm-font-size-xxlarge: 24px;
   --scm-font-size-xxxlarge: 32px;
-}
 
-/* Other Utilities */
-/* TODO: Move to different file */
-.scm-container {
-  background-color: var(--scm-color-sc-white);
-  border-radius: var(--scm-border-radius-large);
-  border: var(--scm-border-width-thin) var(--scm-border-style-default)
-    var(--scm-color-gray-tint-8);
-  padding: var(--scm-padding-4);
-  margin-top: var(--scm-spacing-3);
-}
+  /* Transition durations */
+  --scm-transition-duration-fast: 200ms;
+  --scm-transition-duration-medium: 400ms;
+  --scm-transition-duration-slow: 600ms;
 
-.h1 {
-  font-size: var(--scm-font-size-xxxlarge);
-  font-weight: var(--scm-font-weight-bold);
-  color: var(--scm-color-sc-navy);
-  margin-bottom: var(--scm-spacing-3);
-}
-
-.scm-table-fields-selector-selected {
-  background-color: var(--scm-color-int-blue);
-  color: var(--scm-color-sc-white);
+  /* Box shadows */
+  --scm-box-shadow-small: rgba(51, 51, 51, 0.1) 0px 1px 3px 0px, rgba(51, 51, 51, 0.06) 0px 1px 2px 0px;
+  --scm-box-shadow-medium: rgba(51, 51, 51, 0.1) 0px 4px 6px 0px, rgba(51, 51, 51, 0.1) 0px 2px 4px 0px;
+  --scm-box-shadow-large: rgba(51, 51, 51, 0.1) 0px 10px 15px 0px, rgba(51, 51, 51, 0.1) 0px 4px 6px 0px;
 }
 </css>
-        <name>scm</name>
+        <name>scm-base</name>
         <sys_class_name>sp_css</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 17:58:40</sys_created_on>
         <sys_id>4bf0fb6b836a2650efda54b6feaad37d</sys_id>
-        <sys_mod_count>8</sys_mod_count>
-        <sys_name>scm</sys_name>
+        <sys_mod_count>18</sys_mod_count>
+        <sys_name>scm-base</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_css_4bf0fb6b836a2650efda54b6feaad37d</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-08-28 10:37:00</sys_updated_on>
+        <sys_updated_on>2025-09-12 13:31:34</sys_updated_on>
         <turn_off_scss_compilation>false</turn_off_scss_compilation>
     </sp_css>
 </record_update>

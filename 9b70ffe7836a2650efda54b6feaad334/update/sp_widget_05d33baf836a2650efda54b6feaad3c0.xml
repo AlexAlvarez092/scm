@@ -2,34 +2,35 @@
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
         <client_script><![CDATA[api.controller = function ($scope, $location) {
-  const c = this;
+	const c = this;
 
-  c.title = 'SCM Demo Portal';
+	c.title = 'SCM Demo Portal';
 
-  c.navItems = [
-    { label: 'Incidents', pageId: 'incidents', active: false },
-    { label: 'Contacts', pageId: 'contacts', active: false },
-  ];
+	c.navItems = [
+		{ label: 'Incidents', pageId: 'incidents', active: false },
+		{ label: 'Contacts', pageId: 'contacts', active: false },
+		{ label: 'Tree', pageId: 'scm_tree', active: false }
+	];
 
-  updateActiveNavItem();
+	updateActiveNavItem();
 
-  // Watch for changes in the URL path to update the active navigation item
-  $scope.$on('$locationChangeSuccess', function () {
-    updateActiveNavItem();
-  });
+	// Watch for changes in the URL path to update the active navigation item
+	$scope.$on('$locationChangeSuccess', function () {
+		updateActiveNavItem();
+	});
 
-  /**
-   * Updates the active state of navigation items based on the current path.
-   * This function checks the current URL path and sets the 'active' property
-   * of each navigation item to true if its href is included in the current path.
-   */
-  function updateActiveNavItem() {
-    const params = $location.search();
-    const pageId = params.id || '';
-    c.navItems.forEach((item) => {
-      item.active = item.pageId === pageId;
-    });
-  }
+	/**
+	 * Updates the active state of navigation items based on the current path.
+	 * This function checks the current URL path and sets the 'active' property
+	 * of each navigation item to true if its href is included in the current path.
+	 */
+	function updateActiveNavItem() {
+		const params = $location.search();
+		const pageId = params.id || '';
+		c.navItems.forEach(item => {
+			item.active = item.pageId === pageId;
+		});
+	}
 };
 ]]></client_script>
         <controller_as>c</controller_as>
@@ -111,14 +112,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:11:08</sys_created_on>
         <sys_id>05d33baf836a2650efda54b6feaad3c0</sys_id>
-        <sys_mod_count>4</sys_mod_count>
+        <sys_mod_count>7</sys_mod_count>
         <sys_name>scm-menu-instance</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_05d33baf836a2650efda54b6feaad3c0</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-08-27 15:32:55</sys_updated_on>
+        <sys_updated_on>2025-09-25 21:32:59</sys_updated_on>
         <template><![CDATA[<div class="nav-content">
   <div class="nav-title">
     <a href="?">{{::c.title}}</a>
