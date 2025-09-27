@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
     <sp_ng_template action="INSERT_OR_UPDATE">
         <id>scm-tree-card.html</id>
-        <sp_widget display_value="scm-tree">33c9b74893143210e393f6fa3d03d6ec</sp_widget>
+        <sp_widget display_value="scm-contract-tree">f1b85ad493507210e393f6fa3d03d6b7</sp_widget>
         <sys_class_name>sp_ng_template</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:29:05</sys_created_on>
         <sys_id>34f9bb4893143210e393f6fa3d03d686</sys_id>
-        <sys_mod_count>28</sys_mod_count>
+        <sys_mod_count>38</sys_mod_count>
         <sys_name>scm-tree-card.html</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_34f9bb4893143210e393f6fa3d03d686</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 06:48:16</sys_updated_on>
+        <sys_updated_on>2025-09-26 20:24:34</sys_updated_on>
         <template><![CDATA[<!-- Card colors -->
 <!-- 
     - Navy 
@@ -35,18 +35,28 @@
 <div class="card card--border card--rounded card--compact card--notification card--{{node.color}} margin-bottom-3">
 	<h1 class="card__header">{{node.title}}</h1>
 	<div class="card__body">
-		<span>
-			<strong>ID:</strong>
-			{{node.id}}
-		</span>
-		<span>
-			<strong>Parent:</strong>
-			{{node.parent || 'Root'}}
-		</span>
-		<span>
-			<strong>Color:</strong>
-			{{node.color}}
-		</span>
+		<div class="card-content">
+			<span>
+				<strong>ID:</strong>
+				{{node.id}}
+			</span>
+			<span>
+				<strong>Parent:</strong>
+				{{node.parent || 'Root'}}
+			</span>
+			<span>
+				<strong>Color:</strong>
+				{{node.color}}
+			</span>
+		</div>
+		<div class="card-actions">
+			<sdx-button
+				theme="transparent"
+				icon-size="2"
+				icon-name="icon-eye"
+				ng-click="c.executeCallback('openFlyover', node)"
+			></sdx-button>
+		</div>
 	</div>
 </div>
 ]]></template>

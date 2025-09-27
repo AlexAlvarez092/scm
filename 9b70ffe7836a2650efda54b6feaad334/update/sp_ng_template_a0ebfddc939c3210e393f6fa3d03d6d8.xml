@@ -6,22 +6,70 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-26 06:56:43</sys_created_on>
         <sys_id>a0ebfddc939c3210e393f6fa3d03d6d8</sys_id>
-        <sys_mod_count>9</sys_mod_count>
+        <sys_mod_count>11</sys_mod_count>
         <sys_name>scm-tree-node-recursive.html</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_a0ebfddc939c3210e393f6fa3d03d6d8</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 08:11:49</sys_updated_on>
-        <template><![CDATA[<div class="tree-node">
+        <sys_updated_on>2025-09-26 08:30:24</sys_updated_on>
+        <template><![CDATA[<!--
+========================================================================
+SCM TREE WIDGET - RECURSIVE NODE TEMPLATE
+========================================================================
+
+PURPOSE:
+Recursive template that renders individual tree nodes and their children.
+This template calls itself to create unlimited tree depth while maintaining
+consistent structure and behavior at each level.
+
+ARCHITECTURE:
+1. Node Content: Card display + expand/collapse controls
+2. Recursive Children: Self-referencing template inclusion
+3. Conditional Rendering: Only shows children when expanded
+
+RECURSION MECHANISM:
+- Each node renders its content, then includes this same template for children
+- ng-init="node = child" passes context down the tree
+- Infinite depth possible (limited only by data structure)
+
+PERFORMANCE NOTES:
+- Children only render when parent is expanded (lazy loading)
+- Each level performs filtering operations for child lookup
+- Deep trees may impact rendering performance
+-->
+
+<div class="tree-node">
+	<!-- 
+	NODE CONTENT SECTION:
+	Horizontal layout containing the node's card and control button
+	-->
 	<div class="tree-node-content">
-		<!-- Node card content -->
+		<!-- 
+		DYNAMIC CARD RENDERING:
+		- Uses configurable template from server (c.data.nodeTemplate)
+		- Default: 'scm-tree-card.html' 
+		- Can be overridden via widget options for custom layouts
+		- Template receives 'node' variable from current scope
+		-->
 		<div class="tree-card-wrapper">
 			<ng-include src="c.data.nodeTemplate"></ng-include>
 		</div>
 
-		<!-- Expand/Collapse button (only for nodes with children) -->
+		<!-- 
+		EXPAND/COLLAPSE CONTROLS:
+		Two separate buttons with conditional display based on:
+		1. Node has children: c.hasChildren(node.id)
+		2. Current expansion state: c.isExpanded(node.id)
+		
+		BUTTON STATES:
+		- Collapsed (►): Shows when node has children AND is not expanded
+		- Expanded (▼): Shows when node has children AND is expanded
+		- Hidden: Shows when node has no children
+		-->
+
+		<!-- EXPAND BUTTON: Shows when node is collapsed -->
 		<sdx-button
 			class="tree-toggle-button"
 			ng-if="c.hasChildren(node.id) && !c.isExpanded(node.id)"
@@ -29,8 +77,10 @@
 			theme="transparent"
 			icon-name="icon-fullscreen-enter-2"
 			icon-size="2"
-			></sdx-button>
-			<sdx-button
+		></sdx-button>
+
+		<!-- COLLAPSE BUTTON: Shows when node is expanded -->
+		<sdx-button
 			class="tree-toggle-button"
 			ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)"
 			ng-click="c.toggleExpanded(node.id)"
@@ -40,7 +90,25 @@
 		></sdx-button>
 	</div>
 
-	<!-- Recursive children (only show if expanded) -->
+	<!-- 
+	RECURSIVE CHILDREN SECTION:
+	Only renders when node has children AND is currently expanded
+	
+	RECURSION IMPLEMENTATION:
+	1. ng-repeat iterates through child nodes
+	2. ng-init="node = child" sets context for recursive template
+	3. ng-include calls this same template for each child
+	4. Process repeats for unlimited depth
+	
+	PERFORMANCE IMPACT:
+	- c.getChildren() called for each parent node
+	- DOM nodes only created for expanded branches
+	- Deep recursion may impact browser performance
+	
+	DEBUGGING NOTES:
+	- 'track by child.id' optimizes Angular change detection
+	- Each recursive level maintains its own 'node' scope variable
+	-->
 	<div class="tree-children" ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)">
 		<div
 			ng-repeat="child in c.getChildren(node.id) track by child.id"

@@ -5,7 +5,7 @@
         <draft>false</draft>
         <dynamic_title_structure/>
         <human_readable_url_structure/>
-        <id>scm_tree</id>
+        <id>scm_contract_tree</id>
         <internal>false</internal>
         <omit_watcher>false</omit_watcher>
         <public>false</public>
@@ -16,15 +16,15 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:31:22</sys_created_on>
         <sys_id>f77af78893143210e393f6fa3d03d644</sys_id>
-        <sys_mod_count>1</sys_mod_count>
-        <sys_name>scm_tree</sys_name>
+        <sys_mod_count>3</sys_mod_count>
+        <sys_name>scm_contract_tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_page_f77af78893143210e393f6fa3d03d644</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-25 21:31:37</sys_updated_on>
-        <title>scm_tree</title>
+        <sys_updated_on>2025-09-26 09:06:48</sys_updated_on>
+        <title>scm_contract_tree</title>
         <use_seo_script>false</use_seo_script>
     </sp_page>
     <sys_translated_text action="delete_multiple" query="documentkey=f77af78893143210e393f6fa3d03d644"/>

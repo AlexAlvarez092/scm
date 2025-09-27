@@ -6,23 +6,23 @@
         <bootstrap_alt>false</bootstrap_alt>
         <class_name/>
         <container_class_name/>
-        <name>scm_tree - Container 1</name>
+        <name>scm_contract_tree - Container 1</name>
         <order>1</order>
         <semantic_tag/>
-        <sp_page display_value="scm_tree">f77af78893143210e393f6fa3d03d644</sp_page>
+        <sp_page display_value="scm_contract_tree">f77af78893143210e393f6fa3d03d644</sp_page>
         <subheader>false</subheader>
         <sys_class_name>sp_container</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:31:55</sys_created_on>
         <sys_id>15aa374893143210e393f6fa3d03d6f6</sys_id>
-        <sys_mod_count>1</sys_mod_count>
-        <sys_name>scm_tree - Container 1</sys_name>
+        <sys_mod_count>3</sys_mod_count>
+        <sys_name>scm_contract_tree - Container 1</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_container_15aa374893143210e393f6fa3d03d6f6</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-25 22:31:24</sys_updated_on>
+        <sys_updated_on>2025-09-26 09:06:48</sys_updated_on>
         <title/>
         <width>container-fluid</width>
     </sp_container>

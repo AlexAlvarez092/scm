@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function ($scope, scmFlyover) {
+	const c = this;
+
+	c.openFlyover = function () {
+		const flyover = new scmFlyover('scm-flyover-example', $scope);
+		flyover.setTitle('Example flyover');
+		flyover.setSubTitle('This is an example subtitle');
+		flyover.open();
+	};
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css>.card__body{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    .card-content{
+        display: flex;
+        flex-direction: column;
+    }
+}</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-contract-tree</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-contract-tree</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+	/**
+	 * Generates a large hierarchical dataset for performance testing
+	 *
+	 * ALGORITHM:
+	 * Creates a realistic tree structure with probabilistic branching:
+	 * - Level 0: 10 root nodes (guaranteed)
+	 * - Level 1: 8-12 children per root (random distribution)
+	 * - Level 2: 60% of L1 nodes get 3-8 children
+	 * - Level 3: 40% of L2 nodes get 2-5 children
+	 * - Level 4: 20% of L3 nodes get 1-3 children
+	 *
+	 * TOTAL NODES: Typically 1000-2000 nodes depending on randomization
+	 *
+	 * @returns {Array} Array of node objects with hierarchical structure
+	 */
+	function generateTestData() {
+		const nodes = []; // Final array of all generated nodes
+
+		// Color palette for visual variety in testing
+		const colors = ['navy', 'blue', 'purple', 'turquoise', 'apple', 'petrol', 'iris', 'pink', 'red', 'orange'];
+
+		let nodeId = 1; // Global counter for unique node IDs
+
+		// LEVEL 0: Generate root nodes (no parent)
+		for (let root = 1; root <= 2; root++) {
+			nodes.push({
+				id: String(nodeId++), // Convert to string for consistency
+				title: `Root Node ${root}`, // Human-readable title
+				parent: null, // No parent indicates root level
+				color: colors[root % colors.length] // Cycle through color palette
+			});
+			const rootId = String(nodeId - 1); // Store parent ID for children
+
+			// LEVEL 1: Generate children for each root node
+			const level1Count = 0 + Math.floor(Math.random() * 5);
+			for (let l1 = 1; l1 <= level1Count; l1++) {
+				nodes.push({
+					id: String(nodeId++),
+					title: `Node ${root}.${l1}`, // Hierarchical naming convention
+					parent: rootId, // Links to parent root node
+					color: colors[(root + l1) % colors.length] // Varied coloring
+				});
+				const level1Id = String(nodeId - 1);
+
+				// LEVEL 2: Selective branching (60% probability)
+				// Not all L1 nodes get children - creates realistic sparsity
+				if (Math.random() < 0.6) {
+					const level2Count = 7 + Math.floor(Math.random() * 6);
+					for (let l2 = 1; l2 <= level2Count; l2++) {
+						nodes.push({
+							id: String(nodeId++),
+							title: `Node ${root}.${l1}.${l2}`,
+							parent: level1Id,
+							color: colors[(root + l1 + l2) % colors.length]
+						});
+						const level2Id = String(nodeId - 1);
+
+						// LEVEL 3: Further reduced branching (40% probability)
+						// Deeper levels have fewer nodes - realistic tree structure
+						if (Math.random() < 0.4) {
+							const level3Count = 2 + Math.floor(Math.random() * 4);
+							for (let l3 = 1; l3 <= level3Count; l3++) {
+								nodes.push({
+									id: String(nodeId++),
+									title: `Node ${root}.${l1}.${l2}.${l3}`,
+									parent: level2Id,
+									color: colors[(root + l1 + l2 + l3) % colors.length],
+									callbacks: {
+										viewAction: 'openFlyver'
+									}
+								});
+								const level3Id = String(nodeId - 1);
+
+								// LEVEL 4: Minimal deep branching (20% probability)
+								// Only some nodes go to maximum depth
+								if (Math.random() < 0.2) {
+									const level4Count = 1 + Math.floor(Math.random() * 3);
+									for (let l4 = 1; l4 <= level4Count; l4++) {
+										nodes.push({
+											id: String(nodeId++),
+											title: `Node ${root}.${l1}.${l2}.${l3}.${l4}`,
+											parent: level3Id,
+											color: colors[(root + l1 + l2 + l3 + l4) % colors.length]
+										});
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		gs.info('Generated ' + nodes.length + ' test nodes for SCM Tree widget');
+
+		return nodes;
+	}
+
+	const notes = generateTestData();
+	data.treeWidget = $sp.getWidget('scm-tree', {
+		nodes: notes,
+		node_template: 'scm-tree-card.html',
+		availableCallbacks: {
+			openFlyover: 'parent.openFlyover'
+		}
+	});
+})();
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-26 09:02:51</sys_created_on>
+        <sys_id>f1b85ad493507210e393f6fa3d03d6b7</sys_id>
+        <sys_mod_count>28</sys_mod_count>
+        <sys_name>scm-contract-tree</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_f1b85ad493507210e393f6fa3d03d6b7</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-26 20:27:03</sys_updated_on>
+        <template><![CDATA[<sp-widget widget="data.treeWidget"></sp-widget>]]></template>
+    </sp_widget>
+</record_update>
