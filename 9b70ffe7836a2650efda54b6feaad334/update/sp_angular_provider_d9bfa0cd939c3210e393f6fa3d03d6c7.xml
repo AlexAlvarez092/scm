@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmRecordWatcher</name>
+        <script><![CDATA[/**
+ * Record Watcher Service
+ *
+ * This service centralizes watching changes in forms and tables througout the application
+ *
+ * It allows for:
+ * - Silent data refresh when changes are made by the current user
+ * - Debounced callbacks to prevent excessive refreshes
+ * - Automatic cleanup of watchers when components are destroyed
+ */
+function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil, spModal) {
+	'use strict';
+
+	/* Configuration constants */
+	const DEBOUNCE_TIMEOUT = 1000; // Milliseconds to wait before executing callbacks
+
+	/* State variables */
+	let warningHasBeenPresented = false;
+
+	/* Registry of all active watchers */
+	const activeWatchers = {};
+
+	/**
+	 * Registers a new record watcher
+	 *
+	 * @param {*} options - Configuration options for the watcher
+	 * @param {string} options.table - The table to watch
+	 * @param {string} options.query - Query to filter records to watch
+	 * @param {Array<string>} options.fields - (Optional) List of fields to watch; if provided, only changes to these fields trigger callbacks
+	 * @param {Function} options.callbackFunction - Function to call when watched records change
+	 * @param {Object} options.scope - Angular scope to bind the watcher lifecycle to
+	 * @param {Function} options.checkShowWarningDialogFunction - Custom function to determine if warning dialog should be shown
+	 * @return {Object} - Watcher instance with control methods
+	 */
+	function subscribe(options) {
+		const watcherId = spUtil.createUid('xxxx-xxxx-xxxx-xxxx'); // Unique ID for the watcher
+
+		// Instantiate the record watcher channel
+		const watcher = snRecordWatcher.initChannel(options.table, options.query, function (event) {
+			// Handle field-specific filtering if options.fields is provided
+			if (options.fields && options.fields.length) {
+				const hasRelevantChanges = options.fields.some(field => event.data.changes.includes(field));
+
+				// Skip processing if none of the specified fields changed
+				if (!hasRelevantChanges) return;
+			}
+
+			// Determine if we need to show a warning dialog
+			if (shouldShowWarningDialog(event, options)) {
+				openWarningDialog();
+				return;
+			}
+
+			// Debounce the callback execution
+			if (watcher.timeout) {
+				$timeout.cancel(watcher.timeout);
+			}
+
+			watcher.timeout = $timeout(() => {
+				// Broadcast event to Angular ecosystem and execute callback if provided
+				$rootScope.$broadcast(watcherId, event);
+				if (options.callbackFunction) {
+					options.callbackFunction(event);
+				}
+			}, DEBOUNCE_TIMEOUT);
+		});
+
+		// Auto-cleanup when scope is destroyed
+		options.scope.$on('$destroy', () => {
+			unsubscribe(watcherId);
+		});
+
+		// Store watcher Id for reference
+		watcher.watcherId = watcherId;
+
+		// Register in active watchers registry
+		activeWatchers[watcherId] = {
+			watcherInstance: watcher,
+			table: options.table,
+			query: options.query
+		};
+
+		log('Watcher subscribed:', watcherId);
+
+		return watcher;
+	}
+
+	/**
+	 * Determines if warning dialog should be shown based on event and options
+	 * @params {Object} event - The event data from the record watcher
+	 * @params {Object} options - The options provided during subscription
+	 * @returns {boolean} - True if warning dialog should be shown, false otherwise
+	 */
+	function shouldShowWarningDialog(event, options) {
+		// if custom check function is provided, use it
+		if (options.checkShowWarningDialogFunction) {
+			return options.checkShowWarningDialogFunction(event);
+		}
+
+		// Default logic: show warning if changes are made by another user
+		return event.ext.from_user !== $window.NOW.user_name;
+	}
+
+	/**
+	 * Displays a warning dialog about data changes
+	 * Only shows once per session to avoid spaming the user
+	 */
+	function openWarningDialog() {
+		// Prevent multiple dialogs
+		if (warningHasBeenPresented) {
+			return;
+		}
+		warningHasBeenPresented = true;
+
+		spModal
+			.open({
+				title: 'Data Changed',
+				message:
+					'Another user has just modified data you are working on. Please refresh to see the latest information.',
+				buttons: [
+					{ label: 'OK', primary: true },
+					{ label: 'Cancel', cancel: true }
+				]
+			})
+			.then(function (answer) {
+				if (answer.primary) {
+					$window.location.reload();
+				}
+			});
+	}
+
+	/**
+	 * Unsubscribes and cleans up a watcher by its ID
+	 *
+	 * @param {string} watcherId - The ID of the watcher to unsubscribe
+	 */
+	function unsubscribe(watcherId) {
+		if (!activeWatchers[watcherId]) {
+			log('No active watcher found with ID:', watcherId);
+			return;
+		}
+
+		activeWatchers[watcherId].watcherInstance.unsubscribe();
+		delete activeWatchers[watcherId];
+		log('Watcher unsubscribed:', watcherId);
+	}
+
+	/**
+	 * Debugging utility to display all active watchers in the console
+	 */
+	function getActiveWatchers() {
+		console.table(activeWatchers);
+	}
+
+	/**
+	 * Logging utility for the SCM Record Watcher
+	 * @param {string} message - Message to log
+	 */
+	function log(message) {
+		const prefix = '[scmRecordWatcher] ';
+		console.log('%c' + prefix + ' -> ' + message, 'color:blue');
+	}
+
+	// Add to global debugging object if available
+	if (typeof scm_scratchpad !== 'undefined') {
+		scm_scratchpad.getActiveWatchers = getActiveWatchers;
+	}
+
+	return {
+		subscribe: subscribe,
+		unsubscribe: unsubscribe,
+		getActiveWatchers: getActiveWatchers
+	};
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-09-28 09:19:44</sys_created_on>
+        <sys_id>d9bfa0cd939c3210e393f6fa3d03d6c7</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>scmRecordWatcher</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_d9bfa0cd939c3210e393f6fa3d03d6c7</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-09-28 09:47:06</sys_updated_on>
+        <type>factory</type>
+    </sp_angular_provider>
+</record_update>
