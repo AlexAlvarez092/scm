@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-26 06:56:43</sys_created_on>
         <sys_id>a0ebfddc939c3210e393f6fa3d03d6d8</sys_id>
-        <sys_mod_count>11</sys_mod_count>
+        <sys_mod_count>12</sys_mod_count>
         <sys_name>scm-tree-node-recursive.html</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_a0ebfddc939c3210e393f6fa3d03d6d8</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 08:30:24</sys_updated_on>
+        <sys_updated_on>2025-10-03 13:02:33</sys_updated_on>
         <template><![CDATA[<!--
 ========================================================================
 SCM TREE WIDGET - RECURSIVE NODE TEMPLATE
@@ -47,14 +47,18 @@ PERFORMANCE NOTES:
 	-->
 	<div class="tree-node-content">
 		<!-- 
-		DYNAMIC CARD RENDERING:
-		- Uses configurable template from server (c.data.nodeTemplate)
-		- Default: 'scm-tree-card.html' 
-		- Can be overridden via widget options for custom layouts
+		INDIVIDUAL NODE TEMPLATE RENDERING:
+		- Each node must specify its own template via 'template' property
+		- No fallback template - every node requires explicit template specification
+		- Enables complete flexibility with different layouts per node type
 		- Template receives 'node' variable from current scope
+		
+		TEMPLATE REQUIREMENT:
+		- Node structure: { id: '1', template: 'specific-card.html', ... }
+		- All nodes must have 'template' property defined
 		-->
 		<div class="tree-card-wrapper">
-			<ng-include src="c.data.nodeTemplate"></ng-include>
+			<ng-include src="c.getNodeTemplate(node)"></ng-include>
 		</div>
 
 		<!-- 

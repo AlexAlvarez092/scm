@@ -68,7 +68,8 @@
 				id: String(nodeId++), // Convert to string for consistency
 				title: `Root Node ${root}`, // Human-readable title
 				parent: null, // No parent indicates root level
-				color: colors[root % colors.length] // Cycle through color palette
+				color: colors[root % colors.length], // Cycle through color palette
+				template: 'scm-tree-card.html' // Default template for all contract nodes
 			});
 			const rootId = String(nodeId - 1); // Store parent ID for children
 
@@ -79,7 +80,8 @@
 					id: String(nodeId++),
 					title: `Node ${root}.${l1}`, // Hierarchical naming convention
 					parent: rootId, // Links to parent root node
-					color: colors[(root + l1) % colors.length] // Varied coloring
+					color: colors[(root + l1) % colors.length], // Varied coloring
+					template: 'scm-tree-card.html' // Default template for all contract nodes
 				});
 				const level1Id = String(nodeId - 1);
 
@@ -92,7 +94,8 @@
 							id: String(nodeId++),
 							title: `Node ${root}.${l1}.${l2}`,
 							parent: level1Id,
-							color: colors[(root + l1 + l2) % colors.length]
+							color: colors[(root + l1 + l2) % colors.length],
+							template: 'scm-tree-card.html' // Default template for all contract nodes
 						});
 						const level2Id = String(nodeId - 1);
 
@@ -106,8 +109,9 @@
 									title: `Node ${root}.${l1}.${l2}.${l3}`,
 									parent: level2Id,
 									color: colors[(root + l1 + l2 + l3) % colors.length],
+									template: 'scm-tree-card.html',
 									callbacks: {
-										viewAction: 'openFlyver'
+										viewAction: 'openFlyover'
 									}
 								});
 								const level3Id = String(nodeId - 1);
@@ -121,7 +125,8 @@
 											id: String(nodeId++),
 											title: `Node ${root}.${l1}.${l2}.${l3}.${l4}`,
 											parent: level3Id,
-											color: colors[(root + l1 + l2 + l3 + l4) % colors.length]
+											color: colors[(root + l1 + l2 + l3 + l4) % colors.length],
+											template: 'scm-tree-card.html'
 										});
 									}
 								}
@@ -140,7 +145,6 @@
 	const notes = generateTestData();
 	data.treeWidget = $sp.getWidget('scm-tree', {
 		nodes: notes,
-		node_template: 'scm-tree-card.html',
 		availableCallbacks: {
 			openFlyover: 'parent.openFlyover'
 		}
@@ -152,14 +156,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-26 09:02:51</sys_created_on>
         <sys_id>f1b85ad493507210e393f6fa3d03d6b7</sys_id>
-        <sys_mod_count>28</sys_mod_count>
+        <sys_mod_count>29</sys_mod_count>
         <sys_name>scm-contract-tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_f1b85ad493507210e393f6fa3d03d6b7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 20:27:03</sys_updated_on>
+        <sys_updated_on>2025-10-03 13:04:39</sys_updated_on>
         <template><![CDATA[<sp-widget widget="data.treeWidget"></sp-widget>]]></template>
     </sp_widget>
 </record_update>

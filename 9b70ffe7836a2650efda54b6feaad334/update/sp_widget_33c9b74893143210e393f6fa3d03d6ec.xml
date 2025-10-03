@@ -110,6 +110,55 @@ api.controller = function ($scope) {
 		c.expandedNodes[nodeId] = !c.expandedNodes[nodeId];
 	};
 
+	/**
+	 * Get the template for a specific node
+	 * 
+	 * INDIVIDUAL NODE TEMPLATES:
+	 * Each node must specify its own template via the 'template' property
+	 * No fallback or default template - each node is responsible for its own rendering
+	 * 
+	 * USAGE:
+	 * Returns the template filename directly from node.template property
+	 * Template string can be used directly in ng-include src attribute
+	 * 
+	 * @param {Object} node - Node object that contains template property
+	 * @returns {string} Template filename for this node
+	 */
+	c.getNodeTemplate = function(node) {
+		return node.template;
+	};
+
+	/**
+	 * Execute callback functions from parent widget scope
+	 * 
+	 * INTER-WIDGET COMMUNICATION:
+	 * This function enables the generic tree widget to execute functions
+	 * defined in parent/specific widgets (e.g., scm-contract-tree calls scm-tree)
+	 * 
+	 * CALLBACK RESOLUTION PATTERN:
+	 * 1. Lookup callback name in availableCallbacks configuration
+	 * 2. Parse function path (supports 'parent.' prefix)
+	 * 3. Navigate to parent scope and execute function
+	 * 4. Pass node data as parameter to callback function
+	 * 
+	 * SCOPE NAVIGATION:
+	 * - Uses $scope.$parent to access parent widget's scope
+	 * - Assumes parent controller uses alias 'c' (configurable)
+	 * - Falls back gracefully if parent scope or function not found
+	 * 
+	 * ERROR HANDLING:
+	 * - Logs warning if callback name not found in configuration
+	 * - Silently fails if parent scope or function doesn't exist
+	 * - Prevents JavaScript errors from breaking tree functionality
+	 * 
+	 * USAGE EXAMPLE:
+	 * Template: ng-click="c.executeCallback('openDialog', node)"
+	 * Configuration: availableCallbacks: { openDialog: 'parent.showDialog' }
+	 * Result: Calls $scope.$parent.c.showDialog(nodeData)
+	 * 
+	 * @param {string} callbackName - Name of callback to execute (key in availableCallbacks)
+	 * @param {Object} nodeData - Node data object to pass to callback function
+	 */
 	c.executeCallback = function (callbackName, nodeData) {
 		if (c.data.availableCallbacks && c.data.availableCallbacks[callbackName]) {
 			const functionPath = c.data.availableCallbacks[callbackName];
@@ -322,7 +371,7 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
  *
  * FUNCTIONALITY:
  * 1. Generates large hierarchical datasets for performance testing
- * 2. Supports configurable node templates via widget options
+ * 2. Supports individual node templates via node.template property
  * 3. Creates realistic tree structures with controlled depth and branching
  * 4. Provides logging for debugging and performance analysis
  *
@@ -334,7 +383,7 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
  *
  * WIDGET OPTIONS SUPPORTED:
  * - nodes: Custom node array (overrides generated data)
- * - node_template: HTML template file name for rendering nodes
+ * - availableCallbacks: Callback mapping for inter-widget communication
  */
 (function () {
 	/**
@@ -347,22 +396,16 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
 	 * NODE STRUCTURE REQUIREMENTS:
 	 * - Every node MUST have 'id' and 'parent' attributes
 	 * - 'parent' should be null for root nodes
+	 * - 'template' (required): Template file name for this specific node
 	 * - Additional attributes depend on the chosen template
 	 * - IDs should be strings for consistency
+	 * 
+	 * NODE TEMPLATE EXAMPLES:
+	 * { id: '1', parent: null, template: 'detailed-card.html', title: 'Root' }
+	 * { id: '2', parent: '1', template: 'simple-card.html', title: 'Child' }
+	 * { id: '3', parent: '1', template: 'admin-card.html', title: 'Child' }
 	 */
 	data.nodes = options.nodes;
-
-	/**
-	 * TEMPLATE CONFIGURATION
-	 *
-	 * Allows dynamic selection of node rendering templates
-	 * Default: 'scm-tree-card.html'
-	 *
-	 * USAGE:
-	 * Pass 'node_template' in widget options to use custom templates
-	 * Template files must be in the sp_ng_templates directory
-	 */
-	data.nodeTemplate = options.node_template;
 
 	/**
 	 * INTER-WIDGET CALLBACK CONFIGURATION
@@ -420,14 +463,14 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:28:43</sys_created_on>
         <sys_id>33c9b74893143210e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>109</sys_mod_count>
+        <sys_mod_count>111</sys_mod_count>
         <sys_name>scm-tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_33c9b74893143210e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-26 09:46:21</sys_updated_on>
+        <sys_updated_on>2025-10-03 13:02:36</sys_updated_on>
         <template><![CDATA[<!--
 ========================================================================
 SCM TREE WIDGET - MAIN TEMPLATE
