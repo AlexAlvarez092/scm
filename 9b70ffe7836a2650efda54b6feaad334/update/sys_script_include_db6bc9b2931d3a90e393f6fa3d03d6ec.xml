@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.ContactDetailsWidgetHelper</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>ContactDetailsWidgetHelper</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var ContactDetailsWidgetHelper = Class.create();
+ContactDetailsWidgetHelper.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.tableHelper = new ContactHelper({ transactionId: this.transactionId });
+        this.mappingFrontEndFieldsToDbFields = {
+            sysId: 'sys_id',
+            userName: 'user_name',
+            firstName: 'first_name',
+            lastName: 'last_name',
+            email: 'email',
+            phone: 'phone',
+            title: 'title',
+            department: 'department',
+            company: 'company'
+        };
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true
+        });
+    },
+
+    /**
+     * @param {String} sysId
+     * @returns {Object|null}
+     */
+    getContactDataBySysId: function (sysId) {
+        try {
+            const record = this.tableHelper.getRecordBySysId(sysId);
+            if (!record) {
+                this.logger.warn({
+                    method: 'getContactDataBySysId',
+                    sysId: sysId,
+                    message: 'No record found for sysId'
+                });
+                return null;
+            }
+            const contactData = {};
+            for (const [frontEndField, dbField] of Object.entries(this.mappingFrontEndFieldsToDbFields)) {
+                if (record.isValidField(dbField)) {
+                    contactData[frontEndField] = record.getValue(dbField) || '';
+                } else {
+                    this.logger.warn({
+                        method: 'getContactDataBySysId',
+                        field: dbField,
+                        sysId: sysId,
+                        message: 'Invalid field'
+                    });
+                }
+            }
+            return contactData;
+        } catch (error) {
+            this.logger.error({
+                method: 'getContactDataBySysId',
+                sysId: sysId,
+                message: 'Error retrieving contact data: ' + error.message
+            });
+            return null;
+        }
+    },
+
+    /**
+     * @returns {Array<String>}
+     */
+    getMandatoryFields: function () {
+        const dbMandatoryFields = this.tableHelper.getMandatoryFields();
+        const frontEndMandatoryFields = [];
+        for (const [frontEndField, dbField] of Object.entries(this.mappingFrontEndFieldsToDbFields)) {
+            if (dbMandatoryFields.includes(dbField)) {
+                frontEndMandatoryFields.push(frontEndField);
+            }
+        }
+        return frontEndMandatoryFields;
+    },
+
+    /**
+     * @returns {String}
+     */
+    getTableName: function () {
+        return this.tableHelper.getTableName();
+    },
+
+    /**
+     * @param {Object} data
+     * @returns {Boolean}
+     */
+    validateContactData: function (data) {
+        try {
+            const mappedData = this._mapFrontEndToDbFields(data);
+            const isValid = this.tableHelper.validateContactData(mappedData);
+            if (!isValid) {
+                this.logger.info({
+                    method: 'validateContactData',
+                    data: data,
+                    message: 'Validation failed for data'
+                });
+            }
+            return isValid;
+        } catch (error) {
+            this.logger.error({
+                method: 'validateContactData',
+                data: data,
+                message: 'Error validating contact data: ' + error.message
+            });
+            return false;
+        }
+    },
+
+    /**
+     * @param {String} sysId
+     * @param {Object} data
+     * @returns {Boolean}
+     */
+    saveDataToContactRecord: function (sysId, data) {
+        try {
+            const mappedData = this._mapFrontEndToDbFields(data);
+            return this.tableHelper.saveDataToRecord(sysId, mappedData);
+        } catch (error) {
+            this.logger.error({
+                method: 'saveDataToContactRecord',
+                sysId: sysId,
+                data: data,
+                message: 'Error saving contact record: ' + error.message
+            });
+            return false;
+        }
+    },
+
+    /**
+     * @param {Object} data
+     * @returns {Object}
+     */
+    _mapFrontEndToDbFields: function (data) {
+        const mappedData = {};
+        for (const [frontEndField, dbField] of Object.entries(this.mappingFrontEndFieldsToDbFields)) {
+            if (data.hasOwnProperty(frontEndField)) {
+                mappedData[dbField] = data[frontEndField];
+            }
+        }
+        return mappedData;
+    },
+
+    type: 'ContactDetailsWidgetHelper'
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-11-22 14:52:54</sys_created_on>
+        <sys_id>db6bc9b2931d3a90e393f6fa3d03d6ec</sys_id>
+        <sys_mod_count>24</sys_mod_count>
+        <sys_name>ContactDetailsWidgetHelper</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_db6bc9b2931d3a90e393f6fa3d03d6ec</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-11-22 18:38:58</sys_updated_on>
+    </sys_script_include>
+</record_update>

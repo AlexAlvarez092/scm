@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_theme_js_include">
+    <m2m_sp_theme_js_include action="DELETE">
+        <order>10</order>
+        <sp_js_include display_value="sdx_web_components.js">d022b7eb836a2650efda54b6feaad31a</sp_js_include>
+        <sp_theme display_value="scm">c7c0b76b836a2650efda54b6feaad377</sp_theme>
+        <sys_class_name>m2m_sp_theme_js_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:03:49</sys_created_on>
+        <sys_id>3322b7eb836a2650efda54b6feaad399</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js.SCM</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_theme_js_include_3322b7eb836a2650efda54b6feaad399</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:04:23</sys_updated_on>
+    </m2m_sp_theme_js_include>
+<sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>7b03d460fb53aa9485daf3585eefdc20</instance_id>
+        <instance_name>dev355014</instance_name>
+        <name>m2m_sp_theme_js_include_3322b7eb836a2650efda54b6feaad399</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_theme_js_include">
+    <m2m_sp_theme_js_include action="INSERT_OR_UPDATE">
+        <order>10</order>
+        <sp_js_include display_value="sdx_web_components.js">d022b7eb836a2650efda54b6feaad31a</sp_js_include>
+        <sp_theme display_value="scm">c7c0b76b836a2650efda54b6feaad377</sp_theme>
+        <sys_class_name>m2m_sp_theme_js_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-07-11 18:03:49</sys_created_on>
+        <sys_id>3322b7eb836a2650efda54b6feaad399</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js.SCM</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_theme_js_include_3322b7eb836a2650efda54b6feaad399</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-07-11 18:04:23</sys_updated_on>
+    </m2m_sp_theme_js_include>
+</record_update>]]></payload>
+        <payload_hash>101797641</payload_hash>
+        <record_name>https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js.SCM</record_name>
+        <reverted_from/>
+        <source>4748560d93e7e650e393f6fa3d03d63f</source>
+        <source_table>sys_upgrade_history</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-08-22 10:09:07</sys_created_on>
+        <sys_id>b348560d93e7e650e393f6fa3d03d6ff</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>198d140e2820000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-08-22 10:09:07</sys_updated_on>
+        <type>JS Includes</type>
+        <update_guid>7348560d58e7e6500d4354de945ed5ff</update_guid>
+        <update_guid_history>7348560d58e7e6500d4354de945ed5ff:101797641</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js">78280b5793d07e10e393f6fa3d03d65b</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-10-05 20:11:30</sys_created_on>
+        <sys_db_object display_value="" name="m2m_sp_theme_js_include">m2m_sp_theme_js_include</sys_db_object>
+        <sys_id>15691c87cd7c482080cf815bec236c40</sys_id>
+        <sys_metadata>3322b7eb836a2650efda54b6feaad399</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js.SCM</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>m2m_sp_theme_js_include_3322b7eb836a2650efda54b6feaad399</sys_update_name>
+        <sys_update_version display_value="m2m_sp_theme_js_include_3322b7eb836a2650efda54b6feaad399">b348560d93e7e650e393f6fa3d03d6ff</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-10-05 20:11:30</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_js_include">
     <sp_js_include action="INSERT_OR_UPDATE">
-        <display_name>sdx_web_components.js</display_name>
+        <display_name>sdx v2.31.1</display_name>
         <source>url</source>
         <sys_class_name>sp_js_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:03:49</sys_created_on>
         <sys_id>d022b7eb836a2650efda54b6feaad31a</sys_id>
-        <sys_mod_count>1</sys_mod_count>
-        <sys_name>sdx_web_components.js</sys_name>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>sdx v2.31.1</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_ui_script/>
         <sys_update_name>sp_js_include_d022b7eb836a2650efda54b6feaad31a</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-07-11 18:05:31</sys_updated_on>
+        <sys_updated_on>2025-10-05 20:24:07</sys_updated_on>
         <url>https://sdx.scsstatic.ch/v2.31.1/js/webcomponents/webcomponents/webcomponents.js</url>
     </sp_js_include>
 </record_update>

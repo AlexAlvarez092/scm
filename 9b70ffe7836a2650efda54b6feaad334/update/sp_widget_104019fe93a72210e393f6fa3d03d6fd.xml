@@ -1,53 +1,86 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($scope) {
-  const c = this;
+        <client_script><![CDATA[api.controller = function ($scope, spUtil) {
+    const c = this;
 
-  c.showSpinner = true;
-  c.canSubmit = false;
+    c.loading = true;
+    c.canSubmit = false;
+    c.submitting = false;
 
-  // Handle VCF file parsing
-  c.onVcfParsed = function (vcfData) {
-    // Map VCF data to form fields
-    if (vcfData.firstName) c.firstName = vcfData.firstName;
-    if (vcfData.lastName) c.lastName = vcfData.lastName;
-    if (vcfData.email) c.email = vcfData.email;
-    if (vcfData.mobilePhone || vcfData.workPhone)
-      c.phone = vcfData.mobilePhone || vcfData.workPhone;
-    if (vcfData.jobTitle) c.title = vcfData.jobTitle;
-
-    // Clear any previous errors
-    c.dropzoneError = null;
-  };
-
-  if (!c.data.isNewRecord) {
-    c.server
-      .get({
-        action: "getRecord",
-      })
-      .then(function (response) {
-        c.userName = response.data.userName;
-        c.firstName = response.data.firstName;
-        c.lastName = response.data.lastName;
-        c.email = response.data.email;
-        c.phone = response.data.phone;
-        c.title = response.data.title;
-        c.department = response.data.department;
-        c.departmentDv = response.data.departmentDv;
-        c.company = response.data.company;
-        c.showSpinner = false;
-      });
-  } else {
-    c.showSpinner = false;
-  }
-
-  $scope.$watchGroup(
-    ["c.userName", "c.firstName", "c.lastName", "c.email", "c.phone"], // mandatory fields
-    function (newValues) {
-      c.canSubmit = newValues.every((value) => !!value);
+    const arrWatchedFields = [];
+    for (const field of c.data.arrMandatoryFields) {
+        arrWatchedFields.push('c.data.' + field);
     }
-  );
+
+    // Load existing contact details if not a new record
+    if (!c.data.isNewRecord) {
+        c.server
+            .get({
+                action: 'getRecord'
+            })
+            .then(function (response) {
+                if (response.data.error) {
+                    console.error(response.data);
+                    spUtil.addErrorMessage(response.data.error);
+                    return;
+                }
+
+                console.debug('Response data executing action getRecord:', response.data);
+                c.data = response.data;
+            })
+            .finally(function () {
+                c.loading = false;
+            });
+    } else {
+        c.loading = false;
+    }
+
+    // Watch mandatory fields to enable/disable submit button
+    $scope.$watchGroup(arrWatchedFields, function (newValues) {
+        c.canSubmit = newValues.every(value => !!value);
+    });
+
+    // scmRecordWatcher.subscribe(c.data.tableName, c.data.sysId, function () {
+    //     spUtil.addInfoMessage('This contact record has been updated by another user.');
+    //     c.server.refresh();
+    // });
+
+    // Handle VCF file parsing
+    c.onVcfParsed = function (vcfData) {
+        // Map VCF data to form fields
+        if (vcfData.firstName) c.data.firstName = vcfData.firstName;
+        if (vcfData.lastName) c.data.lastName = vcfData.lastName;
+        if (vcfData.email) c.data.email = vcfData.email;
+        if (vcfData.mobilePhone || vcfData.workPhone) c.data.phone = vcfData.mobilePhone || vcfData.workPhone;
+        if (vcfData.jobTitle) c.data.title = vcfData.jobTitle;
+        // Clear any previous errors
+        c.dropzoneError = null;
+    };
+
+    // Submit contact details
+    c.submitContact = function () {
+        c.submitting = true;
+
+        c.server
+            .get({
+                action: 'submitContact',
+                data: c.data
+            })
+            .then(function (response) {
+                if (response.data.error) {
+                    console.error(response.data);
+                    spUtil.addErrorMessage(response.data.error);
+                    return;
+                }
+
+                console.debug('Response data executing action submitContact:', response.data);
+                spUtil.addTrivialMessage('Contact saved successfully.');
+            })
+            .finally(function () {
+                c.submitting = false;
+            });
+    };
 };
 ]]></client_script>
         <controller_as>c</controller_as>
@@ -68,25 +101,94 @@
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-  const sysId = String($sp.getParameter("sys_id"));
+    const sysId = String($sp.getParameter('sys_id')) || '-1';
+    const transactionId = input?.transactionId || gs.generateGUID();
+    const utils = new ContactDetailsWidgetHelper({
+        transactionId: transactionId
+    });
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'contact-details.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
 
-  data.isNewRecord = sysId === "-1";
+    data.isNewRecord = sysId === '-1';
+    data.sysId = sysId;
+    data.transactionId = transactionId;
+    data.tableName = utils.getTableName();
+    data.arrMandatoryFields = utils.getMandatoryFields();
 
-  if (input && input.action === "getRecord") {
-    var grRecord = new GlideRecord("sys_user");
-    grRecord.get(sysId);
+    // Handle getting existing record details
+    if (input && input.action === 'getRecord') {
+        const contactData = utils.getContactDataBySysId(sysId);
+        if (!contactData) {
+            logger.warn({
+                action: 'getRecord',
+                data: data,
+                message: 'No record found for sysId'
+            });
+            data.error = 'Record not found';
+            return;
+        }
 
-    data.userName = grRecord.user_name.getValue();
-    data.firstName = grRecord.first_name.getValue();
-    data.lastName = grRecord.last_name.getValue();
-    data.email = grRecord.email.getValue();
-    data.phone = grRecord.phone.getValue();
-    data.title = grRecord.title.getValue();
-    data.department = grRecord.department.getValue();
-    data.departmentDv = grRecord.department.getDisplayValue();
-    data.company = grRecord.company.getValue();
-    return;
-  }
+        for (const field in contactData) {
+            data[field] = contactData[field];
+        }
+        return;
+    }
+
+    // Handle submitting contact details
+    if (input && input.action === 'submitContact') {
+        try {
+            const isDataValid = utils.validateContactData(input.data);
+            if (!isDataValid) {
+                logger.info({
+                    action: 'submitContact',
+                    inputData: input.data,
+                    data: data,
+                    message: 'Validation failed for data'
+                });
+                data.error = 'Data is not valid.';
+                return;
+            }
+        } catch (error) {
+            logger.error({
+                action: 'submitContact',
+                inputData: input.data,
+                data: data,
+                message: 'Error during data validation: ' + error.message
+            });
+            data.error = 'Error during data validation.';
+            return;
+        }
+
+        try {
+            const isSavedSuccessfully = utils.saveDataToContactRecord(sysId, input.data);
+            if (!isSavedSuccessfully) {
+                logger.error({
+                    action: 'submitContact',
+                    inputData: input.data,
+                    data: data,
+                    message: 'Failed to save contact record for sysId: ' + sysId
+                });
+                data.error = 'Failed to save the contact record.';
+                return;
+            }
+        } catch (error) {
+            logger.error({
+                action: 'submitContact',
+                inputData: input.data,
+                data: data,
+                message: 'Error saving contact record: ' + error.message
+            });
+            data.error = 'Error saving the contact record.';
+            return;
+        }
+
+        return;
+    }
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -94,105 +196,140 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-27 15:23:40</sys_created_on>
         <sys_id>104019fe93a72210e393f6fa3d03d6fd</sys_id>
-        <sys_mod_count>52</sys_mod_count>
+        <sys_mod_count>112</sys_mod_count>
         <sys_name>contact-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_104019fe93a72210e393f6fa3d03d6fd</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-10 16:29:57</sys_updated_on>
+        <sys_updated_on>2025-11-22 19:05:31</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
-  <div class="row margin-bottom-3">
-    <div class="col">
-      <h1 class="h1">Contact details</h1>
+    <div class="row margin-bottom-3">
+        <div class="col">
+            <h1 class="h1">Contact details</h1>
+        </div>
     </div>
-  </div>
 
-  <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+    <sdx-loading-spinner ng-if="c.loading"></sdx-loading-spinner>
 
-  <!-- Dropzone -->
-  <div ng-if="!c.showSpinner && data.isNewRecord">
-    <scm-vcf-dropzone on-vcf-parsed="c.onVcfParsed(vcfData)"></scm-vcf-dropzone>
-  </div>
+    <!-- Dropzone -->
+    <div ng-if="!c.loading && data.isNewRecord">
+        <scm-vcf-dropzone on-vcf-parsed="c.onVcfParsed(vcfData)"></scm-vcf-dropzone>
+    </div>
 
-  <div ng-if="!c.showSpinner" class="margin-top-3">
-    <div class="row">
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input
-          label="User name"
-          sr-hint="User name"
-          ng-model="c.userName"
-          ng-value="c.userName"
-          ng-required="true"
-        ></sdx-input>
-      </div>
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input label="Email" sr-hint="Email" ng-model="c.email" ng-value="c.email" ng-required="true"></sdx-input>
-      </div>
+    <div ng-if="!c.loading" class="margin-top-3">
+        <div class="row">
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="User name"
+                    sr-hint="User name"
+                    ng-model="c.data.userName"
+                    ng-value="c.data.userName"
+                    ng-required="c.data.arrMandatoryFields.indexOf('userName') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="Email"
+                    sr-hint="Email"
+                    ng-model="c.data.email"
+                    ng-value="c.data.email"
+                    ng-required="c.data.arrMandatoryFields.indexOf('email') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="First name"
+                    sr-hint="First name"
+                    ng-model="c.data.firstName"
+                    ng-value="c.data.firstName"
+                    ng-required="c.data.arrMandatoryFields.indexOf('firstName') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="Last name"
+                    sr-hint="Last name"
+                    ng-model="c.data.lastName"
+                    ng-value="c.data.lastName"
+                    ng-required="c.data.arrMandatoryFields.indexOf('lastName') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="Phone"
+                    sr-hint="Phone"
+                    ng-model="c.data.phone"
+                    ng-value="c.data.phone"
+                    ng-required="c.data.arrMandatoryFields.indexOf('phone') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+            <div class="col-md-6 margin-bottom-2">
+                <scm-reference
+                    label="Department"
+                    placeholder="Select a department"
+                    ng-model="c.data.department"
+                    scm-reference-qualifier="nameISNOTEMPTY"
+                    scm-search-fields="name"
+                    scm-table="cmn_department"
+                    scm-required="c.data.arrMandatoryFields.indexOf('department') !== -1"
+                    scm-display-fields="name"
+                ></scm-reference>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="Title"
+                    sr-hint="Title"
+                    ng-model="c.data.title"
+                    ng-value="c.data.title"
+                    ng-required="c.data.arrMandatoryFields.indexOf('title') !== -1"
+                    change-callback="sdxInputHandler(this)"
+                    scm-model-provider
+                ></sdx-input>
+            </div>
+            <div class="col-md-6 margin-bottom-2">
+                <scm-ref-picker
+                    table="core_company"
+                    search-fields="name"
+                    display-fields="name"
+                    display-field="name"
+                    order-by="name"
+                    order-direction="asc"
+                    placeholder="Select the core company"
+                    label="Core company"
+                    reference-qualifier="nameISNOTEMPTY"
+                    ng-model="c.data.company"
+                    page-size="10"
+                ></scm-ref-picker>
+            </div>
+        </div>
+        <div class="row margin-bottom-2">
+            <div class="col text-align-right">
+                <sdx-button
+                    label="Submit"
+                    ng-click="c.submitContact()"
+                    ng-disabled="!c.canSubmit || c.submitting"
+                ></sdx-button>
+            </div>
+        </div>
     </div>
-    <div class="row">
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input
-          label="First name"
-          sr-hint="First name"
-          ng-model="c.firstName"
-          ng-value="c.firstName"
-          ng-required="true"
-        ></sdx-input>
-      </div>
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input
-          label="Last name"
-          sr-hint="Last name"
-          ng-model="c.lastName"
-          ng-value="c.lastName"
-          ng-required="true"
-        ></sdx-input>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input label="Phone" sr-hint="Phone" ng-model="c.phone" ng-value="c.phone" ng-required="true"></sdx-input>
-      </div>
-      <div class="col-md-6 margin-bottom-2">
-        <scm-reference
-          table="cmn_department"
-          search-fields="name"
-          label="Department"
-          placeholder="Select a department"
-          reference-qualifier="nameISNOTEMPTY"
-          ng-model="c.department"
-          display-fields="name"
-        ></scm-reference>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input label="Title" sr-hint="Title" ng-model="c.title" ng-value="c.title"></sdx-input>
-      </div>
-      <div class="col-md-6 margin-bottom-2">
-        <scm-ref-picker
-          table="core_company"
-          search-fields="name"
-          display-fields="name"
-          display-field="name"
-          order-by="name"
-          order-direction="asc"
-          placeholder="Select the core company"
-          label="Core company"
-          reference-qualifier="nameISNOTEMPTY"
-          ng-model="c.company"
-          page-size="10"
-        ></scm-ref-picker>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12 margin-bottom-2">
-        <sdx-button label="Submit" ng-click="c.submitContact()" ng-disabled="!c.canSubmit"></sdx-button>
-      </div>
-    </div>
-  </div>
 </div>
 ]]></template>
     </sp_widget>

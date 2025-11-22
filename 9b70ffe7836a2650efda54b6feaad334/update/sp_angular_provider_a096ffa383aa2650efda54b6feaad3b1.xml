@@ -5,235 +5,228 @@
  * scmReference Directive
  */
 function scmReference() {
-  "use_strict";
-  return {
-    restrict: "E",
-    replace: true,
-    require: "ngModel",
-    scope: {
-      table: "@",
-      label: "@",
-      placeholder: "@",
-      referenceQualifier: "@?",
-      displayFields: "@?",
-    },
+    'use_strict';
+    return {
+        restrict: 'E',
+        replace: true,
+        require: 'ngModel',
+        scope: {
+            label: '@',
+            placeholder: '@',
+            scmTable: '@',
+            scmReferenceQualifier: '@?',
+            scmDisplayFields: '@?',
+            scmRequired: '=?'
+        },
 
-    template: `
-    <sdx-select
-        label="{{label}}"
-        placeholder="{{placeholder}}"
-        loading="{{isLoading}}"
-        keyboard-behavior="filter"
-        filter-min-length="2">
+        template: `
+            <sdx-select
+                label="{{label}}"
+                placeholder="{{placeholder}}"
+                loading="{{isLoading}}"
+                keyboard-behavior="filter"
+                filter-min-length="2"
+                ng-required="scmRequired">
 
-        <sdx-select-option 
-            ng-repeat="option in options" 
-            value="{{option.value}}">
-            {{option.label}}
-        </sdx-select-option>
-    </sdx-select>
-    `,
-    link: (scope, element, attrs, ngModelCtrl) => {
-      // Function to mark the selected option with the 'selected' attribute
-      function setSelectedOption(value) {
-        setTimeout(() => {
-          const sdxSelectOptions =
-            element[0].querySelectorAll("sdx-select-option");
+                <sdx-select-option 
+                    ng-repeat="option in options" 
+                    value="{{option.value}}">
+                    {{option.label}}
+                </sdx-select-option>
+            </sdx-select>
+        `,
+        link: (scope, element, attrs, ngModelCtrl) => {
+            // Function to mark the selected option with the 'selected' attribute
+            function setSelectedOption(value) {
+                setTimeout(() => {
+                    const sdxSelectOptions = element[0].querySelectorAll('sdx-select-option');
 
-          // Remove 'selected' attribute from all options
-          sdxSelectOptions.forEach((option) => {
-            option.removeAttribute("selected");
-          });
+                    // Remove 'selected' attribute from all options
+                    sdxSelectOptions.forEach(option => {
+                        option.removeAttribute('selected');
+                    });
 
-          // Add 'selected' attribute to the option that matches the value
-          if (value) {
-            sdxSelectOptions.forEach((option) => {
-              if (option.getAttribute("value") === value) {
-                option.setAttribute("selected", "true");
-              }
-            });
-          }
-        }, 50);
-      }
-
-      // Function to set up event listeners for sdx-select component
-      function setupEventListener() {
-        const sdxSelect = element[0].querySelector("sdx-select") || element[0];
-
-        if (sdxSelect) {
-          console.log(
-            "Setting up event listeners for sdx-select and child elements:",
-            sdxSelect
-          );
-
-          sdxSelect.changeCallback = function (value) {
-            setTimeout(() => {
-              scope.$apply(function () {
-                const currentValue = sdxSelect.value;
-                const newValue =
-                  currentValue && currentValue.length > 0
-                    ? currentValue[0]
-                    : null;
-                // Update the ng-model with the new value
-                ngModelCtrl.$setViewValue(newValue);
-                ngModelCtrl.$setDirty();
-                ngModelCtrl.$setTouched();
-                // Mark the selected option in the DOM
-                setSelectedOption(newValue);
-              });
-            }, 100);
-          };
-
-          return true;
-        }
-        return false;
-      }
-
-      // Set up event listener, retry if element not ready
-      if (!setupEventListener()) {
-        setTimeout(() => setupEventListener(), 100);
-      }
-
-      // Set up the ng-model binding for rendering values
-      ngModelCtrl.$render = function () {
-        const modelValue = ngModelCtrl.$viewValue;
-        const sdxSelect = element[0].querySelector("sdx-select") || element[0];
-
-        if (modelValue) {
-          // Set the value property of sdx-select (expects array format)
-          if (sdxSelect && sdxSelect.value !== undefined) {
-            sdxSelect.value = [modelValue];
-          }
-          // Mark the corresponding option as selected in the DOM
-          setSelectedOption(modelValue);
-        } else {
-          // Clear selection when no value
-          if (sdxSelect && sdxSelect.value !== undefined) {
-            sdxSelect.value = [];
-          }
-          // Clear selected option
-          setSelectedOption(null);
-        }
-      };
-
-      // Watch for when options are loaded and there's an initial value
-      scope.$watch("options", function (newOptions) {
-        if (newOptions && newOptions.length > 0 && ngModelCtrl.$viewValue) {
-          // Mark the selected option when options are loaded
-          setSelectedOption(ngModelCtrl.$viewValue);
-        }
-      });
-    },
-    controller: ($scope, $http) => {
-      // Initialize options array for dropdown
-      $scope.options = [];
-
-      // Initialize loading state
-      $scope.isLoading = false;
-
-      // Function to load options from ServiceNow table via REST API
-      $scope.loadOptions = function () {
-        if (!$scope.table) {
-          console.warn("scmReference: table parameter is required");
-          return;
-        }
-
-        // Set loading state to true when starting to load options
-        $scope.isLoading = true;
-
-        // Build the ServiceNow REST API URL for the specified table
-        let apiUrl = "/api/now/table/" + $scope.table;
-
-        // Build query parameters array
-        let params = [];
-
-        // Add reference qualifier for filtering records if provided
-        if ($scope.referenceQualifier) {
-          params.push(
-            "sysparm_query=" + encodeURIComponent($scope.referenceQualifier)
-          );
-        }
-
-        // Include both value and display_value in response
-        params.push("sysparm_display_value=all");
-
-        // Build fields parameter - always include sys_id, plus displayFields if specified
-        let fields = ["sys_id"];
-        if ($scope.displayFields) {
-          fields = fields.concat($scope.displayFields.split(","));
-        }
-        params.push("sysparm_fields=" + encodeURIComponent(fields.join(",")));
-
-        // Limit number of results returned
-        params.push("sysparm_limit=10");
-
-        // Append parameters to URL
-        if (params.length > 0) {
-          apiUrl += "?" + params.join("&");
-        }
-
-        // Make HTTP GET request to ServiceNow REST API
-        $http
-          .get(apiUrl)
-          .then(function (response) {
-            if (response.data && response.data.result) {
-              // Transform API response into options array for dropdown
-              $scope.options = response.data.result.map(function (record) {
-                let label = "";
-
-                if ($scope.displayFields) {
-                  // Handle multiple display fields - concatenate with comma
-                  let displayFields = $scope.displayFields
-                    .split(",")
-                    .map((field) => field.trim());
-                  let displayValues = [];
-
-                  displayFields.forEach(function (field) {
-                    if (record[field] && record[field].display_value) {
-                      displayValues.push(record[field].display_value);
+                    // Add 'selected' attribute to the option that matches the value
+                    if (value) {
+                        sdxSelectOptions.forEach(option => {
+                            if (option.getAttribute('value') === value) {
+                                option.setAttribute('selected', 'true');
+                            }
+                        });
                     }
-                  });
+                }, 50);
+            }
 
-                  label = displayValues.join(", ");
+            // Function to set up event listeners for sdx-select component
+            function setupEventListener() {
+                const sdxSelect = element[0].querySelector('sdx-select') || element[0];
+
+                if (sdxSelect) {
+                    console.debug('Setting up event listeners for sdx-select and child elements:', sdxSelect);
+
+                    sdxSelect.changeCallback = function (value) {
+                        setTimeout(() => {
+                            scope.$apply(function () {
+                                const currentValue = sdxSelect.value;
+                                const newValue = currentValue && currentValue.length > 0 ? currentValue[0] : null;
+                                // Update the ng-model with the new value
+                                ngModelCtrl.$setViewValue(newValue);
+                                ngModelCtrl.$setDirty();
+                                ngModelCtrl.$setTouched();
+                                // Mark the selected option in the DOM
+                                setSelectedOption(newValue);
+                            });
+                        }, 100);
+                    };
+
+                    return true;
+                }
+                return false;
+            }
+
+            // Set up event listener, retry if element not ready
+            if (!setupEventListener()) {
+                setTimeout(() => setupEventListener(), 100);
+            }
+
+            // Set up the ng-model binding for rendering values
+            ngModelCtrl.$render = function () {
+                const modelValue = ngModelCtrl.$viewValue;
+                const sdxSelect = element[0].querySelector('sdx-select') || element[0];
+
+                if (modelValue) {
+                    // Set the value property of sdx-select (expects array format)
+                    if (sdxSelect && sdxSelect.value !== undefined) {
+                        sdxSelect.value = [modelValue];
+                    }
+                    // Mark the corresponding option as selected in the DOM
+                    setSelectedOption(modelValue);
                 } else {
-                  // Fallback to sys_id if no display fields specified
-                  label = record.sys_id.value;
+                    // Clear selection when no value
+                    if (sdxSelect && sdxSelect.value !== undefined) {
+                        sdxSelect.value = [];
+                    }
+                    // Clear selected option
+                    setSelectedOption(null);
+                }
+            };
+
+            // Watch for when options are loaded and there's an initial value
+            scope.$watch('options', function (newOptions) {
+                if (newOptions && newOptions.length > 0 && ngModelCtrl.$viewValue) {
+                    // Mark the selected option when options are loaded
+                    setSelectedOption(ngModelCtrl.$viewValue);
+                }
+            });
+        },
+        controller: ($scope, $http) => {
+            // Initialize options array for dropdown
+            $scope.options = [];
+
+            // Initialize loading state
+            $scope.isLoading = false;
+
+            // Function to load options from ServiceNow table via REST API
+            $scope.loadOptions = function () {
+                if (!$scope.scmTable) {
+                    console.warn('scmReference: table parameter is required');
+                    return;
                 }
 
-                return {
-                  value: record.sys_id.value, // Use sys_id as the value
-                  label: label || record.sys_id.value, // Use constructed label or fallback to sys_id
-                };
-              });
-            }
-          })
-          .catch(function (error) {
-            console.error("scmReference: Error loading options", error);
-          })
-          .finally(function () {
-            // Set loading state to false when request completes (success or error)
-            $scope.isLoading = false;
-          });
-      };
+                // Set loading state to true when starting to load options
+                $scope.isLoading = true;
 
-      // Load options when directive initializes
-      $scope.loadOptions();
-    },
-  };
+                // Build the ServiceNow REST API URL for the specified table
+                let apiUrl = '/api/now/table/' + $scope.scmTable;
+
+                // Build query parameters array
+                let params = [];
+
+                // Add reference qualifier for filtering records if provided
+                if ($scope.scmReferenceQualifier) {
+                    params.push('sysparm_query=' + encodeURIComponent($scope.scmReferenceQualifier));
+                }
+
+                // Include both value and display_value in response
+                params.push('sysparm_display_value=all');
+
+                // Build fields parameter - always include sys_id, plus displayFields if specified
+                let fields = ['sys_id'];
+                if ($scope.scmDisplayFields) {
+                    fields = fields.concat($scope.scmDisplayFields.split(','));
+                }
+                params.push('sysparm_fields=' + encodeURIComponent(fields.join(',')));
+
+                // Limit number of results returned
+                params.push('sysparm_limit=10');
+
+                // Append parameters to URL
+                if (params.length > 0) {
+                    apiUrl += '?' + params.join('&');
+                }
+
+                // Make HTTP GET request to ServiceNow REST API
+                $http
+                    .get(apiUrl)
+                    .then(function (response) {
+                        if (response.data && response.data.result) {
+                            // Transform API response into options array for dropdown
+                            $scope.options = response.data.result.map(function (record) {
+                                let label = '';
+
+                                if ($scope.scmDisplayFields) {
+                                    // Handle multiple display fields - concatenate with comma
+                                    let displayFields = $scope.scmDisplayFields.split(',').map(field => field.trim());
+                                    let displayValues = [];
+
+                                    displayFields.forEach(function (field) {
+                                        if (record[field] && record[field].display_value) {
+                                            displayValues.push(record[field].display_value);
+                                        }
+                                    });
+
+                                    label = displayValues.join(', ');
+                                } else {
+                                    // Fallback to sys_id if no display fields specified
+                                    label = record.sys_id.value;
+                                }
+
+                                return {
+                                    value: record.sys_id.value, // Use sys_id as the value
+                                    label: label || record.sys_id.value // Use constructed label or fallback to sys_id
+                                };
+                            });
+                        }
+                    })
+                    .catch(function (error) {
+                        console.error('scmReference: Error loading options', error);
+                    })
+                    .finally(function () {
+                        // Load empty option on all cases
+                        $scope.options.unshift({ value: '', label: '-- None --' });
+                        // Set loading state to false when request completes (success or error)
+                        $scope.isLoading = false;
+                    });
+            };
+
+            // Load options when directive initializes
+            $scope.loadOptions();
+        }
+    };
 }
 ]]></script>
         <sys_class_name>sp_angular_provider</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:22:59</sys_created_on>
         <sys_id>a096ffa383aa2650efda54b6feaad3b1</sys_id>
-        <sys_mod_count>121</sys_mod_count>
+        <sys_mod_count>127</sys_mod_count>
         <sys_name>scmReference</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_a096ffa383aa2650efda54b6feaad3b1</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-25 18:49:21</sys_updated_on>
+        <sys_updated_on>2025-11-22 19:14:45</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.Logger</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>Logger</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var Logger = Class.create();
+Logger.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.source = options.source || 'Logger';
+
+        this.LEVELS = Constants.LOG_LEVELS;
+
+        this.includeTimeStamp = options.includeTimeStamp || false;
+        this.includeUserInfo = options.includeUserInfo || false;
+        this.includeSessionId = options.includeSessionId || false;
+
+        const propertyName = Constants.SCOPE + '.logger.level';
+        this.instanceLevel = gs.getProperty(propertyName, this.LEVELS.INFO);
+    },
+
+    trace: function (msg) {
+        this._log(this.LEVELS.TRACE, msg);
+    },
+
+    debug: function (msg) {
+        this._log(this.LEVELS.DEBUG, msg);
+    },
+
+    info: function (msg) {
+        this._log(this.LEVELS.INFO, msg);
+    },
+
+    warn: function (msg) {
+        this._log(this.LEVELS.WARN, msg);
+    },
+
+    error: function (msg) {
+        this._log(this.LEVELS.ERROR, msg);
+    },
+
+    fatal: function (msg) {
+        this._log(this.LEVELS.FATAL, msg);
+    },
+
+    includeTimeStamp: function (include) {
+        this.includeTimeStamp = include;
+    },
+
+    includeUserInfo: function (include) {
+        this.includeUserInfo = include;
+    },
+
+    includeSessionId: function (include) {
+        this.includeSessionId = include;
+    },
+
+    _log: function (level, msg) {
+        if (level < this.instanceLevel) {
+            return;
+        }
+
+        const logMessage = this._buildLogMessage(msg, level);
+
+        switch (level) {
+            case this.LEVELS.WARN:
+                gs.warn(logMessage);
+                break;
+            case this.LEVELS.ERROR:
+            case this.LEVELS.FATAL:
+                gs.error(logMessage);
+                break;
+            case this.LEVELS.TRACE:
+            case this.LEVELS.DEBUG:
+                gs.debug(logMessage);
+                break;
+            case this.LEVELS.INFO:
+            default:
+                gs.info(logMessage);
+        }
+    },
+
+    _buildLogMessage: function (msg, level) {
+        const data = {
+            transactionId: this.transactionId,
+            level: level,
+            source: this.source,
+            message: msg
+        };
+
+        if (this.includeTimeStamp) {
+            data.timestamp = new GlideDateTime().getDisplayValue();
+        }
+
+        if (this.includeUserInfo) {
+            data.user = {
+                sysId: gs.getUserID(),
+                userName: gs.getUserName()
+            };
+        }
+
+        if (this.includeSessionId) {
+            data.sessionId = gs.getSessionID();
+        }
+
+        return this._formatMessage(data, 0);
+    },
+
+    _formatMessage(value, indentLevel) {
+        const indentChar = '\t'; // alternative '  '
+        const indent = indentChar.repeat(indentLevel);
+        const nextIndent = indentChar.repeat(indentLevel + 1);
+
+        // null (typeof null === "object")
+        if (value === null) {
+            return 'null';
+        }
+
+        // Arrays
+        if (Array.isArray(value)) {
+            if (value.length === 0) return '[]';
+
+            const parts = value.map((item, index) => {
+                const formatted = this._formatMessage(item, indentLevel + 1);
+                const comma = index < value.length - 1 ? ',' : '';
+                return `${nextIndent}${formatted}${comma}`;
+            });
+
+            return `[\n${parts.join('\n')}\n${indent}]`;
+        }
+
+        // Objects
+        if (typeof value === 'object') {
+            const keys = Object.keys(value);
+            if (keys.length === 0) return '{}';
+
+            const parts = keys.map((key, index) => {
+                const val = value[key];
+                const formatted = this._formatMessage(val, indentLevel + 1);
+                const comma = index < keys.length - 1 ? ',' : '';
+
+                // if the key is a valid identifier, we leave it as is
+                // if not, we put it in single quotes: {'weird key': 1}
+                const isValidIdentifier = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key);
+                const printedKey = isValidIdentifier ? key : `'${key.replace(/'/g, "\\'")}'`;
+
+                return `${nextIndent}${printedKey}: ${formatted}${comma}`;
+            });
+
+            return `{\n${parts.join('\n')}\n${indent}}`;
+        }
+
+        // Strings
+        if (typeof value === 'string') {
+            // Escape single quotes and backslashes
+            const escaped = value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            return `'${escaped}'`;
+        }
+
+        // Numbers and Booleans
+        if (typeof value === 'number' || typeof value === 'boolean') {
+            return String(value);
+        }
+
+        if (typeof value === 'undefined') {
+            return 'undefined';
+        }
+
+        // Fallback for other types (functions, symbols, etc.)
+        return String(value);
+    },
+
+    type: 'Logger'
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-11-22 16:03:56</sys_created_on>
+        <sys_id>accb99b2939d3a90e393f6fa3d03d68e</sys_id>
+        <sys_mod_count>21</sys_mod_count>
+        <sys_name>Logger</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_accb99b2939d3a90e393f6fa3d03d68e</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-11-22 18:19:49</sys_updated_on>
+    </sys_script_include>
+</record_update>

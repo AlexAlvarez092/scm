@@ -24,32 +24,32 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:18:12</sys_created_on>
         <sys_id>2675f36383aa2650efda54b6feaad3b4</sys_id>
-        <sys_mod_count>9</sys_mod_count>
+        <sys_mod_count>14</sys_mod_count>
         <sys_name>incidents-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_instance_2675f36383aa2650efda54b6feaad3b4</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-08-28 10:44:48</sys_updated_on>
+        <sys_updated_on>2025-11-22 22:18:58</sys_updated_on>
         <title>incidents-table</title>
         <url/>
         <widget_parameters><![CDATA[{
-  "table": "incident",
-  "static_query": "active=true",
-  "default_fields": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Short description\", \"name\": \"short_description\" }]",
-  "page_title": "Incidents",
-  "order_by": "number",
-  "order_direction": "DESC",
-  "limit": "10",
-  "fields_preference_name": "scm_portal.incidents.fields",
-  "order_by_preference_name": "scm_portal.incidents.order_by",
-  "order_direction_preference_name": "scm_portal.incidents.order_direction",
-  "limit_preference_name": "scm_portal.incidents.limit",
-  "detail_view_page": "incident_details",
-  "all_fields_available": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Short description\", \"name\": \"short_description\" }, { \"label\": \"State\", \"name\": \"state\" }, { \"label\": \"Caller\", \"name\": \"caller_id\" }, { \"label\": \"Opened\", \"name\": \"opened_at\" }, { \"label\": \"Urgency\", \"name\": \"urgency\" }]",
-  "enable_filters": "true",
-  "filter_fields": "[{ \"field\": \"state\", \"label\": \"State\", \"type\": \"choice\" }, { \"field\": \"urgency\", \"label\": \"Urgency\", \"type\": \"choice\" }, { \"field\": \"caller_id\", \"label\": \"Caller\", \"type\": \"reference\", \"referenceTable\": \"sys_user\", \"searchFields\": \"name,first_name,last_name,user_name,email\", \"referenceQualifier\": \"active=true\" }]"
+    "table": "incident",
+    "static_query": "active=true",
+    "default_fields": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Short description\", \"name\": \"short_description\" }]",
+    "page_title": "Incidents",
+    "order_by": "number",
+    "order_direction": "DESC",
+    "limit": "10",
+    "fields_preference_name": "scm_portal.incidents.fields",
+    "order_by_preference_name": "scm_portal.incidents.order_by",
+    "order_direction_preference_name": "scm_portal.incidents.order_direction",
+    "limit_preference_name": "scm_portal.incidents.limit",
+    "detail_view_page": "incident_details",
+    "all_fields_available": "[{ \"label\": \"Number\", \"name\": \"number\" }, { \"label\": \"Short description\", \"name\": \"short_description\" }, { \"label\": \"State\", \"name\": \"state\" }, { \"label\": \"Caller\", \"name\": \"caller_id\" }, { \"label\": \"Opened\", \"name\": \"opened_at\" }, { \"label\": \"Urgency\", \"name\": \"urgency\" }]",
+    "enable_filters": "true",
+    "filter_fields": "[{ \"field\": \"state\", \"label\": \"State\", \"type\": \"choice\" }, { \"field\": \"urgency\", \"label\": \"Urgency\", \"type\": \"choice\" }, { \"field\": \"caller_id\", \"label\": \"Caller\", \"type\": \"reference\", \"referenceTable\": \"sys_user\", \"displayField\": \"name\", \"referenceQualifier\": \"active=true\" }]"
 }
 ]]></widget_parameters>
     </sp_instance>

@@ -152,44 +152,44 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 17:01:41</sys_created_on>
         <sys_id>08ec6d5793732a10e393f6fa3d03d629</sys_id>
-        <sys_mod_count>159</sys_mod_count>
+        <sys_mod_count>160</sys_mod_count>
         <sys_name>scm-flyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_08ec6d5793732a10e393f6fa3d03d629</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-27 20:34:44</sys_updated_on>
+        <sys_updated_on>2025-11-21 23:41:23</sys_updated_on>
         <template><![CDATA[<div id="flyover-{{::data.widgetUid}}" class="scm-flyover">
-	<div class="scm-flyover-panel-overlay"></div>
-	<div
-		class="scm-flyover-panel-content"
-		ng-class="{'active': c.data.isActive == 'active'}"
-		ng-attr-style="{{overrideSize()}}"
-	>
-		<div class="scm-flyover-header">
-			<sdx-icon
-				class="sc-navy scm-flyover-close-button"
-				icon-name="icon-close"
-				size="3"
-				ng-click="c.closeFlyover()"
-			></sdx-icon>
-			<h2 nf-if="data.title" class="scm-flyover-title">{{::data.title}}</h2>
-			<h3 ng-if="data.subTitle" class="scm-flyover-subtitle">{{::data.subTitle}}</h3>
-		</div>
-		<div class="scm-flyover-body">
-			<sdx-loading-spinner
-				ng-if="c.loadingActive"
-				id="spinner"
-				size="large"
-				sr-hint="Loading. Please wait."
-			></sdx-loading-spinner>
-			<!-- Main Widget -->
-			<div ng-if="data.widget">
-				<sp-widget widget="data.widget"></sp-widget>
-			</div>
-		</div>
-	</div>
+    <div class="scm-flyover-panel-overlay"></div>
+    <div
+        class="scm-flyover-panel-content"
+        ng-class="{'active': c.data.isActive == 'active'}"
+        ng-attr-style="{{overrideSize()}}"
+    >
+        <div class="scm-flyover-header">
+            <sdx-icon
+                class="sc-navy scm-flyover-close-button"
+                icon-name="icon-close"
+                size="3"
+                ng-click="c.closeFlyover()"
+            ></sdx-icon>
+            <h2 nf-if="data.title" class="scm-flyover-title" ng-bind="::data.title"></h2>
+            <h3 ng-if="data.subTitle" class="scm-flyover-subtitle" ng-bind="::data.subTitle"></h3>
+        </div>
+        <div class="scm-flyover-body">
+            <sdx-loading-spinner
+                ng-if="c.loadingActive"
+                id="spinner"
+                size="large"
+                sr-hint="Loading. Please wait."
+            ></sdx-loading-spinner>
+            <!-- Main Widget -->
+            <div ng-if="data.widget">
+                <sp-widget widget="data.widget"></sp-widget>
+            </div>
+        </div>
+    </div>
 </div>
 ]]></template>
     </sp_widget>

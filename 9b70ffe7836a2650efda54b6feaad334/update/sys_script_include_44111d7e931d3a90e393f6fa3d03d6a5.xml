@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.ContactHelper</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>ContactHelper</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var ContactHelper = Class.create();
+ContactHelper.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.CONTACT_TABLE = 'sys_user';
+        this.MANDATORY_FIELDS = ['user_name', 'first_name', 'last_name', 'email', 'phone', 'department'];
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true
+        });
+    },
+
+    /**
+     * @returns {Array<String>}
+     */
+    getMandatoryFields: function () {
+        return this.MANDATORY_FIELDS;
+    },
+
+    /**
+     * @param {String} sysId
+     * @returns {GlideRecord|null}
+     */
+    getRecordBySysId: function (sysId) {
+        if (!sysId || typeof sysId !== 'string' || sysId.length !== 32) {
+            this.logger.warn({
+                method: 'getRecordBySysId',
+                sysId: sysId,
+                message: 'Invalid sysId provided'
+            });
+            throw new Error('Invalid sysId provided: ' + JSON.stringify(sysId));
+        }
+
+        const grContact = new GlideRecord(this.CONTACT_TABLE);
+        if (grContact.get(sysId)) {
+            return grContact;
+        }
+
+        this.logger.info({
+            method: 'getRecordBySysId',
+            sysId: sysId,
+            message: 'No record found for sysId'
+        });
+        return null;
+    },
+
+    /**
+     * @returns {String}
+     */
+    getTableName: function () {
+        return this.CONTACT_TABLE;
+    },
+
+    /**
+     * @param {Object} data
+     * @returns {Boolean}
+     */
+    validateContactData: function (data) {
+        // TODO
+        this.logger.debug({
+            method: 'validateContactData',
+            data: data,
+            message: 'Data to validate'
+        });
+        return true;
+    },
+
+    /**
+     * @param {String} sysId
+     * @param {Object} data
+     * @return {Boolean}
+     */
+    saveDataToRecord: function (sysId, data) {
+        try {
+            const grContact = this.getRecordBySysId(sysId);
+            if (!grContact || !grContact.isValidRecord()) {
+                this.logger.warn({
+                    method: 'saveDataToRecord',
+                    sysId: sysId,
+                    data: data,
+                    message: 'Invalid or non-existent record for sysId'
+                });
+                throw new Error('Invalid or non-existent record for sysId: ' + JSON.stringify(sysId));
+            }
+
+            for (const field in data) {
+                if (field === 'sys_id') {
+                    continue;
+                }
+                if (!grContact.isValidField(field)) {
+                    this.logger.warn({
+                        method: 'saveDataToRecord',
+                        sysId: sysId,
+                        data: data,
+                        field: field,
+                        message: 'Invalid field'
+                    });
+                    continue;
+                }
+
+                const value = data[field];
+                if (value === null || value === undefined || typeof value !== 'string') {
+                    this.logger.warn({
+                        method: 'saveDataToRecord',
+                        sysId: sysId,
+                        field: field,
+                        value: value,
+                        message: 'Skipping invalid value for field'
+                    });
+                    continue;
+                }
+
+                grContact.setValue(field, value);
+            }
+
+            const isUpdated = !!grContact.update();
+            if (isUpdated) {
+                this.logger.info({
+                    method: 'saveDataToRecord',
+                    sysId: sysId,
+                    data: data,
+                    message: 'Contact record updated successfully'
+                });
+                return true;
+            } else {
+                throw new Error('Failed to update executing update() on GlideRecord');
+            }
+        } catch (error) {
+            this.logger.error({
+                method: 'saveDataToRecord',
+                sysId: sysId,
+                data: data,
+                message: 'Error saving contact record: ' + error.message
+            });
+            throw new Error('Error saving contact record: ' + error.message);
+        }
+    },
+
+    type: 'ContactHelper'
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-11-22 15:17:13</sys_created_on>
+        <sys_id>44111d7e931d3a90e393f6fa3d03d6a5</sys_id>
+        <sys_mod_count>20</sys_mod_count>
+        <sys_name>ContactHelper</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_44111d7e931d3a90e393f6fa3d03d6a5</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-11-22 19:07:16</sys_updated_on>
+    </sys_script_include>
+</record_update>

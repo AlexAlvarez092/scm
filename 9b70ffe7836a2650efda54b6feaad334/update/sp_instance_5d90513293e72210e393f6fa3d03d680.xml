@@ -38,33 +38,33 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-27 15:25:06</sys_created_on>
         <sys_id>5d90513293e72210e393f6fa3d03d680</sys_id>
-        <sys_mod_count>12</sys_mod_count>
+        <sys_mod_count>14</sys_mod_count>
         <sys_name>contacts-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_instance_5d90513293e72210e393f6fa3d03d680</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-25 18:51:00</sys_updated_on>
+        <sys_updated_on>2025-11-22 22:55:09</sys_updated_on>
         <title>contacts-table</title>
         <url/>
         <widget_parameters><![CDATA[{
-	"table": "sys_user",
-	"static_query": "active=true",
-	"show_new_record_button": "true",
-	"default_fields": "[{ \"label\": \"User ID\", \"name\": \"user_name\" }, { \"label\": \"First name\", \"name\": \"first_name\" }, { \"label\": \"Last name\", \"name\": \"last_name\" }, { \"label\": \"Email\", \"name\": \"email\" }, { \"label\": \"Business Phone\", \"name\": \"phone\" }, { \"label\": \"Title\", \"name\": \"title\" }]",
-	"page_title": "Contacts",
-	"order_by": "user_name",
-	"order_direction": "ASC",
-	"limit": "10",
-	"fields_preference_name": "scm_portal.contacts.fields",
-	"order_by_preference_name": "scm_portal.contacts.order_by",
-	"order_direction_preference_name": "scm_portal.contacts.order_direction",
-	"limit_preference_name": "scm_portal.contacts.limit",
-	"detail_view_page": "contact_details",
-	"all_fields_available": "[{ \"label\": \"User ID\", \"name\": \"user_name\" }, { \"label\": \"First name\", \"name\": \"first_name\" }, { \"label\": \"Last name\", \"name\": \"last_name\" }, { \"label\": \"Email\", \"name\": \"email\" }, { \"label\": \"Business Phone\", \"name\": \"phone\" }, { \"label\": \"Title\", \"name\": \"title\" }, { \"label\": \"Department\", \"name\": \"department\" }, { \"label\": \"Company\", \"name\": \"company¨\" }]",
-	"enable_filters": "true",
-	"filter_fields": "[{ \"field\": \"department\", \"label\": \"Department\", \"type\": \"reference\", \"referenceTable\": \"cmn_department\", \"displayFields\": \"name\", \"referenceQualifier\": \"nameISNOTEMPTY^idISNOTEMPTY\", \"placeholder\": \"Select a department\" }]"
+    "table": "sys_user",
+    "static_query": "active=true",
+    "show_new_record_button": "true",
+    "default_fields": "[{ \"label\": \"User ID\", \"name\": \"user_name\" }, { \"label\": \"First name\", \"name\": \"first_name\" }, { \"label\": \"Last name\", \"name\": \"last_name\" }, { \"label\": \"Email\", \"name\": \"email\" }, { \"label\": \"Business Phone\", \"name\": \"phone\" }, { \"label\": \"Title\", \"name\": \"title\" }]",
+    "page_title": "Contacts",
+    "order_by": "user_name",
+    "order_direction": "ASC",
+    "limit": "10",
+    "fields_preference_name": "scm_portal.contacts.fields",
+    "order_by_preference_name": "scm_portal.contacts.order_by",
+    "order_direction_preference_name": "scm_portal.contacts.order_direction",
+    "limit_preference_name": "scm_portal.contacts.limit",
+    "detail_view_page": "contact_details",
+    "all_fields_available": "[{ \"label\": \"User ID\", \"name\": \"user_name\" }, { \"label\": \"First name\", \"name\": \"first_name\" }, { \"label\": \"Last name\", \"name\": \"last_name\" }, { \"label\": \"Email\", \"name\": \"email\" }, { \"label\": \"Business Phone\", \"name\": \"phone\" }, { \"label\": \"Title\", \"name\": \"title\" }, { \"label\": \"Department\", \"name\": \"department\" }, { \"label\": \"Company\", \"name\": \"company¨\" }]",
+    "enable_filters": "true",
+    "filter_fields": "[{ \"field\": \"department\", \"label\": \"Department\", \"type\": \"reference\", \"referenceTable\": \"cmn_department\", \"displayFields\": \"name;id\", \"displayField\": \"name\", \"searchFields\": \"name;id\", \"referenceQualifier\": \"nameISNOTEMPTY^idISNOTEMPTY\", \"placeholder\": \"Select a department\", \"pageSize\": \"10\", \"minimumInputLength\": \"2\", \"orderBy\": \"name\", \"orderDirection\": \"desc\" }]"
 }
 ]]></widget_parameters>
     </sp_instance>
