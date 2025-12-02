@@ -118,7 +118,8 @@
         c.revertingListView = true;
         c.server
             .get({
-                action: 'revertListViewToDefault'
+                action: 'revertListViewToDefault',
+                transactionId: c.data.transactionId
             })
             .then(response => {
                 c.data.fields = response.data.fields;
@@ -138,7 +139,6 @@
     };
 
     c.applyFilters = function () {
-        console.debug('Current filters before applying:', c.filters);
         c.appliedFilters = c.filters
             .filter(filter => {
                 return filter.value && filter.value !== '';
@@ -157,7 +157,6 @@
                     id: filter.id
                 };
             });
-        console.debug('Applied filters:', c.appliedFilters);
 
         c.page = 1;
         getTotalRecords();
@@ -178,7 +177,8 @@
     function getTableColumns() {
         return c.server
             .get({
-                action: 'getTableColumns'
+                action: 'getTableColumns',
+                transactionId: c.data.transactionId
             })
             .then(response => {
                 c.data.fields = response.data.fields;
@@ -187,15 +187,14 @@
 
     function getTableData() {
         c.showSpinner = true;
-        console.log('Sending filters to server:', c.appliedFilters);
         c.server
             .get({
                 action: 'getTableData',
+                transactionId: c.data.transactionId,
                 page: c.page,
                 filters: c.appliedFilters || []
             })
             .then(response => {
-                console.log('Server response:', response.data);
                 c.records = response.data.records;
                 c.data.orderBy = response.data.orderBy;
                 c.data.orderDirection = response.data.orderDirection;
@@ -204,10 +203,10 @@
     }
 
     function getTotalRecords() {
-        console.log('Getting total records with filters:', c.appliedFilters);
         c.server
             .get({
                 action: 'getTotalRecords',
+                transactionId: c.data.transactionId,
                 filters: c.appliedFilters || []
             })
             .then(response => {
@@ -260,6 +259,7 @@
         c.server
             .get({
                 action: 'getChoiceValues',
+                transactionId: c.data.transactionId,
                 fieldName: filter.field
             })
             .then(response => {
@@ -274,6 +274,7 @@
     function savePreference(preferenceName, preferenceValue) {
         return c.server.get({
             action: 'savePreference',
+            transactionId: c.data.transactionId,
             preferenceName: preferenceName,
             preferenceValue: preferenceValue
         });
@@ -284,6 +285,7 @@
         c.server
             .get({
                 action: 'getAppliedFiltersInfoMessage',
+                transactionId: c.data.transactionId,
                 appliedFilters: c.appliedFilters || []
             })
             .then(response => {
@@ -324,209 +326,209 @@
 ]]></client_script>
         <controller_as>c</controller_as>
         <css>#table-header {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-#table-wrapper {
-  width: 100%;
-  overflow-x: auto;
-
-  table {
-    width: 100%;
-    min-width: max-content;
-    border-collapse: separate;
-    border-spacing: 0 var(--scm-spacing-2);
-    table-layout: fixed;
-
-    thead {
-      tr {
-        background-color: var(--scm-color-horizon);
-        height: var(--scm-spacing-5);
-        border-radius: var(--scm-border-radius-small);
-
-        th {
-          margin: 0;
-          text-align: left;
-          vertical-align: middle;
-          font-weight: var(--scm-font-weight-semibold);
-          font-size: var(--scm-icon-size-xsmall);
-          color: var(--scm-color-gray);
-          background-color: var(--scm-color-horizon);
-          height: var(--scm-spacing-5);
-          width: 200px;
-          min-width: 200px;
-          padding-left: var(--scm-padding-2);
-          padding-right: var(--scm-padding-2);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-
-          &amp;:first-child {
-            border-top-left-radius: var(--scm-border-radius-small);
-            border-bottom-left-radius: var(--scm-border-radius-small);
-          }
-
-          &amp;:last-child {
-            border-top-right-radius: var(--scm-border-radius-small);
-            border-bottom-right-radius: var(--scm-border-radius-small);
-          }
-        }
-      }
-    }
-
-    tbody {
-      tr {
-        &amp;:hover {
-          td {
-            background-color: var(--scm-color-blue-tint-3);
-
-            &amp;:hover {
-              background-color: var(--scm-color-blue-tint-2);
-            }
-          }
-        }
-
-        td {
-          margin: 0;
-          text-align: left;
-          vertical-align: middle;
-          font-weight: var(--scm-font-weight-regular);
-          font-size: var(--scm-icon-size-xsmall);
-          background-color: var(--scm-color-sc-white);
-          height: var(--scm-spacing-5);
-          width: 200px;
-          min-width: 200px;
-          padding-left: var(--scm-padding-2);
-          padding-right: var(--scm-padding-2);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          a {
-            text-decoration: none !important;
-            border: none !important;
-            outline: none !important;
-            box-shadow: none !important;
-            color: inherit !important;
-
-            &amp;:visited,
-            &amp;:focus,
-            &amp;:active {
-              text-decoration: none !important;
-              border: none !important;
-              outline: none !important;
-              box-shadow: none !important;
-              color: inherit !important;
-            }
-
-            &amp;:hover {
-              text-decoration: none !important;
-              border: none !important;
-              outline: none !important;
-              box-shadow: none !important;
-              font-weight: var(--scm-font-weight-semibold);
-              color: inherit !important;
-            }
-          }
-
-          &amp;:first-child {
-            border-top-left-radius: var(--scm-border-radius-medium);
-            border-bottom-left-radius: var(--scm-border-radius-medium);
-          }
-
-          &amp;:last-child {
-            border-top-right-radius: var(--scm-border-radius-medium);
-            border-bottom-right-radius: var(--scm-border-radius-medium);
-          }
-        }
-      }
-    }
-  }
-}
-
-#controller-wrapper {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  padding-left: var(--scm-padding-2);
-  padding-right: var(--scm-padding-2);
-
-  div {
-    display: flex;
-    align-items: center;
-    gap: var(--scm-spacing-2);
-  }
-
-  #metadata-wrapper {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: space-between;
+}
+
+#table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+
+    table {
+        width: 100%;
+        min-width: max-content;
+        border-collapse: separate;
+        border-spacing: 0 var(--scm-spacing-2);
+        table-layout: fixed;
+
+        thead {
+            tr {
+                background-color: var(--scm-color-horizon);
+                height: var(--scm-spacing-5);
+                border-radius: var(--scm-border-radius-small);
+
+                th {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-semibold);
+                    font-size: var(--scm-icon-size-xsmall);
+                    color: var(--scm-color-gray);
+                    background-color: var(--scm-color-horizon);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-small);
+                        border-bottom-left-radius: var(--scm-border-radius-small);
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(--scm-border-radius-small);
+                        border-bottom-right-radius: var(--scm-border-radius-small);
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                &amp;:hover {
+                    td {
+                        background-color: var(--scm-color-blue-tint-3);
+
+                        &amp;:hover {
+                            background-color: var(--scm-color-blue-tint-2);
+                        }
+                    }
+                }
+
+                td {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-regular);
+                    font-size: var(--scm-icon-size-xsmall);
+                    background-color: var(--scm-color-sc-white);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    a {
+                        text-decoration: none !important;
+                        border: none !important;
+                        outline: none !important;
+                        box-shadow: none !important;
+                        color: inherit !important;
+
+                        &amp;:visited,
+                        &amp;:focus,
+                        &amp;:active {
+                            text-decoration: none !important;
+                            border: none !important;
+                            outline: none !important;
+                            box-shadow: none !important;
+                            color: inherit !important;
+                        }
+
+                        &amp;:hover {
+                            text-decoration: none !important;
+                            border: none !important;
+                            outline: none !important;
+                            box-shadow: none !important;
+                            font-weight: var(--scm-font-weight-semibold);
+                            color: inherit !important;
+                        }
+                    }
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-medium);
+                        border-bottom-left-radius: var(--scm-border-radius-medium);
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(--scm-border-radius-medium);
+                        border-bottom-right-radius: var(--scm-border-radius-medium);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#controller-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: var(--scm-padding-2);
+    padding-right: var(--scm-padding-2);
 
     div {
-      color: var(--scm-color-gray);
-      font-weight: var(--scm-font-weight-light);
-      font-size: var(--scm-font-size-xsmall);
-      margin-right: var(--scm-spacing-4);
+        display: flex;
+        align-items: center;
+        gap: var(--scm-spacing-2);
     }
-  }
 
-  sdx-dialog sdx-dialog-toggle sdx-icon {
-    color: var(--scm-color-int-blue);
-    cursor: pointer;
-  }
+    #metadata-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
 
-  sdx-dialog sdx-dialog-toggle sdx-icon:hover {
-    color: var(--scm-color-int-blue-active);
-  }
+        div {
+            color: var(--scm-color-gray);
+            font-weight: var(--scm-font-weight-light);
+            font-size: var(--scm-font-size-xsmall);
+            margin-right: var(--scm-spacing-4);
+        }
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon {
+        color: var(--scm-color-int-blue);
+        cursor: pointer;
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon:hover {
+        color: var(--scm-color-int-blue-active);
+    }
 }
 
 #filters-wrapper {
-  margin-top: var(--scm-spacing-6);
-  margin-bottom: var(--scm-spacing-6);
+    margin-top: var(--scm-spacing-6);
+    margin-bottom: var(--scm-spacing-6);
 
-  #filters-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--scm-spacing-3);
-    gap: var(--scm-spacing-4);
-  }
+    #filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-3);
+        gap: var(--scm-spacing-4);
+    }
 
-  #filters-form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: var(--scm-spacing-3);
-  }
+    #filters-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--scm-spacing-3);
+    }
 }
 
 #applied-filters-wrapper {
-  margin-top: var(--scm-spacing-3);
-  margin-bottom: var(--scm-spacing-3);
+    margin-top: var(--scm-spacing-3);
+    margin-bottom: var(--scm-spacing-3);
 
-  #applied-filters-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--scm-spacing-1);
-    font-weight: var(--scm-font-weight-semibold);
-    font-size: var(--scm-icon-size-xsmall);
-    color: var(--scm-color-gray);
-  }
-
-  #applied-filters-list {
-    color: var(--scm-color-gray);
-    font-weight: var(--scm-font-weight-light);
-    font-size: var(--scm-font-size-xsmall);
-
-    .filter-separator {
-      margin: 0 var(--scm-spacing-2);
-      font-weight: var(--scm-font-weight-semibold);
-      color: var(--scm-color-int-blue);
+    #applied-filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-1);
+        font-weight: var(--scm-font-weight-semibold);
+        font-size: var(--scm-icon-size-xsmall);
+        color: var(--scm-color-gray);
     }
-  }
+
+    #applied-filters-list {
+        color: var(--scm-color-gray);
+        font-weight: var(--scm-font-weight-light);
+        font-size: var(--scm-font-size-xsmall);
+
+        .filter-separator {
+            margin: 0 var(--scm-spacing-2);
+            font-weight: var(--scm-font-weight-semibold);
+            color: var(--scm-color-int-blue);
+        }
+    }
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -538,28 +540,21 @@
         <id>scm-table</id>
         <internal>false</internal>
         <link><![CDATA[function link(scope, element, attrs, controller) {
-  $(document).on("keydown", function (event) {
-    const settingsDialogElement = document.getElementById(
-      controller.settingsDialogId
-    );
-    const filtersDialogElement = document.getElementById(
-      controller.filtersDialogId
-    );
-    console.log(event.keyCode);
-    switch (event.keyCode) {
-      case 27: // escape
-        console.log("Escape key pressed");
-        if (settingsDialogElement) settingsDialogElement.close();
-        if (filtersDialogElement) filtersDialogElement.close();
-        break;
+    $(document).on('keydown', function (event) {
+        const settingsDialogElement = document.getElementById(controller.settingsDialogId);
+        const filtersDialogElement = document.getElementById(controller.filtersDialogId);
+        switch (event.keyCode) {
+            case 27: // escape
+                if (settingsDialogElement) settingsDialogElement.close();
+                if (filtersDialogElement) filtersDialogElement.close();
+                break;
 
-      case 13: // enter
-        console.log("Enter key pressed");
-        if (settingsDialogElement) controller.saveListView();
-        if (filtersDialogElement) controller.applyFilters();
-        break;
-    }
-  });
+            case 13: // enter
+                if (settingsDialogElement) controller.saveListView();
+                if (filtersDialogElement) controller.applyFilters();
+                break;
+        }
+    });
 }
 ]]></link>
         <name>scm-table</name>
@@ -653,7 +648,16 @@
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-    // TODO: Logger
+    const transactionId = input?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
+
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'scm-table.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
     const tableName = options.table;
 
     if (input && input.action === 'savePreference') {
@@ -661,6 +665,13 @@
         const preferenceValue = input.preferenceValue;
 
         gs.getUser().savePreference(preferenceName, String(preferenceValue));
+
+        logger.debug({
+            action: 'savePreference',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
@@ -691,6 +702,13 @@
         }
 
         data.appliedFiltersHtml = htmlString;
+
+        logger.debug({
+            action: 'getAppliedFiltersInfoMessage',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
@@ -708,6 +726,13 @@
 
         gaRecord.next();
         data.totalRecords = gaRecord.getAggregate('COUNT');
+
+        logger.debug({
+            action: 'getTotalRecords',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
@@ -738,6 +763,14 @@
         } while (choices.length === 0 && iterator < hierarchy.length);
 
         data.choiceValues = choices;
+
+        logger.debug({
+            action: 'getChoiceValues',
+            input: input,
+            data: data,
+            options: options
+        });
+
         return;
     }
 
@@ -751,15 +784,29 @@
             data.fields = JSON.parse(options.default_fields);
         }
 
+        logger.debug({
+            action: 'getTableColumns',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
     if (input && input.action === 'revertListViewToDefault') {
         gs.getUser().savePreference(data.fieldsPreferenceName, options.default_fields);
         data.fields = JSON.parse(options.default_fields);
+
+        logger.debug({
+            action: 'revertListViewToDefault',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
+    data.idField = options.id_field || 'sys_id';
     data.allFieldsAvailable = JSON.parse(options.all_fields_available);
     data.orderByPreferenceName = options.order_by_preference_name;
     data.orderDirectionPreferenceName = options.order_direction_preference_name;
@@ -815,32 +862,39 @@
         }
 
         data.records = records;
+
+        logger.debug({
+            action: 'getTableData',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
 
-    function applyFilters(grRecord, filters) {
-        gs.info('SCM Table: Applying filters: ' + JSON.stringify(filters));
+    logger.debug({
+        input: input,
+        data: data,
+        options: options
+    });
 
+    function applyFilters(grRecord, filters) {
         // Apply static query first (always applied)
         if (data.staticQuery) {
             grRecord.addEncodedQuery(data.staticQuery);
-            gs.info('SCM Table: Applied static query: ' + data.staticQuery);
         }
 
         // Apply user filters
         for (const filter of filters) {
-            gs.info('SCM Table: Processing filter: ' + JSON.stringify(filter));
             switch (filter.type) {
                 case 'choice':
                     grRecord.addQuery(filter.field, filter.value);
-                    gs.info('SCM Table: Applied choice filter: ' + filter.field + ' = ' + filter.value);
                     break;
                 case 'reference':
                     grRecord.addQuery(filter.field, filter.value);
-                    gs.info('SCM Table: Applied reference filter: ' + filter.field + ' = ' + filter.value);
                     break;
                 default:
-                    gs.warn('SCM Table: Unknown filter type: ' + filter.type);
+                    logger.warn('SCM Table: Unknown filter type: ' + filter.type);
             }
         }
     }
@@ -851,14 +905,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:21:31</sys_created_on>
         <sys_id>c736f3a383aa2650efda54b6feaad3f2</sys_id>
-        <sys_mod_count>111</sys_mod_count>
+        <sys_mod_count>128</sys_mod_count>
         <sys_name>scm-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_c736f3a383aa2650efda54b6feaad3f2</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 23:02:39</sys_updated_on>
+        <sys_updated_on>2025-12-01 22:42:55</sys_updated_on>
         <template><![CDATA[<div>
     <div id="table-header">
         <h1 class="h1" ng-bind="::data.title"></h1>
@@ -871,408 +925,12 @@
         ></sdx-button>
     </div>
     <div id="controller-wrapper">
-        <!-- Settings & filters -->
         <div>
-            <!-- Settings -->
-            <sdx-dialog
-                label="Please, choose the columns to include in the list"
-                id="{{c.settingsDialogId}}"
-                class="align-header-center"
-            >
-                <sdx-dialog-toggle>
-                    <sdx-icon
-                        icon-name="icon-settings"
-                        size="1"
-                        id="scm-table-columns-selector-settings-icon"
-                        title="Select the columns to include in the list"
-                    ></sdx-icon>
-                </sdx-dialog-toggle>
-                <sdx-dialog-content>
-                    <!-- Fields selected / unselected -->
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: row;
-                            align-items: stretch;
-                            justify-content: space-between;
-                            height: 400px;
-                        "
-                    >
-                        <!-- Not selected fields -->
-                        <div
-                            style="
-                                flex: 0 0 40%;
-                                box-sizing: border-box;
-                                padding: var(--scm-padding-2);
-                                display: flex;
-                                flex-direction: column;
-                                height: 100%;
-                            "
-                        >
-                            <h3
-                                style="
-                                    font-weight: var(--scm-font-weight-regular);
-                                    font-size: var(--scm-font-size-medium);
-                                    color: var(--scm-color-gray-tint-4);
-                                    margin-bottom: var(--scm-spacing-1);
-                                    flex: 0 0 auto;
-                                "
-                                ng-bind="::'Available fields'"
-                            ></h3>
-                            <ul
-                                style="
-                                    list-style: none;
-                                    padding: 0;
-                                    margin: 0;
-                                    flex: 1 1 0;
-                                    border: var(--scm-border-width-thin) var(--scm-border-style-default)
-                                        var(--scm-color-gray-tint-4);
-                                    border-radius: 5px;
-                                    overflow-y: auto;
-                                "
-                            >
-                                <li
-                                    style="padding: var(--scm-padding-2) var(--scm-padding-3); cursor: pointer"
-                                    ng-repeat="field in c.unselectedFieldsList"
-                                    ng-click="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null;"
-                                    ng-dblclick="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null; c.addField();"
-                                    ng-class="{'scm-table-fields-selector-selected': c.fieldToAdd.name === field.name}"
-                                    ng-bind="field.label"
-                                ></li>
-                            </ul>
-                        </div>
-                        <!-- Move to selected / available buttons -->
-                        <div
-                            style="
-                                display: flex;
-                                flex: 0 0 10%;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                                box-sizing: border-box;
-                                padding: var(--scm-padding-2);
-                            "
-                        >
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-chevron-normal-right"
-                                icon-size="3"
-                                ng-click="c.addField()"
-                                ng-disabled="!c.fieldToAdd"
-                            ></sdx-button>
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-chevron-normal-left"
-                                icon-size="3"
-                                ng-click="c.removeField()"
-                                ng-disabled="!c.fieldToRemove"
-                            ></sdx-button>
-                        </div>
-                        <!-- Selected fields -->
-                        <div
-                            style="
-                                flex: 0 0 40%;
-                                box-sizing: border-box;
-                                padding: var(--scm-padding-2);
-                                display: flex;
-                                flex-direction: column;
-                                height: 100%;
-                            "
-                        >
-                            <h3
-                                style="
-                                    font-weight: var(--scm-font-weight-regular);
-                                    font-size: var(--scm-font-size-medium);
-                                    color: var(--scm-color-gray-tint-4);
-                                    margin-bottom: var(--scm-spacing-1);
-                                    flex: 0 0 auto;
-                                "
-                                ng-bind="::'Selected fields'"
-                            ></h3>
-                            <ul
-                                style="
-                                    list-style: none;
-                                    padding: 0;
-                                    margin: 0;
-                                    flex: 1 1 0;
-                                    border: var(--scm-border-width-thin) var(--scm-border-style-default)
-                                        var(--scm-color-gray-tint-4);
-                                    border-radius: 5px;
-                                    overflow-y: auto;
-                                "
-                            >
-                                <li
-                                    style="padding: var(--scm-padding-2) var(--scm-padding-3); cursor: pointer"
-                                    ng-repeat="field in c.selectedFieldsList"
-                                    ng-click="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null;"
-                                    ng-dblclick="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null; c.removeField()"
-                                    ng-class="{'scm-table-fields-selector-selected': c.fieldToRemove.name === field.name}"
-                                    ng-bind="field.label"
-                                ></li>
-                            </ul>
-                        </div>
-                        <!-- Sorting selected fields buttons -->
-                        <div
-                            style="
-                                display: flex;
-                                flex: 0 0 10%;
-                                flex-direction: column;
-                                align-items: center;
-                                justify-content: center;
-                                box-sizing: border-box;
-                                padding: var(--scm-padding-2);
-                            "
-                        >
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-chevron-normal-up"
-                                icon-size="3"
-                                ng-click="c.moveFieldUp()"
-                                ng-disabled="!c.fieldToRemove"
-                            ></sdx-button>
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-chevron-normal-down"
-                                icon-size="3"
-                                ng-click="c.moveFieldDown()"
-                                ng-disabled="!c.fieldToRemove"
-                            ></sdx-button>
-                        </div>
-                    </div>
-                    <!-- Fields limit -->
-                    <div style="box-sizing: border-box; margin-left: var(--scm-spacing-2); width: 50%">
-                        <label for="{{c.limitSelectId}}" ng-bind="::'Records per page:'"></label>
-                        <select id="{{c.limitSelectId}}" ng-model="c.data.limit" ng-change="c.setLimit()">
-                            <option value="10" ng-bind="::'10'"></option>
-                            <option value="20" ng-bind="::'20'"></option>
-                            <option value="50" ng-bind="::'50'"></option>
-                            <option value="100" ng-bind="::'100'"></option>
-                        </select>
-                    </div>
-                    <!-- Save, cancel, and revert buttons-->
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: row;
-                            align-items: center;
-                            justify-content: space-between;
-                            margin-top: var(--scm-spacing-3);
-                        "
-                    >
-                        <!-- Revert button-->
-                        <sdx-button
-                            theme="transparent"
-                            icon-name="icon-reply-message"
-                            icon-size="2"
-                            ng-click="c.revertListViewToDefault()"
-                            ng-if="!c.revertingListView"
-                            ng-disabled="c.savingListView || c.cancelingListView"
-                            label="Revert to default"
-                        ></sdx-button>
-                        <sdx-loading-spinner ng-if="c.revertingListView"></sdx-loading-spinner>
-                        <div
-                            style="display: flex; flex-direction: row; align-items: flex-end; gap: var(--scm-spacing-3)"
-                        >
-                            <!-- Cancel -->
-                            <sdx-button
-                                id="scm-table-columns-selector-cancel-changes"
-                                theme="transparent"
-                                icon-name="icon-close"
-                                icon-size="2"
-                                ng-click="c.cancelListView()"
-                                ng-if="!c.cancelingListView"
-                                ng-disabled="c.revertingListView || c.savingListView"
-                                label="Cancel"
-                            ></sdx-button>
-                            <sdx-loading-spinner ng-if="c.cancelingListView"></sdx-loading-spinner>
-                            <!-- Save -->
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-save"
-                                icon-size="2"
-                                ng-click="c.saveListView()"
-                                ng-if="!c.savingListView"
-                                ng-disabled="c.revertingListView || c.cancelingListView"
-                                label="Save"
-                            ></sdx-button>
-                            <sdx-loading-spinner ng-if="c.savingListView"></sdx-loading-spinner>
-                        </div>
-                    </div>
-                </sdx-dialog-content>
-            </sdx-dialog>
-            <!-- Filters -->
-            <sdx-dialog
-                ng-if="c.data.enableFilters"
-                label="Filter records"
-                id="{{c.filtersDialogId}}"
-                class="align-header-center"
-            >
-                <sdx-dialog-toggle>
-                    <sdx-icon
-                        icon-name="icon-filter"
-                        size="1"
-                        id="scm-table-filters-icon"
-                        title="Apply filters to the table"
-                        ng-disabled="!data.canApplyFilters"
-                    ></sdx-icon>
-                </sdx-dialog-toggle>
-                <sdx-dialog-content>
-                    <!-- Filters Form -->
-                    <div style="margin-bottom: var(--scm-spacing-3)">
-                        <div
-                            class="filters-field"
-                            ng-repeat="filter in c.filters"
-                            style="margin-bottom: var(--scm-spacing-2)"
-                        >
-                            <!-- Choice fields -->
-                            <div ng-if="filter.type === 'choice'" class="filter-input-group">
-                                <label
-                                    for="{{filter.id}}"
-                                    style="
-                                        font-weight: var(--scm-font-weight-regular);
-                                        font-size: var(--scm-font-size-medium);
-                                        color: var(--scm-color-gray-tint-4);
-                                        margin-bottom: var(--scm-spacing-1);
-                                        display: block;
-                                    "
-                                    ng-bind="filter.label"
-                                ></label>
-                                <select
-                                    id="{{filter.id}}"
-                                    ng-model="filter.value"
-                                    class="filter-select"
-                                    ng-disabled="filter.loading"
-                                    style="
-                                        width: 100%;
-                                        padding: var(--scm-padding-2);
-                                        border: var(--scm-border-width-thin) var(--scm-border-style-default)
-                                            var(--scm-color-gray-tint-4);
-                                        border-radius: 5px;
-                                        font-size: var(--scm-font-size-medium);
-                                    "
-                                >
-                                    <option
-                                        value=""
-                                        ng-if="!filter.loading"
-                                        ng-bind="'-- Select ' + filter.label + ' --'"
-                                    ></option>
-                                    <option
-                                        value=""
-                                        ng-if="filter.loading"
-                                        ng-bind="'-- Loading options... --'"
-                                    ></option>
-                                    <option
-                                        ng-repeat="choice in filter.choiceValues"
-                                        value="{{choice.value}}"
-                                        ng-bind="choice.label"
-                                    ></option>
-                                </select>
-                                <sdx-loading-spinner
-                                    ng-if="filter.loading"
-                                    style="display: inline-block; margin-left: 8px; margin-top: 8px"
-                                ></sdx-loading-spinner>
-                            </div>
-                            <!-- Reference fields -->
-                            <div
-                                ng-if="filter.type === 'reference'"
-                                class="filter-input-group"
-                                style="margin-bottom: var(--scm-spacing-2)"
-                            >
-                                <scm-ref-picker
-                                    label="{{filter.label}}"
-                                    table="{{filter.referenceTable}}"
-                                    display-field="{{filter.displayField}}"
-                                    search-fields="{{filter.searchFields}}"
-                                    placeholder="{{filter.placeholder}}"
-                                    reference-qualifier="{{filter.referenceQualifier}}"
-                                    page-size="{{filter.pageSize}}"
-                                    minimum-input-length="{{filter.minimumInputLength}}"
-                                    display-fields="{{filter.displayFields}}"
-                                    order-by="{{filter.orderBy}}"
-                                    order-direction="{{filter.orderDirection}}"
-                                    ng-model="filter.value"
-                                ></scm-ref-picker>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Apply and Clear buttons -->
-                    <div
-                        style="
-                            display: flex;
-                            flex-direction: row;
-                            align-items: center;
-                            justify-content: space-between;
-                            margin-top: var(--scm-spacing-3);
-                        "
-                    >
-                        <div
-                            style="display: flex; flex-direction: row; align-items: flex-end; gap: var(--scm-spacing-3)"
-                        >
-                            <!-- Cancel -->
-                            <sdx-button
-                                id="scm-table-filters-cancel"
-                                theme="transparent"
-                                icon-name="icon-close"
-                                icon-size="2"
-                                ng-click="c.cancelFilters()"
-                                label="Cancel"
-                            ></sdx-button>
-                            <!-- Apply -->
-                            <sdx-button
-                                theme="transparent"
-                                icon-name="icon-save"
-                                icon-size="2"
-                                ng-click="c.applyFilters()"
-                                label="Save"
-                            ></sdx-button>
-                        </div>
-                    </div>
-                </sdx-dialog-content>
-            </sdx-dialog>
+            <ng-include src="'scm-table-settings'"></ng-include>
+            <ng-include src="'scm-table-filters'"></ng-include>
         </div>
-        <!-- Metadata -->
-        <div id="metadata-wrapper">
-            <div ng-bind="'Total records:' + c.totalRecords"></div>
-            <div ng-bind="'Records per page:' + c.data.limit"></div>
-            <div ng-bind="'Displaying records ' + c.getFirstRecordIndex() + ' to ' + c.getLastRecordIndex()"></div>
-            <div ng-bind="'Page:' + c.page"></div>
-        </div>
-        <!-- Pagination -->
-        <div id="pagination-wrapper">
-            <sdx-button
-                theme="transparent"
-                icon-name="icon-rewind-filled"
-                icon-size="1"
-                ng-click="c.goToFirstPage()"
-                ng-disabled="c.page === 1"
-                title="Go to first page"
-            ></sdx-button>
-            <sdx-button
-                theme="transparent"
-                icon-name="icon-play-filled"
-                icon-size="1"
-                title="Go to previous page"
-                ng-click="c.goToPreviousPage()"
-                style="transform: scaleX(-1)"
-                ng-disabled="c.page === 1"
-            ></sdx-button>
-            <sdx-button
-                theme="transparent"
-                icon-name="icon-play-filled"
-                icon-size="1"
-                title="Go to next page"
-                ng-click="c.goToNextPage()"
-                ng-disabled="c.totalPages === c.page"
-            ></sdx-button>
-            <sdx-button
-                theme="transparent"
-                icon-name="icon-forward-filled"
-                icon-size="1"
-                title="Go to last page"
-                ng-click="c.goToLastPage()"
-                ng-disabled="c.totalPages === c.page"
-            ></sdx-button>
-        </div>
+        <ng-include src="'scm-table-metadata'"></ng-include>
+        <ng-include src="'scm-table-pagination'"></ng-include>
     </div>
     <!-- Applied filters -->
     <div id="applied-filters-wrapper" ng-if="c.appliedFilters && c.appliedFilters.length > 0">
@@ -1306,7 +964,7 @@
                 <tr ng-repeat="record in c.records track by $index" ng-if="!c.showSpinner">
                     <td ng-if="$index === 0" ng-repeat-start="field in c.data.fields" title="{{ record[field.name] }}">
                         <a
-                            ng-href="?id={{data.detailViewPage}}&sys_id={{record.sys_id}}"
+                            ng-href="?id={{data.detailViewPage}}&scm_record_id={{record[data.idField]}}"
                             target="_blank"
                             rel="noopener"
                             ng-bind="record[field.name]"

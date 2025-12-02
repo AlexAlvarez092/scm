@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.NavigationManagerAJAX</api_name>
+        <caller_access/>
+        <client_callable>true</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>NavigationManagerAJAX</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const NavigationManagerAJAX = Class.create();
+NavigationManagerAJAX.prototype = Object.extendsObject(global.AbstractAjaxProcessor, {
+    getPageConfigs: function (page, params) {
+        page = page || String(this.getParameter('page'));
+        params = params || JSON.parse(String(this.getParameter('params')));
+
+        const navManagerClient = new NavigationManager(page, params);
+        const configs = navManagerClient.getConfigs();
+        return JSON.stringify(configs);
+    },
+    type: 'NavigationManagerAJAX'
+});
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-02 12:34:42</sys_created_on>
+        <sys_id>68ab48c293e17214e393f6fa3d03d6b6</sys_id>
+        <sys_mod_count>5</sys_mod_count>
+        <sys_name>NavigationManagerAJAX</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_68ab48c293e17214e393f6fa3d03d6b6</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-02 12:40:05</sys_updated_on>
+    </sys_script_include>
+</record_update>

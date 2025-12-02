@@ -62,8 +62,6 @@ function scmReference() {
                 const sdxSelect = element[0].querySelector('sdx-select') || element[0];
 
                 if (sdxSelect) {
-                    console.debug('Setting up event listeners for sdx-select and child elements:', sdxSelect);
-
                     sdxSelect.changeCallback = function (value) {
                         setTimeout(() => {
                             scope.$apply(function () {
@@ -219,14 +217,14 @@ function scmReference() {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:22:59</sys_created_on>
         <sys_id>a096ffa383aa2650efda54b6feaad3b1</sys_id>
-        <sys_mod_count>127</sys_mod_count>
+        <sys_mod_count>128</sys_mod_count>
         <sys_name>scmReference</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_a096ffa383aa2650efda54b6feaad3b1</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 19:14:45</sys_updated_on>
+        <sys_updated_on>2025-12-01 18:59:16</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

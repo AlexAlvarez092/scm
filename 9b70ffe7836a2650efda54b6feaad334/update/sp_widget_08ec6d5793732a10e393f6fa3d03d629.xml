@@ -1,124 +1,124 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function (spUtil, $scope, $rootScope, $timeout) {
-  const c = this;
+        <client_script><![CDATA[api.controller = function (spUtil, $scope, $rootScope) {
+    const c = this;
 
-  c.data.isActive = "deactivated";
-  const widgetId = c.data.widgetId;
-  const widgetUid = c.data.widgetUid;
-  const widgetOptions = c.data.widgetOptions;
+    c.data.isActive = 'deactivated';
+    const widgetId = c.data.widgetId;
+    const widgetUid = c.data.widgetUid;
+    const widgetOptions = c.data.widgetOptions;
 
-  c.loadingActive = true;
-  c.skipDirtyFormCheck = false;
+    c.loadingActive = true;
+    c.skipDirtyFormCheck = false;
 
-  loadFlyOverContent(widgetId, widgetOptions);
+    loadFlyOverContent(widgetId, widgetOptions);
 
-  $scope.overrideSize = function () {
-    return c.data.width != "75" ? "width:" + c.data.width + "% !important" : "width:75%";
-  };
+    $scope.overrideSize = function () {
+        return c.data.width != '75' ? 'width:' + c.data.width + '% !important' : 'width:75%';
+    };
 
-  function loadFlyOverContent(widgetId, widgetOptions) {
-    spUtil.get(widgetId, widgetOptions).then(function (response) {
-      c.data.widget = response;
-      c.loadingActive = false;
-      c.data.isActive = "active";
-      changeParentWidth("open");
-      document.body.classList.add("overflowFlyOverOpen");
+    function loadFlyOverContent(widgetId, widgetOptions) {
+        spUtil.get(widgetId, widgetOptions).then(function (response) {
+            c.data.widget = response;
+            c.loadingActive = false;
+            c.data.isActive = 'active';
+            changeParentWidth('open');
+            document.body.classList.add('overflowFlyOverOpen');
+        });
+    }
+
+    c.closeFlyover = function () {
+        $rootScope.$broadcast('scmFlyover-close-triggered-' + widgetUid);
+        c.data.isActive = 'deactivated';
+        changeParentWidth('close');
+        document.body.classList.remove('overflowFlyOverOpen');
+    };
+
+    const unregisterEvent = $scope.$on('scmFlyover-close-' + widgetUid, function (e, data) {
+        c.closeFlyover();
+        unregisterEvent();
     });
-  }
 
-  c.closeFlyover = function () {
-    $rootScope.$broadcast("scmFlyover-close-triggered-" + widgetUid);
-    c.data.isActive = "deactivated";
-    changeParentWidth("close");
-    document.body.classList.remove("overflowFlyOverOpen");
-  };
+    function changeParentWidth(action) {
+        const flyOversContainers = document.querySelectorAll('.scm-flyover-panel-content');
 
-  const unregisterEvent = $scope.$on("scmFlyover-close-" + widgetUid, function (e, data) {
-    c.closeFlyover();
-    unregisterEvent();
-  });
-
-  function changeParentWidth(action) {
-    const flyOversContainers = document.querySelectorAll(".scm-flyover-panel-content");
-
-    if (flyOversContainers.length > 1) {
-      for (let i = 0; i < flyOversContainers.length; i++) {
-        if (i < flyOversContainers.length - 1) {
-          flyOversContainers[i].classList.add("full");
-        } else {
-          if (action == "close") {
-            flyOversContainers[i - 1].classList.remove("full");
-          }
-        }
-      }
-    } else if (flyOversContainers.length == 1) flyOversContainers[0].classList.remove("full");
-  }
+        if (flyOversContainers.length > 1) {
+            for (let i = 0; i < flyOversContainers.length; i++) {
+                if (i < flyOversContainers.length - 1) {
+                    flyOversContainers[i].classList.add('full');
+                } else {
+                    if (action == 'close') {
+                        flyOversContainers[i - 1].classList.remove('full');
+                    }
+                }
+            }
+        } else if (flyOversContainers.length == 1) flyOversContainers[0].classList.remove('full');
+    }
 };
 ]]></client_script>
         <controller_as>c</controller_as>
         <css>.scm-flyover {
-	.scm-flyover-panel-overlay {
-		width: 100%;
-		height: 100%;
-		background-color: var(--scm-color-gray);
-		position: fixed;
-		top: 0;
-		left: 0;
-		opacity: 0.5;
-		transition: opacity var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
-	}
+    .scm-flyover-panel-overlay {
+        width: 100%;
+        height: 100%;
+        background-color: var(--scm-color-gray);
+        position: fixed;
+        top: 0;
+        left: 0;
+        opacity: 0.5;
+        transition: opacity var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
+    }
 
-	.scm-flyover-panel-content {
-		background-color: var(--scm-color-aluminimum-tint-2);
-		position: fixed;
-		width: 90% !important;
-		height: 100%;
-		top: 0;
-		right: 0;
-		transform: translateX(100%);
-		transition: all var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
-		box-shadow: var(--scm-box-shadow-large);
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
+    .scm-flyover-panel-content {
+        background-color: var(--scm-color-aluminimum-tint-2);
+        position: fixed;
+        width: 90% !important;
+        height: 100%;
+        top: 0;
+        right: 0;
+        transform: translateX(100%);
+        transition: all var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
+        box-shadow: var(--scm-box-shadow-large);
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
 
-		&amp;.full {
-			width: 100% !important;
-		}
+        &amp;.full {
+            width: 100% !important;
+        }
 
-		&amp;.active {
-			transform: translateX(0);
-		}
+        &amp;.active {
+            transform: translateX(0);
+        }
 
-		.scm-flyover-header {
-			height: 110px;
-			background-color: var(--scm-color-sc-white);
-			padding: var(--scm-padding-4) var(--scm-padding-4);
-			box-shadow: var(--scm-box-shadow-small);
+        .scm-flyover-header {
+            height: 110px;
+            background-color: var(--scm-color-sc-white);
+            padding: var(--scm-padding-4) var(--scm-padding-4);
+            box-shadow: var(--scm-box-shadow-small);
 
-			.scm-flyover-close-button {
-				cursor: pointer;
-				float: left;
-			}
+            .scm-flyover-close-button {
+                cursor: pointer;
+                float: left;
+            }
 
-			.scm-flyover-title {
-				line-height: initial;
-				margin-left: var(--scm-spacing-6);
-				margin-bottom: 0;
-			}
+            .scm-flyover-title {
+                line-height: initial;
+                margin-left: var(--scm-spacing-6);
+                margin-bottom: 0;
+            }
 
-			.scm-flyover-subtitle {
-				margin-left: var(--scm-spacing-6);
-				margin-top: 0;
-			}
-		}
+            .scm-flyover-subtitle {
+                margin-left: var(--scm-spacing-6);
+                margin-top: 0;
+            }
+        }
 
-		.scm-flyover-body {
-			flex: 1;
-		}
-	}
+        .scm-flyover-body {
+            flex: 1;
+        }
+    }
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -129,22 +129,38 @@
         <has_preview>false</has_preview>
         <id>scm-flyover</id>
         <internal>false</internal>
-        <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+        <link><![CDATA[function link() {}
+]]></link>
         <name>scm-flyover</name>
         <option_schema/>
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-  const inputOrOptions = input ? input : options;
+    const inputOrOptions = input ? input : options;
+    const transactionId = inputOrOptions?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
 
-  data.widgetId = inputOrOptions.widgetId;
-  data.widgetUid = inputOrOptions.widgetUid;
-  data.title = inputOrOptions.title;
-  data.subTitle = inputOrOptions.subTitle;
-  data.widgetOptions = inputOrOptions.widgetOptions || {};
-  data.widgetOptions.flyoverId = inputOrOptions.widgetUid;
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'scm-flyover.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
+
+    data.widgetId = inputOrOptions.widgetId;
+    data.widgetUid = inputOrOptions.widgetUid;
+    data.title = inputOrOptions.title;
+    data.subTitle = inputOrOptions.subTitle;
+    data.widgetOptions = inputOrOptions.widgetOptions || {};
+    data.widgetOptions.flyoverId = inputOrOptions.widgetUid;
+
+    logger.debug({
+        input: input,
+        data: data,
+        options: options,
+        inputOrOptions: inputOrOptions
+    });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -152,14 +168,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 17:01:41</sys_created_on>
         <sys_id>08ec6d5793732a10e393f6fa3d03d629</sys_id>
-        <sys_mod_count>160</sys_mod_count>
+        <sys_mod_count>167</sys_mod_count>
         <sys_name>scm-flyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_08ec6d5793732a10e393f6fa3d03d629</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-21 23:41:23</sys_updated_on>
+        <sys_updated_on>2025-12-01 21:36:12</sys_updated_on>
         <template><![CDATA[<div id="flyover-{{::data.widgetUid}}" class="scm-flyover">
     <div class="scm-flyover-panel-overlay"></div>
     <div

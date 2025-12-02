@@ -17,7 +17,8 @@
     if (!c.data.isNewRecord) {
         c.server
             .get({
-                action: 'getRecord'
+                action: 'getRecord',
+                transactionId: c.data.transactionId
             })
             .then(function (response) {
                 if (response.data.error) {
@@ -25,8 +26,6 @@
                     spUtil.addErrorMessage(response.data.error);
                     return;
                 }
-
-                console.debug('Response data executing action getRecord:', response.data);
                 c.data = response.data;
             })
             .finally(function () {
@@ -65,7 +64,8 @@
         c.server
             .get({
                 action: 'submitContact',
-                data: c.data
+                data: c.data,
+                transactionId: c.data.transactionId
             })
             .then(function (response) {
                 if (response.data.error) {
@@ -73,12 +73,11 @@
                     spUtil.addErrorMessage(response.data.error);
                     return;
                 }
-
-                console.debug('Response data executing action submitContact:', response.data);
                 spUtil.addTrivialMessage('Contact saved successfully.');
             })
             .finally(function () {
                 c.submitting = false;
+                c.canSubmit = false;
             });
     };
 };
@@ -93,19 +92,17 @@
         <has_preview>false</has_preview>
         <id>contact-details</id>
         <internal>false</internal>
-        <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+        <link><![CDATA[function link() {}
+]]></link>
         <name>contact-details</name>
         <option_schema/>
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-    const sysId = String($sp.getParameter('sys_id')) || '-1';
+    const userName = String($sp.getParameter('scm_record_id')) || '-1';
     const transactionId = input?.transactionId || gs.generateGUID();
-    const utils = new ContactDetailsWidgetHelper({
-        transactionId: transactionId
-    });
+    data.transactionId = transactionId;
+
     const logger = new Logger({
         transactionId: transactionId,
         source: 'contact-details.server.js',
@@ -114,20 +111,21 @@
         includeSessionId: true
     });
 
-    data.isNewRecord = sysId === '-1';
-    data.sysId = sysId;
-    data.transactionId = transactionId;
-    data.tableName = utils.getTableName();
+    const utils = new ContactDetailsWidgetHelper({
+        transactionId: transactionId
+    });
+
+    data.isNewRecord = !!!userName;
     data.arrMandatoryFields = utils.getMandatoryFields();
 
     // Handle getting existing record details
     if (input && input.action === 'getRecord') {
-        const contactData = utils.getContactDataBySysId(sysId);
+        const contactData = utils.getContactDataByUserName(userName);
         if (!contactData) {
             logger.warn({
                 action: 'getRecord',
                 data: data,
-                message: 'No record found for sysId'
+                message: 'No record found for userName: ' + userName
             });
             data.error = 'Record not found';
             return;
@@ -136,6 +134,14 @@
         for (const field in contactData) {
             data[field] = contactData[field];
         }
+
+        logger.debug({
+            action: 'getRecord',
+            data: data,
+            input: input,
+            options: options,
+            contactData: contactData
+        });
         return;
     }
 
@@ -165,13 +171,13 @@
         }
 
         try {
-            const isSavedSuccessfully = utils.saveDataToContactRecord(sysId, input.data);
+            const isSavedSuccessfully = utils.saveDataToContactRecordByUserName(userName, input.data);
             if (!isSavedSuccessfully) {
                 logger.error({
                     action: 'submitContact',
                     inputData: input.data,
                     data: data,
-                    message: 'Failed to save contact record for sysId: ' + sysId
+                    message: 'Failed to save contact record for userName: ' + userName
                 });
                 data.error = 'Failed to save the contact record.';
                 return;
@@ -187,8 +193,20 @@
             return;
         }
 
+        logger.debug({
+            action: 'submitContact',
+            input: input,
+            data: data,
+            options: options
+        });
         return;
     }
+
+    logger.debug({
+        data: data,
+        input: input,
+        options: options
+    });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -196,14 +214,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-27 15:23:40</sys_created_on>
         <sys_id>104019fe93a72210e393f6fa3d03d6fd</sys_id>
-        <sys_mod_count>112</sys_mod_count>
+        <sys_mod_count>126</sys_mod_count>
         <sys_name>contact-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_104019fe93a72210e393f6fa3d03d6fd</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 19:05:31</sys_updated_on>
+        <sys_updated_on>2025-12-02 12:06:27</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
     <div class="row margin-bottom-3">
         <div class="col">

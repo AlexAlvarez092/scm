@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-26 06:56:43</sys_created_on>
         <sys_id>a0ebfddc939c3210e393f6fa3d03d6d8</sys_id>
-        <sys_mod_count>12</sys_mod_count>
+        <sys_mod_count>13</sys_mod_count>
         <sys_name>scm-tree-node-recursive.html</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_a0ebfddc939c3210e393f6fa3d03d6d8</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-10-03 13:02:33</sys_updated_on>
+        <sys_updated_on>2025-12-01 19:11:04</sys_updated_on>
         <template><![CDATA[<!--
 ========================================================================
 SCM TREE WIDGET - RECURSIVE NODE TEMPLATE
@@ -41,12 +41,12 @@ PERFORMANCE NOTES:
 -->
 
 <div class="tree-node">
-	<!-- 
+    <!-- 
 	NODE CONTENT SECTION:
 	Horizontal layout containing the node's card and control button
 	-->
-	<div class="tree-node-content">
-		<!-- 
+    <div class="tree-node-content">
+        <!-- 
 		INDIVIDUAL NODE TEMPLATE RENDERING:
 		- Each node must specify its own template via 'template' property
 		- No fallback template - every node requires explicit template specification
@@ -57,11 +57,11 @@ PERFORMANCE NOTES:
 		- Node structure: { id: '1', template: 'specific-card.html', ... }
 		- All nodes must have 'template' property defined
 		-->
-		<div class="tree-card-wrapper">
-			<ng-include src="c.getNodeTemplate(node)"></ng-include>
-		</div>
+        <div class="tree-card-wrapper">
+            <ng-include src="c.getNodeTemplate(node)"></ng-include>
+        </div>
 
-		<!-- 
+        <!-- 
 		EXPAND/COLLAPSE CONTROLS:
 		Two separate buttons with conditional display based on:
 		1. Node has children: c.hasChildren(node.id)
@@ -73,28 +73,28 @@ PERFORMANCE NOTES:
 		- Hidden: Shows when node has no children
 		-->
 
-		<!-- EXPAND BUTTON: Shows when node is collapsed -->
-		<sdx-button
-			class="tree-toggle-button"
-			ng-if="c.hasChildren(node.id) && !c.isExpanded(node.id)"
-			ng-click="c.toggleExpanded(node.id)"
-			theme="transparent"
-			icon-name="icon-fullscreen-enter-2"
-			icon-size="2"
-		></sdx-button>
+        <!-- EXPAND BUTTON: Shows when node is collapsed -->
+        <sdx-button
+            class="tree-toggle-button"
+            ng-if="c.hasChildren(node.id) && !c.isExpanded(node.id)"
+            ng-click="c.toggleExpanded(node.id)"
+            theme="transparent"
+            icon-name="icon-fullscreen-enter-2"
+            icon-size="2"
+        ></sdx-button>
 
-		<!-- COLLAPSE BUTTON: Shows when node is expanded -->
-		<sdx-button
-			class="tree-toggle-button"
-			ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)"
-			ng-click="c.toggleExpanded(node.id)"
-			theme="transparent"
-			icon-name="icon-fullscreen-leave-2"
-			icon-size="2"
-		></sdx-button>
-	</div>
+        <!-- COLLAPSE BUTTON: Shows when node is expanded -->
+        <sdx-button
+            class="tree-toggle-button"
+            ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)"
+            ng-click="c.toggleExpanded(node.id)"
+            theme="transparent"
+            icon-name="icon-fullscreen-leave-2"
+            icon-size="2"
+        ></sdx-button>
+    </div>
 
-	<!-- 
+    <!-- 
 	RECURSIVE CHILDREN SECTION:
 	Only renders when node has children AND is currently expanded
 	
@@ -113,13 +113,13 @@ PERFORMANCE NOTES:
 	- 'track by child.id' optimizes Angular change detection
 	- Each recursive level maintains its own 'node' scope variable
 	-->
-	<div class="tree-children" ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)">
-		<div
-			ng-repeat="child in c.getChildren(node.id) track by child.id"
-			ng-init="node = child"
-			ng-include="'scm-tree-node-recursive.html'"
-		></div>
-	</div>
+    <div class="tree-children" ng-if="c.hasChildren(node.id) && c.isExpanded(node.id)">
+        <div
+            ng-repeat="child in c.getChildren(node.id) track by child.id"
+            ng-init="node = child"
+            ng-include="'scm-tree-node-recursive.html'"
+        ></div>
+    </div>
 </div>
 ]]></template>
     </sp_ng_template>

@@ -89,7 +89,7 @@ Logger.prototype = {
     _buildLogMessage: function (msg, level) {
         const data = {
             transactionId: this.transactionId,
-            level: level,
+            level: Object.keys(this.LEVELS).find(key => this.LEVELS[key] === level) || level,
             source: this.source,
             message: msg
         };
@@ -183,13 +183,13 @@ Logger.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 16:03:56</sys_created_on>
         <sys_id>accb99b2939d3a90e393f6fa3d03d68e</sys_id>
-        <sys_mod_count>21</sys_mod_count>
+        <sys_mod_count>22</sys_mod_count>
         <sys_name>Logger</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_accb99b2939d3a90e393f6fa3d03d68e</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 18:19:49</sys_updated_on>
+        <sys_updated_on>2025-12-01 19:21:07</sys_updated_on>
     </sys_script_include>
 </record_update>

@@ -35,6 +35,32 @@ ContactDetailsWidgetHelper.prototype = {
     },
 
     /**
+     * @param {String} userName
+     * @returns {Object|null}
+     */
+    getContactDataByUserName: function (userName) {
+        try {
+            const sysId = this.tableHelper.getRecordSysIdByUserName(userName);
+            if (!sysId) {
+                this.logger.warn({
+                    method: 'getContactDataByUserName',
+                    userName: userName,
+                    message: 'No record found for userName'
+                });
+                return null;
+            }
+            return this.getContactDataBySysId(sysId);
+        } catch (error) {
+            this.logger.error({
+                method: 'getContactDataByUserName',
+                userName: userName,
+                message: 'Error retrieving contact data: ' + error.message
+            });
+            return null;
+        }
+    },
+
+    /**
      * @param {String} sysId
      * @returns {Object|null}
      */
@@ -141,6 +167,34 @@ ContactDetailsWidgetHelper.prototype = {
     },
 
     /**
+     * @param {String} userName
+     * @param {Object} data
+     * @returns {Boolean}
+     */
+    saveDataToContactRecordByUserName: function (userName, data) {
+        try {
+            const sysId = this.tableHelper.getRecordSysIdByUserName(userName);
+            if (!sysId) {
+                this.logger.warn({
+                    method: 'saveDataToContactRecordByUserName',
+                    userName: userName,
+                    message: 'No record found for userName'
+                });
+                return false;
+            }
+            return this.saveDataToContactRecord(sysId, data);
+        } catch (error) {
+            this.logger.error({
+                method: 'saveDataToContactRecordByUserName',
+                userName: userName,
+                data: data,
+                message: 'Error saving contact record: ' + error.message
+            });
+            return false;
+        }
+    },
+
+    /**
      * @param {Object} data
      * @returns {Object}
      */
@@ -161,13 +215,13 @@ ContactDetailsWidgetHelper.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 14:52:54</sys_created_on>
         <sys_id>db6bc9b2931d3a90e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>24</sys_mod_count>
+        <sys_mod_count>25</sys_mod_count>
         <sys_name>ContactDetailsWidgetHelper</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_db6bc9b2931d3a90e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 18:38:58</sys_updated_on>
+        <sys_updated_on>2025-12-01 22:50:56</sys_updated_on>
     </sys_script_include>
 </record_update>

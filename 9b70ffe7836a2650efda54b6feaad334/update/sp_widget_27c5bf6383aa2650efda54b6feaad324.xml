@@ -2,18 +2,19 @@
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
         <client_script><![CDATA[api.controller = function () {
-  const c = this;
+    const c = this;
 
-  c.showSpinner = true;
+    c.showSpinner = true;
 
-  c.server
-    .get({
-      action: 'getRecord',
-    })
-    .then(function (response) {
-      c.number = response.data.number;
-      c.showSpinner = false;
-    });
+    c.server
+        .get({
+            action: 'getRecord',
+            transactionId: c.data.transactionId
+        })
+        .then(function (response) {
+            c.number = response.data.number;
+            c.showSpinner = false;
+        });
 };
 ]]></client_script>
         <controller_as>c</controller_as>
@@ -26,23 +27,54 @@
         <has_preview>false</has_preview>
         <id>incident-details</id>
         <internal>false</internal>
-        <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+        <link><![CDATA[function link() {}
+]]></link>
         <name>incident-details</name>
         <option_schema/>
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-  const sysId = String($sp.getParameter('sys_id'));
+    const transactionId = input?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
 
-  if (input && input.action === 'getRecord') {
-    var grRecord = new GlideRecord('incident');
-    grRecord.get(sysId);
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'incident-details.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
 
-    data.number = grRecord.number.getDisplayValue();
-    return;
-  }
+    const sysId = String($sp.getParameter('sys_id'));
+    if (!sysId) {
+        logger.warm({
+            message: 'No sys_id parameter provided'
+        });
+        return;
+    }
+
+    if (input && input.action === 'getRecord') {
+        var grRecord = new GlideRecord('incident');
+        grRecord.get(sysId);
+
+        data.number = grRecord.number.getDisplayValue();
+
+        logger.debug({
+            action: 'getRecord',
+            input: input,
+            data: data,
+            options: options,
+            sysId: sysId
+        });
+        return;
+    }
+
+    logger.debug({
+        input: input,
+        data: data,
+        options: options,
+        sysId: sysId
+    });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -50,34 +82,35 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:19:38</sys_created_on>
         <sys_id>27c5bf6383aa2650efda54b6feaad324</sys_id>
-        <sys_mod_count>15</sys_mod_count>
+        <sys_mod_count>23</sys_mod_count>
         <sys_name>incident-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_27c5bf6383aa2650efda54b6feaad324</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-08-22 11:27:51</sys_updated_on>
+        <sys_updated_on>2025-12-01 21:35:30</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
-  <div class="row margin-bottom-3">
-    <div class="col">
-      <h1 class="h1">Incident details</h1>
+    <div class="row margin-bottom-3">
+        <div class="col">
+            <h1 class="h1">Incident details</h1>
+        </div>
     </div>
-  </div>
 
-  <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+    <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
 
-  <div ng-if="!c.showSpinner">
-    <div class="row">
-      <div class="col-md-6 margin-bottom-2">
-        <sdx-input
-          label="Number"
-          sr-hint="Incident number"
-          ng-model="c.number"
-          ng-value="c.number"
-          ng-disabled="true"></sdx-input>
-      </div>
-      <!--
+    <div ng-if="!c.showSpinner">
+        <div class="row">
+            <div class="col-md-6 margin-bottom-2">
+                <sdx-input
+                    label="Number"
+                    sr-hint="Incident number"
+                    ng-model="c.number"
+                    ng-value="c.number"
+                    ng-disabled="true"
+                ></sdx-input>
+            </div>
+            <!--
       <div class="col-md-6 margin-bottom-2">
         <scm-reference
           table="core_company"
@@ -89,8 +122,8 @@
           initial-display-value="c.customerDisplay"></scm-reference>
       </div>
 	  -->
-    </div>
-	<!--
+        </div>
+        <!--
     <div class="row">
       <div class="col-md-6 margin-bottom-2">
         <sdx-input
@@ -118,8 +151,8 @@
       </div>
     </div>
 	-->
-	
-    <!--
+
+        <!--
     <div class="row">
       <div class="col-md-6 margin-bottom-2">
         <scm-reference
@@ -132,7 +165,7 @@
       </div>
     </div>
 	-->
-  </div>
+    </div>
 </div>
 ]]></template>
     </sp_widget>

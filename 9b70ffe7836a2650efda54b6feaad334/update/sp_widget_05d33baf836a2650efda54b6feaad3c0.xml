@@ -2,77 +2,77 @@
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
         <client_script><![CDATA[api.controller = function ($scope, $location) {
-	const c = this;
+    const c = this;
 
-	c.title = 'SCM Demo Portal';
+    c.title = 'SCM Demo Portal';
 
-	c.navItems = [
-		{ label: 'Incidents', pageId: 'incidents', active: false },
-		{ label: 'Contacts', pageId: 'contacts', active: false },
-		{ label: 'Contracts tree', pageId: 'scm_contract_tree', active: false }
-	];
+    c.navItems = [
+        { label: 'Incidents', pageId: 'incidents', active: false },
+        { label: 'Contacts', pageId: 'contacts', active: false },
+        { label: 'Contracts tree', pageId: 'scm_contract_tree', active: false }
+    ];
 
-	updateActiveNavItem();
+    updateActiveNavItem();
 
-	// Watch for changes in the URL path to update the active navigation item
-	$scope.$on('$locationChangeSuccess', function () {
-		updateActiveNavItem();
-	});
+    // Watch for changes in the URL path to update the active navigation item
+    $scope.$on('$locationChangeSuccess', function () {
+        updateActiveNavItem();
+    });
 
-	/**
-	 * Updates the active state of navigation items based on the current path.
-	 * This function checks the current URL path and sets the 'active' property
-	 * of each navigation item to true if its href is included in the current path.
-	 */
-	function updateActiveNavItem() {
-		const params = $location.search();
-		const pageId = params.id || '';
-		c.navItems.forEach(item => {
-			item.active = item.pageId === pageId;
-		});
-	}
+    /**
+     * Updates the active state of navigation items based on the current path.
+     * This function checks the current URL path and sets the 'active' property
+     * of each navigation item to true if its href is included in the current path.
+     */
+    function updateActiveNavItem() {
+        const params = $location.search();
+        const pageId = params.id || '';
+        c.navItems.forEach(item => {
+            item.active = item.pageId === pageId;
+        });
+    }
 };
 ]]></client_script>
         <controller_as>c</controller_as>
         <css>.nav-content {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  height: inherit;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: inherit;
 }
 
 .nav-title {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  font-weight: var(--scm-font-weight-bold);
-  font-size: var(--scm-font-size-xxlarge);
-  color: var(--scm-color-sc-navy);
-  margin-right: var(--scm-spacing-7);
-  height: inherit;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-weight: var(--scm-font-weight-bold);
+    font-size: var(--scm-font-size-xxlarge);
+    color: var(--scm-color-sc-navy);
+    margin-right: var(--scm-spacing-7);
+    height: inherit;
 }
 
 .nav-title:hover {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 .nav-title a {
-  color: inherit;
+    color: inherit;
 }
 
 .nav-item {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  font-size: var(--scm-font-size-medium);
-  color: var(--scm-color-sc-navy);
-  margin-right: var(--scm-spacing-5);
-  height: inherit;
-  cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: var(--scm-font-size-medium);
+    color: var(--scm-color-sc-navy);
+    margin-right: var(--scm-spacing-5);
+    height: inherit;
+    cursor: pointer;
 }
 
 .nav-item-active {
-  color: var(--scm-color-int-azure-active);
+    color: var(--scm-color-int-azure-active);
 }
 
 .nav-item a,
@@ -80,15 +80,15 @@
 .nav-item a:hover,
 .nav-item a:focus,
 .nav-item a:active {
-  text-decoration: none !important;
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-  color: inherit;
+    text-decoration: none !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    color: inherit;
 }
 
 .nav-item:hover {
-  font-weight: var(--scm-font-weight-semibold);
+    font-weight: var(--scm-font-weight-semibold);
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -99,27 +99,44 @@
         <has_preview>false</has_preview>
         <id>scm-menu-instance</id>
         <internal>false</internal>
-        <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+        <link><![CDATA[function link() {}
+]]></link>
         <name>scm-menu-instance</name>
         <option_schema/>
         <public>false</public>
         <roles/>
-        <script><![CDATA[(function() {})();]]></script>
+        <script><![CDATA[(function () {
+    const transactionId = input?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
+
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'scm-menu-instance.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
+
+    logger.debug({
+        input: input,
+        data: data,
+        options: options
+    });
+})();
+]]></script>
         <servicenow>false</servicenow>
         <sys_class_name>sp_widget</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:11:08</sys_created_on>
         <sys_id>05d33baf836a2650efda54b6feaad3c0</sys_id>
-        <sys_mod_count>10</sys_mod_count>
+        <sys_mod_count>17</sys_mod_count>
         <sys_name>scm-menu-instance</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_05d33baf836a2650efda54b6feaad3c0</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-21 23:42:42</sys_updated_on>
+        <sys_updated_on>2025-12-01 21:37:15</sys_updated_on>
         <template><![CDATA[<div class="nav-content">
     <div class="nav-title">
         <a href="?" ng-bind="::c.title"></a>

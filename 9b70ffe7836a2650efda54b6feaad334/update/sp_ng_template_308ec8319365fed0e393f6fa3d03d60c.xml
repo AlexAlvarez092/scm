@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="INSERT_OR_UPDATE">
+        <id>scm-table-pagination</id>
+        <sp_widget display_value="scm-table">c736f3a383aa2650efda54b6feaad3f2</sp_widget>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-01 18:08:06</sys_created_on>
+        <sys_id>308ec8319365fed0e393f6fa3d03d60c</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scm-table-pagination</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_308ec8319365fed0e393f6fa3d03d60c</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-01 18:36:29</sys_updated_on>
+        <template><![CDATA[<div id="pagination-wrapper">
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-rewind-filled"
+        icon-size="1"
+        ng-click="c.goToFirstPage()"
+        ng-disabled="c.page === 1"
+        title="Go to first page"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to previous page"
+        ng-click="c.goToPreviousPage()"
+        class="scm-go-to-previous-page"
+        ng-disabled="c.page === 1"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to next page"
+        ng-click="c.goToNextPage()"
+        ng-disabled="c.totalPages === c.page"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-forward-filled"
+        icon-size="1"
+        title="Go to last page"
+        ng-click="c.goToLastPage()"
+        ng-disabled="c.totalPages === c.page"
+    ></sdx-button>
+</div>
+
+<style>
+    .scm-go-to-previous-page {
+        transform: scaleX(-1);
+    }
+</style>
+]]></template>
+    </sp_ng_template>
+</record_update>

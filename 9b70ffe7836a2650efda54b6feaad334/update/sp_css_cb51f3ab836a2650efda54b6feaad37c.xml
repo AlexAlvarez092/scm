@@ -1,153 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_css">
     <sp_css action="INSERT_OR_UPDATE">
         <css>:root {
-  --scm-dropdown-max-height: 120px;
-  --scm-reference-input-height: 48px;
-  --scm-zindex-dropdown: 20;
+    --scm-dropdown-max-height: 120px;
+    --scm-reference-input-height: 48px;
+    --scm-zindex-dropdown: 20;
 }
 
 .scm-reference-wrapper {
-  display: flex;
-  flex-direction: column;
-  position: relative;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .scm-reference-input-wrapper {
-  position: relative;
-  width: 100%;
+    position: relative;
+    width: 100%;
 }
 
 .scm-reference-input {
-  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
-  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
-  border-radius: var(--scm-border-radius-input);
-  height: var(--scm-reference-input-height);
-  width: 100%;
-  color: var(--scm-color-gray);
-  background-color: var(--scm-color-sc-white);
+    border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+    padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
+    border-radius: var(--scm-border-radius-input);
+    height: var(--scm-reference-input-height);
+    width: 100%;
+    color: var(--scm-color-gray);
+    background-color: var(--scm-color-sc-white);
 }
 
 .scm-reference-input.scm-reference-list-open {
-  border-bottom-left-radius: 0%;
-  border-bottom-right-radius: 0%;
+    border-bottom-left-radius: 0%;
+    border-bottom-right-radius: 0%;
 }
 
 .scm-reference-input:active,
 .scm-reference-input:focus {
-  border-color: var(--scm-color-int-blue) !important;
-  box-shadow: none !important;
-  outline: none !important;
+    border-color: var(--scm-color-int-blue) !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 .scm-reference-input::placeholder {
-  color: var(--scm-color-gray-tint-5);
+    color: var(--scm-color-gray-tint-5);
 }
 
 .scm-reference-magnifying-glass-icon {
-  position: absolute;
-  top: 50%;
-  right: var(--scm-spacing-2);
-  pointer-events: all;
-  transform: translateY(-50%);
-  color: var(--scm-color-int-blue);
+    position: absolute;
+    top: 50%;
+    right: var(--scm-spacing-2);
+    pointer-events: all;
+    transform: translateY(-50%);
+    color: var(--scm-color-int-blue);
 }
 
 .scm-reference-clear-icon {
-  position: absolute;
-  top: 50%;
-  left: var(--scm-spacing-2);
-  pointer-events: all;
-  transform: translateY(-50%);
-  color: var(--scm-color-gray-tint-5);
+    position: absolute;
+    top: 50%;
+    left: var(--scm-spacing-2);
+    pointer-events: all;
+    transform: translateY(-50%);
+    color: var(--scm-color-gray-tint-5);
 }
 
 .scm-reference-clear-icon:hover {
-  color: var(--scm-color-gray);
+    color: var(--scm-color-gray);
 }
 
 .scm-reference-dropdown-container {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: var(--scm-zindex-dropdown);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--scm-zindex-dropdown);
 }
 
 .scm-reference-search-wrapper,
 .scm-autocomplete-list {
-  position: static; /* Reset positioning */
+    position: static; /* Reset positioning */
 }
 
 .scm-reference-search-wrapper {
-  width: 100%;
-  padding: var(--scm-padding-2);
-  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
-  border-top: 0;
-  background-color: var(--scm-color-sc-white);
+    width: 100%;
+    padding: var(--scm-padding-2);
+    border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
+    border-top: 0;
+    background-color: var(--scm-color-sc-white);
 }
 
 .scm-reference-search-input {
-  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
-  border-radius: var(--scm-border-radius-input);
-  padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
-  height: var(--scm-reference-input-height);
-  width: 100%;
-  color: var(--scm-color-gray);
-  background-color: var(--scm-color-sc-white);
-  box-sizing: border-box;
+    border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+    border-radius: var(--scm-border-radius-input);
+    padding: 0 var(--scm-padding-6) 0 var(--scm-padding-4);
+    height: var(--scm-reference-input-height);
+    width: 100%;
+    color: var(--scm-color-gray);
+    background-color: var(--scm-color-sc-white);
+    box-sizing: border-box;
 }
 
 .scm-reference-search-input:active,
 .scm-reference-search-input:focus {
-  border-color: var(--scm-color-int-blue) !important;
-  box-shadow: none !important;
-  outline: none !important;
+    border-color: var(--scm-color-int-blue) !important;
+    box-shadow: none !important;
+    outline: none !important;
 }
 
 .scm-autocomplete-list {
-  border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
-  border-top: 0;
-  max-height: var(--scm-dropdown-max-height);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: var(--scm-zindex-dropdown);
-  background-color: var(--scm-color-sc-white);
+    border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-int-blue);
+    border-top: 0;
+    max-height: var(--scm-dropdown-max-height);
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: var(--scm-zindex-dropdown);
+    background-color: var(--scm-color-sc-white);
 }
 
 .scm-autocomplete-item {
-  padding: var(--scm-padding-2);
-  background-color: var(--scm-color-sc-white);
+    padding: var(--scm-padding-2);
+    background-color: var(--scm-color-sc-white);
 }
 
 .scm-autocomplete-item:hover {
-  background-color: var(--scm-color-int-blue);
-  color: var(--scm-color-sc-white);
-  cursor: pointer;
+    background-color: var(--scm-color-int-blue);
+    color: var(--scm-color-sc-white);
+    cursor: pointer;
 }
 
 .scm-autocomplete-item.scm-autocomplete-load-more {
-  background-color: var(--scm-color-gray-tint-8);
-  padding: var(--scm-padding-1);
+    background-color: var(--scm-color-gray-tint-8);
+    padding: var(--scm-padding-1);
 }
 
 .scm-autocomplete-item.scm-autocomplete-no-more,
 .scm-autocomplete-item.scm-autocomplete-no-results,
 .scm-autocomplete-item.scm-autocomplete-loading {
-  background-color: var(--scm-color-gray-tint-8);
-  padding: var(--scm-padding-1);
+    background-color: var(--scm-color-gray-tint-8);
+    padding: var(--scm-padding-1);
 }
 
 .scm-autocomplete-item.scm-autocomplete-no-more:hover,
 .scm-autocomplete-item.scm-autocomplete-no-results:hover {
-  background-color: var(--scm-color-gray-tint-8);
-  padding: var(--scm-padding-1);
-  color: var(--scm-color-gray);
-  pointer-events: none;
+    background-color: var(--scm-color-gray-tint-8);
+    padding: var(--scm-padding-1);
+    color: var(--scm-color-gray);
+    pointer-events: none;
 }
 </css>
         <name>scm-ref-picker</name>
@@ -155,14 +155,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:00:39</sys_created_on>
         <sys_id>cb51f3ab836a2650efda54b6feaad37c</sys_id>
-        <sys_mod_count>42</sys_mod_count>
+        <sys_mod_count>43</sys_mod_count>
         <sys_name>scm-ref-picker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_css_cb51f3ab836a2650efda54b6feaad37c</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-12 13:19:06</sys_updated_on>
+        <sys_updated_on>2025-12-01 19:10:48</sys_updated_on>
         <turn_off_scss_compilation>false</turn_off_scss_compilation>
     </sp_css>
 </record_update>

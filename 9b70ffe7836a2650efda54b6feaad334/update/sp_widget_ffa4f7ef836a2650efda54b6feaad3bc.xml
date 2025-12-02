@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($scope, $timeout, scmFlyover, $sce, $compile) {
+        <client_script><![CDATA[api.controller = function ($scope, $timeout, scmFlyover, scmNavFlyoverManager) {
     var c = this;
 
     const TIMEOUT = 500;
@@ -14,7 +14,14 @@
         const flyover = new scmFlyover('scm-flyover-example', $scope);
         flyover.setTitle('Example flyover');
         flyover.setSubTitle('This is an example subtitle');
+        flyover.setTransactionId(c.data.transactionId);
         flyover.open();
+    };
+
+    c.navigateToFlyover = function () {
+        scmNavFlyoverManager.navigate({
+            name: 'flyover_example'
+        });
     };
 };
 ]]></client_script>
@@ -28,33 +35,51 @@
         <has_preview>false</has_preview>
         <id>scm-homepage</id>
         <internal>false</internal>
-        <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+        <link><![CDATA[function link() {}
+]]></link>
         <name>scm-homepage</name>
         <option_schema/>
         <public>false</public>
         <roles/>
-        <script><![CDATA[(function () {})();]]></script>
+        <script><![CDATA[(function () {
+    const transactionId = input?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
+
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: 'scm-homepage.server.js',
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true
+    });
+
+    logger.debug({
+        input: input,
+        data: data,
+        options: options
+    });
+})();
+]]></script>
         <servicenow>false</servicenow>
         <sys_class_name>sp_widget</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:14:45</sys_created_on>
         <sys_id>ffa4f7ef836a2650efda54b6feaad3bc</sys_id>
-        <sys_mod_count>46</sys_mod_count>
+        <sys_mod_count>59</sys_mod_count>
         <sys_name>scm-homepage</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_ffa4f7ef836a2650efda54b6feaad3bc</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-21 23:38:46</sys_updated_on>
+        <sys_updated_on>2025-12-02 20:56:42</sys_updated_on>
         <template><![CDATA[<sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
 
 <div class="scm-container" ng-if="!c.showSpinner">
     <h1>Welcome to SCM Portal!</h1>
 
     <sdx-button theme="primary" ng-click="c.openFlyover()" label="Hello world!"></sdx-button>
+    <sdx-button theme="primary" ng-click="c.navigateToFlyover()" label="Navigate to flyover"></sdx-button>
 
     <hr />
 

@@ -105,7 +105,6 @@ function scmRefPicker($http, $timeout) {
       </div>
     `,
         controller: ($scope, $http, spUtil) => {
-            debugger;
             if (!$scope.label || !$scope.table || !$scope.displayField) {
                 console.error(
                     'scmRefPicker: Missing required attributes. Please provide label, table, and displayField.'
@@ -228,7 +227,6 @@ function scmRefPicker($http, $timeout) {
              */
             function fetchPage() {
                 $scope.isLoading = true;
-                debugger;
 
                 // Build the ServiceNow REST API URL for the specified table
                 let apiUrl = '/api/now/table/' + table;
@@ -422,14 +420,14 @@ function scmRefPicker($http, $timeout) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>157</sys_mod_count>
+        <sys_mod_count>158</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-11-22 22:59:57</sys_updated_on>
+        <sys_updated_on>2025-12-01 18:13:25</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

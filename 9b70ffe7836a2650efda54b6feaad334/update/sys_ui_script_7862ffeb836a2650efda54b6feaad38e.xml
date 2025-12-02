@@ -23,110 +23,110 @@ scm_scratchpad.eventManager = new SCM_EventManager(); // This object helps debug
  * @returns {Promise} - Resolves with the server response
  */
 function scmGlideAjaxAsync(scriptInclude, methodName, params) {
-	const eventId = scm_scratchpad.eventManager.addEvent('GlideAjax Call Started', {
-		scriptInclude,
-		methodName,
-		params
-	});
+    const eventId = scm_scratchpad.eventManager.addEvent('GlideAjax Call Started', {
+        scriptInclude,
+        methodName,
+        params
+    });
 
-	const returnPromise = new PromiseRejectionEvent(resolve => {
-		const ga = new GlideAjax(scriptInclude);
-		ga.addParam('sysparm_name', methodName);
-		for (const key in params) {
-			if (params.hasOwnProperty(key)) {
-				ga.addParam(key, params[key]);
-			}
-		}
+    const returnPromise = new Promise(resolve => {
+        const ga = new GlideAjax(scriptInclude);
+        ga.addParam('sysparm_name', methodName);
+        for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+                ga.addParam(key, params[key]);
+            }
+        }
 
-		ga.getXML(response => {
-			const answer = response.responseXML.documentElement.getAttribute('answer');
-			scm_scratchpad.eventManager.resolveEvent(eventId);
-			answer.eventId = eventId;
-			resolve(answer);
-		});
+        ga.getXML(response => {
+            const answer = response.responseXML.documentElement.getAttribute('answer');
+            scm_scratchpad.eventManager.resolveEvent(eventId);
+            answer.eventId = eventId;
+            resolve(answer);
+        });
 
-		ga.setErrorCallback(response => {
-			scm_scratchpad.eventManager.failEvent(eventId, 'Server responded with an error');
-			console.error('GlideAjax Error Response:', scriptInclude, response);
-		});
-	});
+        ga.setErrorCallback(response => {
+            scm_scratchpad.eventManager.failEvent(eventId, 'Server responded with an error');
+            console.error('GlideAjax Error Response:', scriptInclude, response);
+        });
+    });
 
-	// Assign eventId to be able to get debug information from
-	// EventManager (custom made SCM object) using this event Id
-	returnPromise.eventId = eventId;
+    // Assign eventId to be able to get debug information from
+    // EventManager (custom made SCM object) using this event Id
+    returnPromise.eventId = eventId;
 
-	return returnPromise;
+    return returnPromise;
 }
 
 /**
  * Event Manager to track and debug events such as GlideAjax calls
  */
 function SCM_EventManager() {
-	this.currentEventId = 0;
-	this.currentEvents = [];
+    this.currentEventId = 0;
+    this.currentEvents = [];
 
-	/**
-	 * Adds a new event to the event manager
-	 * @param {*} name - The name of the event
-	 * @returns {number} - The ID of the created event
-	 */
-	this.addEvent = name => {
-		const id = this.currentEventId++;
-		this.currentEvents.push({
-			id,
-			name,
-			status: 1,
-			message: '',
-			timeStarted: new Date().getTime(),
-			timeElapsed: 0
-		});
-		return id;
-	};
+    /**
+     * Adds a new event to the event manager
+     * @param {*} name - The name of the event
+     * @returns {number} - The ID of the created event
+     */
+    this.addEvent = name => {
+        const id = this.currentEventId++;
+        this.currentEvents.push({
+            id,
+            name,
+            status: 1,
+            message: '',
+            timeStarted: new Date().getTime(),
+            timeElapsed: 0
+        });
+        return id;
+    };
 
-	/**
-	 * Resolves an event by its ID
-	 * @param {*} id - The ID of the event to resolve
-	 */
-	this.resolveEvent = id => {
-		const that = this;
-		this.currentEvents.forEach((event, index) => {
-			if (event.id === id) {
-				that.currentEvents[index].status = 0;
-				that.currentEvents[index].timeElapsed = new Date().getTime() - that.currentEvents[index].timeStarted;
-			}
-		});
-	};
+    /**
+     * Resolves an event by its ID
+     * @param {*} id - The ID of the event to resolve
+     */
+    this.resolveEvent = id => {
+        const that = this;
+        this.currentEvents.forEach((event, index) => {
+            if (event.id === id) {
+                that.currentEvents[index].status = 0;
+                that.currentEvents[index].timeElapsed = new Date().getTime() - that.currentEvents[index].timeStarted;
+            }
+        });
+    };
 
-	/**
-	 * Fails an event by its ID
-	 * @param {*} id - The ID of the event to fail
-	 * @param {*} message - The failure message
-	 */
-	this.failEvent = (id, message) => {
-		const that = this;
-		this.currentEvents.forEach((event, index) => {
-			if (event.id === id) {
-				that.currentEvents[index].status = 500;
-				that.currentEvents[index].message = message;
-				that.currentEvents[index].timeElapsed = new Date().getTime() - that.currentEvents[index].timeStarted;
-			}
-		});
-	};
+    /**
+     * Fails an event by its ID
+     * @param {*} id - The ID of the event to fail
+     * @param {*} message - The failure message
+     */
+    this.failEvent = (id, message) => {
+        const that = this;
+        this.currentEvents.forEach((event, index) => {
+            if (event.id === id) {
+                that.currentEvents[index].status = 500;
+                that.currentEvents[index].message = message;
+                that.currentEvents[index].timeElapsed = new Date().getTime() - that.currentEvents[index].timeStarted;
+            }
+        });
+    };
 
-	/**
-	 * Retrieves all current events
-	 * @returns {Array} - Array of current events
-	 */
-	this.getEvents = () => {
-		return this.currentEvents;
-	};
+    /**
+     * Retrieves all current events
+     * @returns {Array} - Array of current events
+     */
+    this.getEvents = () => {
+        return this.currentEvents;
+    };
 
-	/**
-	 * Logs current events to the console for debugging
-	 */
-	this.debug = function () {
-		console.table(this.currentEvents);
-	};
+    /**
+     * Logs current events to the console for debugging
+     */
+    this.debug = function () {
+        console.table(this.currentEvents);
+    };
 }
 
 /**
@@ -134,9 +134,9 @@ function SCM_EventManager() {
  * @param {HTMLElement} element
  */
 function sdxInputHandler(element) {
-	var value = element.value || '';
-	var sdxElement = element.el;
-	sdxElement.setAttribute('value', value);
+    var value = element.value || '';
+    var sdxElement = element.el;
+    sdxElement.setAttribute('value', value);
 }
 
 /**
@@ -144,9 +144,9 @@ function sdxInputHandler(element) {
  * @param {HTMLElement} element
  */
 function sdxSelectHandler(element) {
-	var value = element.value[0] || '';
-	var sdxElement = element.el;
-	sdxElement.setAttribute('value', value);
+    var value = element.value[0] || '';
+    var sdxElement = element.el;
+    sdxElement.setAttribute('value', value);
 }
 ]]></script>
         <script_name>scm_helpers.js</script_name>
@@ -154,14 +154,14 @@ function sdxSelectHandler(element) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:04:57</sys_created_on>
         <sys_id>7862ffeb836a2650efda54b6feaad38e</sys_id>
-        <sys_mod_count>3</sys_mod_count>
+        <sys_mod_count>7</sys_mod_count>
         <sys_name>x_680259_scm.scm_helpers.js</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_ui_script_7862ffeb836a2650efda54b6feaad38e</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-09-28 10:05:59</sys_updated_on>
+        <sys_updated_on>2025-12-02 20:18:39</sys_updated_on>
         <ui_type>0</ui_type>
         <use_scoped_format>false</use_scoped_format>
     </sys_ui_script>
