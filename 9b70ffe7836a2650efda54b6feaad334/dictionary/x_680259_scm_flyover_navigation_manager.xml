@@ -1,6 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element attributes="update_synch=true" db_object_id="2120c263c3a1321057b3d4fc0501316c" extends="sys_metadata" label="Flyover navigation manager" max_length="40" name="x_680259_scm_flyover_navigation_manager" type="collection">
-        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element default="/**&#10; * EVALUATED ON CLIENT&#10; *&#10; * &quot;renderResponse&quot; is the object that is returned by &quot;Render condition&quot;&#10; * &#10; * The script should return TRUE for flyover to be opened&#10; * The script should return FALSE if flyover should NOT be opened&#10; */&#10;(function(navParams, renderResponse) {&#10;&#9;// Check the result of &quot;Render condition script&quot; and issue an error message if needed&#10;&#9;if (renderResponse.result != true){&#10;&#9;&#9;spUtil.addErrorMessage(renderResponse.errorMessage);&#10;&#9;&#9;return false;&#10;&#9;}&#10;&#9;return true;&#10;})(navParams, renderResponse);" label="Before open" max_length="8000" name="before_open" type="script"/>
+        <element default="/**&#10; * EVALUATED ON SERVER&#10; * &#10; * &quot;current&quot; is the Glide Record that is initialized based on configuration of &#10; * Table, Param ID, Field ID&#10; * &#10; * This function must return an object with two keys:&#10; * { 'result': true/false, errorMessage: '' }&#10; * Error message will be presented tot the user if errorMessage is filled out.&#10; * &#10;*/&#10;(function(current) {&#10;&#9;if (current &amp;&amp; current.isValidRecord() &amp;&amp; !current.canRead()){&#10;&#9;&#9;return {&#10;&#9;&#9;&#9;result: false,&#10;&#9;&#9;&#9;errorMessage: 'Unfortunately you have no rights to view this record.'&#10;&#9;&#9;};&#9;&#9;&#10;&#9;}&#10;&#9;return {&#10;&#9;&#9;result: true,&#10;&#9;&#9;errorMessage: ''&#10;&#9;};&#10;})(current, navParams);" label="Render conditions" max_length="8000" name="render_conditions" type="script"/>
+        <element default="sys_id" label="Param ID" max_length="40" name="param_id" type="string"/>
+        <element label="Page" mandatory="true" max_length="32" name="page" reference="sp_page" type="reference"/>
+        <element label="Widget ID" mandatory="true" max_length="40" name="widget_id" type="string"/>
+        <element default="true" label="Active" max_length="40" name="active" type="boolean"/>
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" display="true" label="Number" max_length="40" name="number" read_only="true" type="string"/>
+        <element label="Table" max_length="32" name="table" reference="sys_db_object" type="reference"/>
+        <element default="sys_id" label="Field ID" max_length="40" name="field_id" type="string"/>
         <element label="Name" mandatory="true" max_length="254" name="name" type="string"/>
+        <element default="/**&#10; * EVALUATED ON CLIENT&#10; * &#10; * &quot;navParams&quot; is an object of key-value pairs. All URL params starting with &quot;scm_nav&quot; are&#10; * parsed and put to this object. Example: the value of param &quot;scm_nav_id&quot; is accessible&#10; * as navParams.id&#10;*/&#10;(function(navParams) {&#10;&#9;return &quot;Flyover title template&quot;;&#10;})(navParams);" label="Title" max_length="8000" name="title" type="script"/>
+        <element default="/**&#10; * EVALUATED ON CLIENT&#10; *&#10; * &quot;navParams&quot; is an object of key-value pairs. All URL params starting with &quot;scm_nav&quot; are&#10; * parsed and put to this object. Example: the value of param &quot;scm_nav_id&quot; is accessible&#10; * as navParams.id&#10; */&#10;(function (navParams) {&#10;&#9;return {&#10;&#9;&#9;'table': '',&#10;&#9;&#9;'sys_id': navParams.sys_id,&#10;&#9;&#9;'view': 'sp',&#10;&#9;&#9;'trivialMessagePrefix': '',&#10;&#9;&#9;'autoCloseOnCompletedAction': true,&#10;&#9;&#9;'showDeletebutton': true,&#10;&#9;&#9;'deleteButtonInfo': {&#10;&#9;&#9;&#9;'title': 'Delete',&#10;&#9;&#9;&#9;'body': 'Do you really want to delete?',&#10;&#9;&#9;},&#10;&#9;};&#10;})(navParams);" label="Options" max_length="8000" name="options" type="script"/>
+        <index name="index">
+            <element name="page"/>
+        </index>
+        <index name="index2">
+            <element name="table"/>
+        </index>
     </element>
 </database>

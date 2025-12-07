@@ -38,7 +38,7 @@ ContactDetailsWidgetHelper.prototype = {
 
     getCompanyAdvancedSearchConfigurationObjectId: function() {
         // TODO
-        return "ff31798783e1f210c9c658a6feaad388";
+        return "66aa35a3c361321057b3d4fc050131f3";
     },
 
     /**
@@ -232,13 +232,13 @@ ContactDetailsWidgetHelper.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 14:52:54</sys_created_on>
         <sys_id>db6bc9b2931d3a90e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>26</sys_mod_count>
+        <sys_mod_count>27</sys_mod_count>
         <sys_name>ContactDetailsWidgetHelper</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_db6bc9b2931d3a90e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:32:30</sys_updated_on>
+        <sys_updated_on>2025-12-07 20:47:33</sys_updated_on>
     </sys_script_include>
 </record_update>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_680259_scm_flyover_navigation_manager">
+    <x_680259_scm_flyover_navigation_manager action="INSERT_OR_UPDATE">
+        <active>true</active>
+        <before_open><![CDATA[/**
+ * EVALUATED ON CLIENT
+ *
+ * "renderResponse" is the object that is returned by "Render condition"
+ * 
+ * The script should return TRUE for flyover to be opened
+ * The script should return FALSE if flyover should NOT be opened
+ */
+(function(navParams, renderResponse) {
+    // Check the result of "Render condition script" and issue an error message if needed
+    if (renderResponse.result != true) {
+        spUtil.addErrorMessage(renderResponse.errorMessage);
+        return false;
+    }
+    return true;
+})(navParams, renderResponse);]]></before_open>
+        <field_id>]</field_id>
+        <name>flyover_example</name>
+        <number>FLYNAV-CONFIG0001001</number>
+        <options><![CDATA[/**
+ * EVALUATED ON CLIENT
+ *
+ * "navParams" is an object of key-value pairs. All URL params starting with "scm_nav" are
+ * parsed and put to this object. Example: the value of param "scm_nav_id" is accessible
+ * as navParams.id
+ */
+(function (navParams) {
+	return {};
+})(navParams);]]></options>
+        <page display_value="scm_homepage">7a4477ef836a2650efda54b6feaad3bb</page>
+        <param_id>sys_id</param_id>
+        <render_conditions><![CDATA[/**
+ * EVALUATED ON SERVER
+ * 
+ * "current" is the Glide Record that is initialized based on configuration of 
+ * Table, Param ID, Field ID
+ * 
+ * This function must return an object with two keys:
+ * { 'result': true/false, errorMessage: '' }
+ * Error message will be presented tot the user if errorMessage is filled out.
+ * 
+*/
+(function (current) {
+	if (current && current.isValidRecord() && !current.canRead()) {
+		return {
+			result: false,
+			errorMessage: 'Unfortunately you have no rights to view this record.'
+		};
+	}
+	return {
+		result: true,
+		errorMessage: ''
+	};
+})(current, navParams);]]></render_conditions>
+        <sys_class_name>x_680259_scm_flyover_navigation_manager</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 20:49:55</sys_created_on>
+        <sys_id>decca7e3c3ed321057b3d4fc050131f5</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>flyover_example</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>x_680259_scm_flyover_navigation_manager_decca7e3c3ed321057b3d4fc050131f5</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 20:50:27</sys_updated_on>
+        <table/>
+        <title><![CDATA[/**
+ * EVALUATED ON CLIENT
+ * 
+ * "navParams" is an object of key-value pairs. All URL params starting with "scm_nav" are
+ * parsed and put to this object. Example: the value of param "scm_nav_id" is accessible
+ * as navParams.id
+*/
+(function(navParams) {
+	return "Flyover title template";
+})(navParams);]]></title>
+        <widget_id>scm-flyover-example</widget_id>
+    </x_680259_scm_flyover_navigation_manager>
+</record_update>
