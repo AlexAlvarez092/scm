@@ -4,6 +4,7 @@
         <footer/>
         <footer_fixed>true</footer_fixed>
         <header display_value="scm-header">89e27f2f836a2650efda54b6feaad35d</header>
+        <matching_now_experience_theme/>
         <name>scm</name>
         <navbar_fixed>true</navbar_fixed>
         <sys_class_name>sp_theme</sys_class_name>

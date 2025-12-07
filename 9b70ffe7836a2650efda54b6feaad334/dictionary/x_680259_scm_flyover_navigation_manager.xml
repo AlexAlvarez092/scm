@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element attributes="update_synch=true" db_object_id="2120c263c3a1321057b3d4fc0501316c" extends="sys_metadata" label="Flyover navigation manager" max_length="40" name="x_680259_scm_flyover_navigation_manager" type="collection">
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element label="Name" mandatory="true" max_length="254" name="name" type="string"/>
+    </element>
+</database>

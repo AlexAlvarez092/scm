@@ -99,114 +99,99 @@
         <public>false</public>
         <roles/>
         <script><![CDATA[(function () {
-    const userName = String($sp.getParameter('scm_record_id')) || '-1';
+    const userName = String($sp.getParameter("scm_record_id")) || "-1";
     const transactionId = input?.transactionId || gs.generateGUID();
     data.transactionId = transactionId;
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'contact-details.server.js',
+        source: "contact-details.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
     const utils = new ContactDetailsWidgetHelper({
-        transactionId: transactionId
+        transactionId: transactionId,
     });
 
     data.isNewRecord = !!!userName;
     data.arrMandatoryFields = utils.getMandatoryFields();
+    data.companyAdvancedSearchConfigId =
+        utils.getCompanyAdvancedSearchConfigurationObjectId();
 
     // Handle getting existing record details
-    if (input && input.action === 'getRecord') {
+    if (input && input.action === "getRecord") {
         const contactData = utils.getContactDataByUserName(userName);
         if (!contactData) {
             logger.warn({
-                action: 'getRecord',
+                action: "getRecord",
                 data: data,
-                message: 'No record found for userName: ' + userName
+                message: "No record found for userName: " + userName,
             });
-            data.error = 'Record not found';
+            data.error = "Record not found";
             return;
         }
 
         for (const field in contactData) {
             data[field] = contactData[field];
         }
-
-        logger.debug({
-            action: 'getRecord',
-            data: data,
-            input: input,
-            options: options,
-            contactData: contactData
-        });
         return;
     }
 
     // Handle submitting contact details
-    if (input && input.action === 'submitContact') {
+    if (input && input.action === "submitContact") {
         try {
             const isDataValid = utils.validateContactData(input.data);
             if (!isDataValid) {
-                logger.info({
-                    action: 'submitContact',
+                logger.warn({
+                    action: "submitContact",
                     inputData: input.data,
                     data: data,
-                    message: 'Validation failed for data'
+                    message: "Validation failed for data",
                 });
-                data.error = 'Data is not valid.';
+                data.error = "Data is not valid.";
                 return;
             }
         } catch (error) {
             logger.error({
-                action: 'submitContact',
+                action: "submitContact",
                 inputData: input.data,
                 data: data,
-                message: 'Error during data validation: ' + error.message
+                message: "Error during data validation",
+                error: error.message,
             });
-            data.error = 'Error during data validation.';
+            data.error = "Error during data validation.";
             return;
         }
 
         try {
-            const isSavedSuccessfully = utils.saveDataToContactRecordByUserName(userName, input.data);
+            const isSavedSuccessfully = utils.saveDataToContactRecordByUserName(
+                userName,
+                input.data
+            );
             if (!isSavedSuccessfully) {
                 logger.error({
-                    action: 'submitContact',
+                    action: "submitContact",
                     inputData: input.data,
                     data: data,
-                    message: 'Failed to save contact record for userName: ' + userName
+                    message: "Failed to save contact record for: " + userName,
                 });
-                data.error = 'Failed to save the contact record.';
+                data.error = "Failed to save the contact record.";
                 return;
             }
         } catch (error) {
             logger.error({
-                action: 'submitContact',
+                action: "submitContact",
                 inputData: input.data,
                 data: data,
-                message: 'Error saving contact record: ' + error.message
+                message: "Error saving contact record",
+                error: error.message,
             });
-            data.error = 'Error saving the contact record.';
+            data.error = "Error saving the contact record.";
             return;
         }
-
-        logger.debug({
-            action: 'submitContact',
-            input: input,
-            data: data,
-            options: options
-        });
-        return;
     }
-
-    logger.debug({
-        data: data,
-        input: input,
-        options: options
-    });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -214,14 +199,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-27 15:23:40</sys_created_on>
         <sys_id>104019fe93a72210e393f6fa3d03d6fd</sys_id>
-        <sys_mod_count>126</sys_mod_count>
+        <sys_mod_count>127</sys_mod_count>
         <sys_name>contact-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_104019fe93a72210e393f6fa3d03d6fd</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-02 12:06:27</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:40:06</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
     <div class="row margin-bottom-3">
         <div class="col">
@@ -233,7 +218,9 @@
 
     <!-- Dropzone -->
     <div ng-if="!c.loading && data.isNewRecord">
-        <scm-vcf-dropzone on-vcf-parsed="c.onVcfParsed(vcfData)"></scm-vcf-dropzone>
+        <scm-vcf-dropzone
+            on-vcf-parsed="c.onVcfParsed(vcfData)"
+        ></scm-vcf-dropzone>
     </div>
 
     <div ng-if="!c.loading" class="margin-top-3">
@@ -335,6 +322,7 @@
                     reference-qualifier="nameISNOTEMPTY"
                     ng-model="c.data.company"
                     page-size="10"
+                    advanced-search-configuration-object="{{data.companyAdvancedSearchConfigId}}"
                 ></scm-ref-picker>
             </div>
         </div>

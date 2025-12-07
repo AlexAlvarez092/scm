@@ -6,15 +6,19 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-01 18:07:48</sys_created_on>
         <sys_id>ec7eccbd9325fed0e393f6fa3d03d627</sys_id>
-        <sys_mod_count>12</sys_mod_count>
+        <sys_mod_count>13</sys_mod_count>
         <sys_name>scm-table-filters</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 18:34:59</sys_updated_on>
-        <template><![CDATA[<sdx-dialog ng-if="c.data.enableFilters" label="Filter records" id="{{c.filtersDialogId}}" class="align-header-center">
+        <sys_updated_on>2025-12-07 12:36:15</sys_updated_on>
+        <template><![CDATA[<sdx-dialog
+    label="Filter records"
+    id="{{c.filtersDialogId}}"
+    class="align-header-center"
+>
     <sdx-dialog-toggle>
         <sdx-icon
             icon-name="icon-filter"
@@ -27,7 +31,10 @@
     <sdx-dialog-content>
         <!-- Filters Form -->
         <div class="scm-filters-dialog-form">
-            <div class="scm-filters-field-dialog margin-bottom-1" ng-repeat="filter in c.filters">
+            <div
+                class="scm-filters-field-dialog margin-bottom-1"
+                ng-repeat="filter in c.filters"
+            >
                 <!-- Choice fields -->
                 <div ng-if="filter.type === 'choice'">
                     <label
@@ -41,8 +48,16 @@
                         class="scm-filter-dialog-choice-field-input"
                         ng-disabled="filter.loading"
                     >
-                        <option value="" ng-if="!filter.loading" ng-bind="'-- Select ' + filter.label + ' --'"></option>
-                        <option value="" ng-if="filter.loading" ng-bind="'-- Loading options... --'"></option>
+                        <option
+                            value=""
+                            ng-if="!filter.loading"
+                            ng-bind="'-- Select ' + filter.label + ' --'"
+                        ></option>
+                        <option
+                            value=""
+                            ng-if="filter.loading"
+                            ng-bind="'-- Loading options... --'"
+                        ></option>
                         <option
                             ng-repeat="choice in filter.choiceValues"
                             value="{{choice.value}}"
@@ -55,7 +70,10 @@
                     ></sdx-loading-spinner>
                 </div>
                 <!-- Reference fields -->
-                <div ng-if="filter.type === 'reference'" class="scm-filter-dialog-reference-field-container">
+                <div
+                    ng-if="filter.type === 'reference'"
+                    class="scm-filter-dialog-reference-field-container"
+                >
                     <scm-ref-picker
                         label="{{filter.label}}"
                         table="{{filter.referenceTable}}"
@@ -116,7 +134,8 @@
     .scm-filter-dialog-choice-field-input {
         width: 100%;
         padding: var(--scm-padding-2);
-        border: var(--scm-border-width-thin) var(--scm-border-style-default) var(--scm-color-gray-tint-4);
+        border: var(--scm-border-width-thin) var(--scm-border-style-default)
+            var(--scm-color-gray-tint-4);
         border-radius: 5px;
         font-size: var(--scm-font-size-medium);
     }

@@ -41,7 +41,7 @@
         <update_guid_history>b68b093cd9bbaa102cee8ea8f7bdee5b:-1099180985</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="scmReferenceV2.contact-details">33ed0dfc93bbaa10e393f6fa3d03d626</sys_audit_delete>
+        <sys_audit_delete display_value="">33ed0dfc93bbaa10e393f6fa3d03d626</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-02 20:21:23</sys_created_on>

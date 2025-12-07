@@ -610,7 +610,7 @@
         <update_guid_history>106b053c96bbaa100893cf37902d9f5f:-536025983,245b413c9fbbaa10eabc7d3cb1961a6e:386902479,643bcdf8dbbbaa104de74841a6295e56:967146484</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="scm_reference">589514b593332210e393f6fa3d03d6a0</sys_audit_delete>
+        <sys_audit_delete display_value="">589514b593332210e393f6fa3d03d6a0</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-05 18:49:03</sys_created_on>

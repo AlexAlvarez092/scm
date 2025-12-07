@@ -2,11 +2,17 @@
     <sp_angular_provider action="INSERT_OR_UPDATE">
         <name>scmNavFlyoverManager</name>
         <script><![CDATA[//! Do not remove dependency: spUtil
-function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSerializer, spUtil) {
-    'use strict';
+function scmNavFlyoverManager(
+    $rootScope,
+    scmFlyover,
+    $location,
+    $httpParamSerializer,
+    spUtil
+) {
+    "use strict";
 
-    const NAV_PREFIX = 'scm_nav';
-    const UTILS_SCRIPT_NAME = 'x_680259_scm.NavigationManagerAJAX';
+    const NAV_PREFIX = "scm_nav";
+    const UTILS_SCRIPT_NAME = "x_680259_scm.NavigationManagerAJAX";
 
     let navConfigs = [];
 
@@ -20,7 +26,7 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
         Init a flyover that will render widgets regarding the config.
         This object will be reused every time we need new content
     */
-    const flyover = new scmFlyover('', $rootScope);
+    const flyover = new scmFlyover("", $rootScope);
     flyover.setAppendToBody(true);
 
     /*
@@ -28,14 +34,14 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
         - in case the "page id" has been changed, we need to re-load configs
         - in case URL params changed and we have a suitable config - we open a flyover
     */
-    $rootScope.$on('$locationChangeStart', () => {
+    $rootScope.$on("$locationChangeStart", () => {
         runOnLocationChange();
     });
 
     // Pass accessible functions to the factory and return them
     const factory = {
         navigate: navigate,
-        removeNavParams: removeNavParams
+        removeNavParams: removeNavParams,
     };
 
     return factory;
@@ -56,9 +62,9 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
 
         const decodedNavParams = decodeNavParams(navParams);
         navConfigs
-            .filter(config => config.name == navParams[NAV_PREFIX])
+            .filter((config) => config.name == navParams[NAV_PREFIX])
             // Only 1 config should be there after the filtering
-            .forEach(config => {
+            .forEach((config) => {
                 let title, options, beforeOpen;
 
                 /*
@@ -70,7 +76,10 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
                         beforeOpen = eval(config.beforeOpen);
                     } catch (error) {
                         console.error(
-                            "Failed to evaluate 'Before open' script for config " + config.name + ': ' + error
+                            "Failed to evaluate 'Before open' script for config " +
+                                config.name +
+                                ": " +
+                                error
                         );
                     }
                 })(decodedNavParams, config.render);
@@ -83,7 +92,12 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
                     try {
                         title = eval(config.title);
                     } catch (error) {
-                        console.error("Failed to evaluate 'Title' script for config " + config.name + ': ' + error);
+                        console.error(
+                            "Failed to evaluate 'Title' script for config " +
+                                config.name +
+                                ": " +
+                                error
+                        );
                     }
                 })(decodedNavParams);
 
@@ -92,7 +106,12 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
                     try {
                         options = eval(config.options);
                     } catch (error) {
-                        console.error("Failed to evaluate 'Options' script for config " + config.name + ': ' + error);
+                        console.error(
+                            "Failed to evaluate 'Options' script for config " +
+                                config.name +
+                                ": " +
+                                error
+                        );
                     }
                 })(decodedNavParams);
 
@@ -134,14 +153,14 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
 
     function removeNavParams(navOptionsToRemove) {
         const currentParams = $location.search();
-        navOptionsToRemove.forEach(key => delete currentParams[key]);
+        navOptionsToRemove.forEach((key) => delete currentParams[key]);
         $location.search($httpParamSerializer(currentParams));
     }
 
     function getNavParams() {
         const params = $location.search();
         return Object.keys(params)
-            .filter(key => key.startsWith(NAV_PREFIX))
+            .filter((key) => key.startsWith(NAV_PREFIX))
             .reduce((cur, key) => {
                 return Object.assign(cur, { [key]: params[key] });
             }, {});
@@ -150,17 +169,19 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
     function cleanupNavParams() {
         const currentParams = $location.search();
         const currentNavParams = getNavParams();
-        Object.keys(currentNavParams).forEach(key => delete currentParams[key]);
+        Object.keys(currentNavParams).forEach(
+            (key) => delete currentParams[key]
+        );
         $location.search($httpParamSerializer(currentParams));
     }
 
     function encodeNavParams(params) {
         const encodedParams = {};
-        Object.keys(params).forEach(param => {
-            if (param == 'name') {
+        Object.keys(params).forEach((param) => {
+            if (param == "name") {
                 encodedParams[NAV_PREFIX] = params[param];
             } else {
-                encodedParams[NAV_PREFIX + '_' + param] = params[param];
+                encodedParams[NAV_PREFIX + "_" + param] = params[param];
             }
         });
         return encodedParams;
@@ -168,11 +189,12 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
 
     function decodeNavParams(params) {
         const decodedParams = {};
-        Object.keys(params).forEach(param => {
+        Object.keys(params).forEach((param) => {
             if (param == NAV_PREFIX) {
-                decodedParams['name'] = params[param];
+                decodedParams["name"] = params[param];
             } else {
-                decodedParams[param.slice(NAV_PREFIX.length + 1)] = params[param];
+                decodedParams[param.slice(NAV_PREFIX.length + 1)] =
+                    params[param];
             }
         });
         return decodedParams;
@@ -185,16 +207,17 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
             return;
         }
         scm_scratchpad
-            .glideAjax(UTILS_SCRIPT_NAME, 'getPageConfigs', {
+            .glideAjax(UTILS_SCRIPT_NAME, "getPageConfigs", {
                 page: locationParams.id,
-                params: JSON.stringify(locationParams)
+                params: JSON.stringify(locationParams),
             })
             .then(function (configs) {
                 /*
                     Configs are exposed to the global variable 
                     scm_scratchpad.navigationConfigs for debugging purposes
                 */
-                navConfigs = scm_scratchpad.navigationConfigs = JSON.parse(configs);
+                navConfigs = scm_scratchpad.navigationConfigs =
+                    JSON.parse(configs);
                 runOnLocationChange();
             });
     }
@@ -204,14 +227,14 @@ function scmNavFlyoverManager($rootScope, scmFlyover, $location, $httpParamSeria
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-02 12:09:45</sys_created_on>
         <sys_id>e206404a93a17214e393f6fa3d03d6df</sys_id>
-        <sys_mod_count>15</sys_mod_count>
+        <sys_mod_count>16</sys_mod_count>
         <sys_name>scmNavFlyoverManager</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_e206404a93a17214e393f6fa3d03d6df</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-02 20:50:53</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:38:38</sys_updated_on>
         <type>factory</type>
     </sp_angular_provider>
 </record_update>

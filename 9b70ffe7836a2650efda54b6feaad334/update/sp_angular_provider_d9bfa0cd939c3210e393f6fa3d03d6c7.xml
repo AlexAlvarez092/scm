@@ -11,8 +11,15 @@
  * - Debounced callbacks to prevent excessive refreshes
  * - Automatic cleanup of watchers when components are destroyed
  */
-function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil, spModal) {
-    'use strict';
+function scmRecordWatcher(
+    $timeout,
+    $rootScope,
+    $window,
+    snRecordWatcher,
+    spUtil,
+    spModal
+) {
+    "use strict";
 
     /* Configuration constants */
     const DEBOUNCE_TIMEOUT = 1000; // Milliseconds to wait before executing callbacks
@@ -36,40 +43,46 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
      * @return {Object} - Watcher instance with control methods
      */
     function subscribe(options) {
-        const watcherId = spUtil.createUid('xxxx-xxxx-xxxx-xxxx'); // Unique ID for the watcher
+        const watcherId = spUtil.createUid("xxxx-xxxx-xxxx-xxxx"); // Unique ID for the watcher
 
         // Instantiate the record watcher channel
-        const watcher = snRecordWatcher.initChannel(options.table, options.query, function (event) {
-            // Handle field-specific filtering if options.fields is provided
-            if (options.fields && options.fields.length) {
-                const hasRelevantChanges = options.fields.some(field => event.data.changes.includes(field));
+        const watcher = snRecordWatcher.initChannel(
+            options.table,
+            options.query,
+            function (event) {
+                // Handle field-specific filtering if options.fields is provided
+                if (options.fields && options.fields.length) {
+                    const hasRelevantChanges = options.fields.some((field) =>
+                        event.data.changes.includes(field)
+                    );
 
-                // Skip processing if none of the specified fields changed
-                if (!hasRelevantChanges) return;
-            }
-
-            // Determine if we need to show a warning dialog
-            if (shouldShowWarningDialog(event, options)) {
-                openWarningDialog();
-                return;
-            }
-
-            // Debounce the callback execution
-            if (watcher.timeout) {
-                $timeout.cancel(watcher.timeout);
-            }
-
-            watcher.timeout = $timeout(() => {
-                // Broadcast event to Angular ecosystem and execute callback if provided
-                $rootScope.$broadcast(watcherId, event);
-                if (options.callbackFunction) {
-                    options.callbackFunction(event);
+                    // Skip processing if none of the specified fields changed
+                    if (!hasRelevantChanges) return;
                 }
-            }, DEBOUNCE_TIMEOUT);
-        });
+
+                // Determine if we need to show a warning dialog
+                if (shouldShowWarningDialog(event, options)) {
+                    openWarningDialog();
+                    return;
+                }
+
+                // Debounce the callback execution
+                if (watcher.timeout) {
+                    $timeout.cancel(watcher.timeout);
+                }
+
+                watcher.timeout = $timeout(() => {
+                    // Broadcast event to Angular ecosystem and execute callback if provided
+                    $rootScope.$broadcast(watcherId, event);
+                    if (options.callbackFunction) {
+                        options.callbackFunction(event);
+                    }
+                }, DEBOUNCE_TIMEOUT);
+            }
+        );
 
         // Auto-cleanup when scope is destroyed
-        options.scope.$on('$destroy', () => {
+        options.scope.$on("$destroy", () => {
             unsubscribe(watcherId);
         });
 
@@ -80,10 +93,10 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
         activeWatchers[watcherId] = {
             watcherInstance: watcher,
             table: options.table,
-            query: options.query
+            query: options.query,
         };
 
-        log('Watcher subscribed:', watcherId);
+        log("Watcher subscribed:", watcherId);
 
         return watcher;
     }
@@ -117,13 +130,13 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
 
         spModal
             .open({
-                title: 'Data Changed',
+                title: "Data Changed",
                 message:
-                    'Another user has just modified data you are working on. Please refresh to see the latest information.',
+                    "Another user has just modified data you are working on. Please refresh to see the latest information.",
                 buttons: [
-                    { label: 'OK', primary: true },
-                    { label: 'Cancel', cancel: true }
-                ]
+                    { label: "OK", primary: true },
+                    { label: "Cancel", cancel: true },
+                ],
             })
             .then(function (answer) {
                 if (answer.primary) {
@@ -139,13 +152,13 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
      */
     function unsubscribe(watcherId) {
         if (!activeWatchers[watcherId]) {
-            log('No active watcher found with ID:', watcherId);
+            log("No active watcher found with ID:", watcherId);
             return;
         }
 
         activeWatchers[watcherId].watcherInstance.unsubscribe();
         delete activeWatchers[watcherId];
-        log('Watcher unsubscribed:', watcherId);
+        log("Watcher unsubscribed:", watcherId);
     }
 
     /**
@@ -160,19 +173,19 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
      * @param {string} message - Message to log
      */
     function log(message) {
-        const prefix = '[scmRecordWatcher] ';
-        console.log('%c' + prefix + ' -> ' + message, 'color:blue');
+        const prefix = "[scmRecordWatcher] ";
+        console.log("%c" + prefix + " -> " + message, "color:blue");
     }
 
     // Add to global debugging object if available
-    if (typeof scm_scratchpad !== 'undefined') {
+    if (typeof scm_scratchpad !== "undefined") {
         scm_scratchpad.getActiveWatchers = getActiveWatchers;
     }
 
     return {
         subscribe: subscribe,
         unsubscribe: unsubscribe,
-        getActiveWatchers: getActiveWatchers
+        getActiveWatchers: getActiveWatchers,
     };
 }
 ]]></script>
@@ -180,14 +193,14 @@ function scmRecordWatcher($timeout, $rootScope, $window, snRecordWatcher, spUtil
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-28 09:19:44</sys_created_on>
         <sys_id>d9bfa0cd939c3210e393f6fa3d03d6c7</sys_id>
-        <sys_mod_count>2</sys_mod_count>
+        <sys_mod_count>3</sys_mod_count>
         <sys_name>scmRecordWatcher</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_d9bfa0cd939c3210e393f6fa3d03d6c7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 19:00:07</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:38:44</sys_updated_on>
         <type>factory</type>
     </sp_angular_provider>
 </record_update>

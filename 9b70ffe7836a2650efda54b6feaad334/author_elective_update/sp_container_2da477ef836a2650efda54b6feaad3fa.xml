@@ -52,7 +52,7 @@
         <update_guid_history>f2d4b32337aa2650c7467952e052ee3e:431671660,4fc43fef9e6a2650ae4d599b31fed0c2:531640077,fda477eff36a26502e1d09b38b7e2efc:431671660</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="scm_homepage - Container 1">63f4b72383aa2650efda54b6feaad3ad</sys_audit_delete>
+        <sys_audit_delete display_value="">63f4b72383aa2650efda54b6feaad3ad</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:16:06</sys_created_on>

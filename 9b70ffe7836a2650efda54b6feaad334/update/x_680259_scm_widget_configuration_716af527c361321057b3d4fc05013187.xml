@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_680259_scm_widget_configuration">
+    <x_680259_scm_widget_configuration action="INSERT_OR_UPDATE">
+        <description/>
+        <number>WDT-CONFIG0001001</number>
+        <script><![CDATA[(function executeConfig() {
+    const transactionId = gs.generateGUID();
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: "WDT-CONFIG0001001.js",
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true,
+    });
+
+    try {
+        const widgetHelper = new ContactMainListWidgetHelper({
+            transactionId: transactionId
+        });
+        return widgetHelper.getTableConfigObject();
+    } catch (error) {
+        logger.error(
+            "Error getting table configuration object: " + error.message
+        );
+        throw error;
+    }
+})();]]></script>
+        <short_description>Contact main list configuration object</short_description>
+        <sys_class_name>x_680259_scm_widget_configuration</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:29:22</sys_created_on>
+        <sys_id>716af527c361321057b3d4fc05013187</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name/>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>x_680259_scm_widget_configuration_716af527c361321057b3d4fc05013187</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:29:22</sys_updated_on>
+    </x_680259_scm_widget_configuration>
+</record_update>

@@ -41,7 +41,7 @@
         <update_guid_history>09c53d6e0091f69072eae4eb19a64307:1916371624</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="scmModelProvider.scm-homepage">13e775a293d1f690e393f6fa3d03d6d3</sys_audit_delete>
+        <sys_audit_delete display_value="">13e775a293d1f690e393f6fa3d03d6d3</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-21 23:28:25</sys_created_on>

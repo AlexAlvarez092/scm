@@ -800,7 +800,7 @@ function scmRefPicker($http, spUtil, $timeout) {
         <update_guid_history>3184d435bd3322104ea0d8ac9bbb11ac:-14553836,11ee41705dfbaa10e029fe86ab51b7aa:794833124,08ee017076fbaa104b39dc5a2e650acd:-1467138092,6cdec9309bfbaa102ad44b01ce208cf4:667343460,cf6ecdfce0bbaa1010dc201af5f4d4a6:-1813057676,d91d85bc8fbbaa10beeb4e4d7a97b2ca:-842593243,9fbc01bc7cbbaa108083faa270a004e2:-8260673,91f6cdf098bbaa10271ba324aa7fe506:1157210725,71d6c5b42abbaa10663f3480283e37a9:1576112704</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="scmReferenceField">5a459c7593332210e393f6fa3d03d617</sys_audit_delete>
+        <sys_audit_delete display_value="">5a459c7593332210e393f6fa3d03d617</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-05 18:47:49</sys_created_on>

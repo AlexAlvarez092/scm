@@ -5,24 +5,25 @@
  * scmReference Directive
  * This directive provides a reference input field that allows users to search and select records from a specified table. It supports searching by multiple fields, displaying results, and handling selections.
  */
-function scmRefPicker($http, $timeout) {
-    'use_strict';
+function scmRefPicker($http, $timeout, scmFlyover) {
+    "use_strict";
     return {
-        restrict: 'E',
+        restrict: "E",
         replace: true,
-        require: 'ngModel',
+        require: "ngModel",
         scope: {
-            label: '@',
-            table: '@',
-            displayField: '@',
-            searchFields: '@?',
-            placeholder: '@?',
-            referenceQualifier: '@?',
-            pageSize: '@?',
-            minimumInputLength: '@?',
-            displayFields: '@?',
-            orderBy: '@?',
-            orderDirection: '@?'
+            label: "@",
+            table: "@",
+            displayField: "@",
+            searchFields: "@?",
+            placeholder: "@?",
+            referenceQualifier: "@?",
+            pageSize: "@?",
+            minimumInputLength: "@?",
+            displayFields: "@?",
+            orderBy: "@?",
+            orderDirection: "@?",
+            advancedSearchConfigurationObject: "@?",
         },
 
         /**
@@ -30,96 +31,96 @@ function scmRefPicker($http, $timeout) {
          * Usually, the event ng-click is used, but in this case, it does not work because the event ng-blur of the input is triggered before the ng-click of the li.
          */
         template: `
-      <div class="scm-reference-wrapper">
-          <label
-            for="{{uid}}">
-            {{ label }}
-          </label>
-          <div class="scm-reference-input-wrapper">
-            <input 
-              class="input scm-reference-input"
-              ng-class="{'scm-reference-list-open': showResults}"
-              id="{{displayUid}}"
-              type="text"
-              ng-model="displayValue"
-              ng-click="openList()"
-              placeholder="{{ placeholder || 'Select an option' }}"
-              >
-              <a
-                ng-if="displayValue"
-                ng-click="clearSelection()"
-                class="scm-reference-clear-icon">
-                  <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
-              </a>
-            </input>
-            <sdx-icon 
-              class="scm-reference-magnifying-glass-icon" 
-              icon-name="icon-search" size="3"
-              ng-click="openList()">
-            </sdx-icon>
-          </div>
-          <div class="scm-reference-dropdown-container" ng-show="showResults">
-            <div class="scm-reference-search-wrapper">
-              <input
-                id="{{searchUid}}"
-                type="text"
-                ng-model="searchTerm"
-                ng-model-options="{debounce: 300}"
-                ng-blur="closeList()"
-                ng-change="onSearch()"
-                ng-keydown="handleKeyDown($event)"
-                placeholder="Type to search..."
-                class="input scm-reference-search-input"
-              />
+            <div class="scm-reference-wrapper">
+                <label
+                    for="{{uid}}">
+                    {{ label }}
+                </label>
+                <div class="scm-reference-input-wrapper">
+                    <input 
+                    class="input scm-reference-input"
+                    ng-class="{'scm-reference-list-open': showResults}"
+                    id="{{displayUid}}"
+                    type="text"
+                    ng-model="displayValue"
+                    ng-click="openList()"
+                    placeholder="{{ placeholder || 'Select an option' }}"
+                    >
+                    <a
+                        ng-if="displayValue"
+                        ng-click="clearSelection()"
+                        class="scm-reference-clear-icon">
+                        <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
+                    </a>
+                    </input>
+                    <sdx-icon 
+                    class="scm-reference-magnifying-glass-icon" 
+                    icon-name="icon-search" size="3"
+                    ng-click="openFlyover()">
+                    </sdx-icon>
+                </div>
+                <div class="scm-reference-dropdown-container" ng-show="showResults">
+                    <div class="scm-reference-search-wrapper">
+                    <input
+                        id="{{searchUid}}"
+                        type="text"
+                        ng-model="searchTerm"
+                        ng-model-options="{debounce: 300}"
+                        ng-blur="closeList()"
+                        ng-change="onSearch()"
+                        ng-keydown="handleKeyDown($event)"
+                        placeholder="Type to search..."
+                        class="input scm-reference-search-input"
+                    />
+                    </div>
+                    <ul class="scm-autocomplete-list">
+                        <li 
+                        class="scm-autocomplete-item"
+                        ng-repeat="item in results track by item.sysId"
+                        ng-mousedown="selectItem(item)">
+                            {{ item.displayList }}
+                        </li>
+                        <li
+                        class="scm-autocomplete-item scm-autocomplete-load-more"
+                        ng-if="moreResults && !isLoading"
+                        ng-mousedown="loadMore()">
+                        Load more results…
+                        </li>
+                        <li
+                        class="scm-autocomplete-item scm-autocomplete-loading"
+                        ng-if="isLoading">
+                        Loading…
+                        </li>
+                        <li
+                        class="scm-autocomplete-item scm-autocomplete-no-results"
+                        ng-if="results.length == 0 && !isLoading">
+                        No results…
+                        </li>
+                        <li
+                        class="scm-autocomplete-item scm-autocomplete-no-more"
+                        ng-if="!moreResults && results.length && !isLoading">
+                        No more results…
+                        </li>
+                    </ul>
+                </div>
             </div>
-            <ul class="scm-autocomplete-list">
-                <li 
-                  class="scm-autocomplete-item"
-                  ng-repeat="item in results track by item.sysId"
-                  ng-mousedown="selectItem(item)">
-                    {{ item.displayList }}
-                </li>
-                <li
-                  class="scm-autocomplete-item scm-autocomplete-load-more"
-                  ng-if="moreResults && !isLoading"
-                  ng-mousedown="loadMore()">
-                  Load more results…
-                </li>
-                <li
-                  class="scm-autocomplete-item scm-autocomplete-loading"
-                  ng-if="isLoading">
-                  Loading…
-                </li>
-                <li
-                  class="scm-autocomplete-item scm-autocomplete-no-results"
-                  ng-if="results.length == 0 && !isLoading">
-                  No results…
-                </li>
-                <li
-                  class="scm-autocomplete-item scm-autocomplete-no-more"
-                  ng-if="!moreResults && results.length && !isLoading">
-                  No more results…
-                </li>
-            </ul>
-          </div>
-      </div>
-    `,
+            `,
         controller: ($scope, $http, spUtil) => {
             if (!$scope.label || !$scope.table || !$scope.displayField) {
                 console.error(
-                    'scmRefPicker: Missing required attributes. Please provide label, table, and displayField.'
+                    "scmRefPicker: Missing required attributes. Please provide label, table, and displayField."
                 );
                 return;
             }
 
             // Unique ID for label-for and input
-            $scope.displayUid = spUtil.createUid('xxxx-xxxx');
-            $scope.searchUid = spUtil.createUid('xxxx-xxxx');
+            $scope.displayUid = spUtil.createUid("xxxx-xxxx");
+            $scope.searchUid = spUtil.createUid("xxxx-xxxx");
 
             $scope.isLoading = false;
             $scope.moreResults = false;
-            $scope.searchTerm = '';
-            $scope.displayValue = '';
+            $scope.searchTerm = "";
+            $scope.displayValue = "";
             $scope.showResults = false;
             $scope.results = [];
 
@@ -128,14 +129,19 @@ function scmRefPicker($http, $timeout) {
             const displayField = $scope.displayField;
             const searchFields = $scope.searchFields || $scope.displayField;
             const displayFields = $scope.displayFields || $scope.displayField;
-            const referenceQualifier = $scope.referenceQualifier || '';
-            const pageSize = $scope.pageSize ? parseInt($scope.pageSize, 10) : 10;
-            const minCharts = $scope.minimumInputLength ? parseInt($scope.minimumInputLength, 10) : 2;
-            const orderBy = $scope.orderBy ? $scope.orderBy.trim() : 'sys_id';
+            const referenceQualifier = $scope.referenceQualifier || "";
+            const pageSize = $scope.pageSize
+                ? parseInt($scope.pageSize, 10)
+                : 10;
+            const minCharts = $scope.minimumInputLength
+                ? parseInt($scope.minimumInputLength, 10)
+                : 2;
+            const orderBy = $scope.orderBy ? $scope.orderBy.trim() : "sys_id";
             const orderDirection =
-                $scope.orderDirection && ['asc', 'desc'].includes($scope.orderDirection.toLowerCase())
+                $scope.orderDirection &&
+                ["asc", "desc"].includes($scope.orderDirection.toLowerCase())
                     ? $scope.orderDirection.toLowerCase()
-                    : 'asc';
+                    : "asc";
 
             let page = 0;
 
@@ -151,7 +157,7 @@ function scmRefPicker($http, $timeout) {
                 fetchPage();
             };
 
-            $scope.fetchDisplayValue = sysId => {
+            $scope.fetchDisplayValue = (sysId) => {
                 fetchDisplayValue(sysId);
             };
 
@@ -170,7 +176,10 @@ function scmRefPicker($http, $timeout) {
                 $scope.results = [];
                 $scope.moreResults = false; // Reset "Load more" when starting new search
 
-                if (!$scope.searchTerm || $scope.searchTerm.length < minCharts) {
+                if (
+                    !$scope.searchTerm ||
+                    $scope.searchTerm.length < minCharts
+                ) {
                     return;
                 }
 
@@ -188,32 +197,34 @@ function scmRefPicker($http, $timeout) {
                 let searchConditions = [];
 
                 // Split searchFields by semicolon and create CONTAINS conditions
-                const fields = searchFields.split(';').map(f => f.trim());
+                const fields = searchFields.split(";").map((f) => f.trim());
                 if (term) {
-                    searchConditions = fields.map(field => field + 'CONTAINS' + term);
+                    searchConditions = fields.map(
+                        (field) => field + "CONTAINS" + term
+                    );
                 }
 
-                let finalQuery = searchConditions.join('^OR') || '';
+                let finalQuery = searchConditions.join("^OR") || "";
 
                 // Add reference qualifier if provided
                 if (finalQuery && referenceQualifier) {
-                    finalQuery = referenceQualifier + '^' + finalQuery;
+                    finalQuery = referenceQualifier + "^" + finalQuery;
                 } else if (referenceQualifier) {
                     finalQuery = referenceQualifier;
                 }
 
                 // Add ordering
-                if (orderDirection === 'asc') {
+                if (orderDirection === "asc") {
                     if (finalQuery) {
-                        finalQuery += '^ORDERBY' + orderBy;
+                        finalQuery += "^ORDERBY" + orderBy;
                     } else {
-                        finalQuery = 'ORDERBY' + orderBy;
+                        finalQuery = "ORDERBY" + orderBy;
                     }
                 } else {
                     if (finalQuery) {
-                        finalQuery += '^ORDERBYDESC' + orderBy;
+                        finalQuery += "^ORDERBYDESC" + orderBy;
                     } else {
-                        finalQuery = 'ORDERBYDESC' + orderBy;
+                        finalQuery = "ORDERBYDESC" + orderBy;
                     }
                 }
 
@@ -229,57 +240,70 @@ function scmRefPicker($http, $timeout) {
                 $scope.isLoading = true;
 
                 // Build the ServiceNow REST API URL for the specified table
-                let apiUrl = '/api/now/table/' + table;
+                let apiUrl = "/api/now/table/" + table;
 
                 // Build query parameters array
                 let params = [];
 
                 // Add search query
                 // params.push('sysparm_query=' + encodeURIComponent(buildQuery($scope.searchTerm)));
-                params.push('sysparm_query=' + buildQuery($scope.searchTerm));
+                params.push("sysparm_query=" + buildQuery($scope.searchTerm));
 
                 // Include both value and display_value in response
-                params.push('sysparm_display_value=all');
+                params.push("sysparm_display_value=all");
 
                 // Build fields parameter - always include sys_id, plus displayFields if specified or displayField
-                let fields = ['sys_id', displayField];
-                fields = fields.concat(displayFields.split(';').map(f => f.trim()));
+                let fields = ["sys_id", displayField];
+                fields = fields.concat(
+                    displayFields.split(";").map((f) => f.trim())
+                );
 
-                params.push('sysparm_fields=' + encodeURIComponent(fields.join(',')));
+                params.push(
+                    "sysparm_fields=" + encodeURIComponent(fields.join(","))
+                );
 
                 // Pagination parameters
-                params.push('sysparm_limit=' + pageSize);
-                params.push('sysparm_offset=' + page * pageSize);
+                params.push("sysparm_limit=" + pageSize);
+                params.push("sysparm_offset=" + page * pageSize);
 
                 // Append parameters to URL
-                apiUrl += '?' + params.join('&');
+                apiUrl += "?" + params.join("&");
 
                 // Make HTTP GET request to ServiceNow REST API
                 $http
                     .get(apiUrl)
-                    .then(response => {
+                    .then((response) => {
                         if (response.data && response.data.result) {
                             const items = response.data.result;
 
-                            const newResults = items.map(record => {
-                                let display = '';
+                            const newResults = items.map((record) => {
+                                let display = "";
 
                                 // Handle multiple display fields - concatenate with comma
-                                let fields = displayFields.split(';').map(field => field.trim());
+                                let fields = displayFields
+                                    .split(";")
+                                    .map((field) => field.trim());
                                 let displayValues = [];
 
                                 fields.forEach(function (field) {
-                                    if (record[field] && record[field].display_value) {
-                                        displayValues.push(record[field].display_value);
+                                    if (
+                                        record[field] &&
+                                        record[field].display_value
+                                    ) {
+                                        displayValues.push(
+                                            record[field].display_value
+                                        );
                                     }
                                 });
 
-                                display = displayValues.join(', ');
+                                display = displayValues.join(", ");
 
                                 return {
                                     sysId: record.sys_id.display_value,
-                                    displayList: display || record.sys_id.display_value,
-                                    displaySelected: record[displayField].display_value
+                                    displayList:
+                                        display || record.sys_id.display_value,
+                                    displaySelected:
+                                        record[displayField].display_value,
                                 };
                             });
 
@@ -288,8 +312,11 @@ function scmRefPicker($http, $timeout) {
                             $scope.showResults = true;
                         }
                     })
-                    .catch(error => {
-                        console.error('scmRefPicker: Error loading results', error);
+                    .catch((error) => {
+                        console.error(
+                            "scmRefPicker: Error loading results",
+                            error
+                        );
                         $scope.showResults = false;
                     })
                     .finally(() => {
@@ -305,24 +332,32 @@ function scmRefPicker($http, $timeout) {
                     return;
                 }
 
-                let apiUrl = '/api/now/table/' + table + '/' + sysId;
-                let params = ['sysparm_display_value=all'];
+                let apiUrl = "/api/now/table/" + table + "/" + sysId;
+                let params = ["sysparm_display_value=all"];
 
-                let fields = ['sys_id', displayField];
+                let fields = ["sys_id", displayField];
 
-                params.push('sysparm_fields=' + encodeURIComponent(fields.join(',')));
+                params.push(
+                    "sysparm_fields=" + encodeURIComponent(fields.join(","))
+                );
 
-                apiUrl += '?' + params.join('&');
+                apiUrl += "?" + params.join("&");
 
                 $http
                     .get(apiUrl)
-                    .then(response => {
+                    .then((response) => {
                         if (response.data && response.data.result) {
-                            $scope.displayValue = response.data.result[displayField].display_value;
+                            $scope.displayValue =
+                                response.data.result[
+                                    displayField
+                                ].display_value;
                         }
                     })
-                    .catch(error => {
-                        console.error('scmRefPicker: Error loading display value', error);
+                    .catch((error) => {
+                        console.error(
+                            "scmRefPicker: Error loading display value",
+                            error
+                        );
                     });
             }
         },
@@ -336,7 +371,7 @@ function scmRefPicker($http, $timeout) {
                 if (sysId) {
                     scope.fetchDisplayValue(sysId);
                 } else {
-                    scope.displayValue = '';
+                    scope.displayValue = "";
                 }
             };
 
@@ -348,14 +383,29 @@ function scmRefPicker($http, $timeout) {
 
                 // Initial search to show results to the user
                 if (scope.results.length === 0) {
-                    scope.searchTerm = '';
+                    scope.searchTerm = "";
                     scope.page = 0;
                     scope.fetchPage();
                 }
 
                 $timeout(() => {
-                    angular.element('#' + scope.searchUid).focus();
+                    angular.element("#" + scope.searchUid).focus();
                 }, 0);
+            };
+
+            /**
+             * Opens the flyover for advanced search.
+             * @returns
+             */
+            scope.openFlyover = () => {
+                const flyover = new scmFlyover("scm-table", scope);
+                flyover.setAppendToBody(true);
+                flyover.setOptions({
+                    configurationRecordSysId:
+                        scope.advancedSearchConfigurationObject,
+                });
+                flyover.setTitle("Advanced Search");
+                flyover.open();
             };
 
             /**
@@ -369,42 +419,42 @@ function scmRefPicker($http, $timeout) {
                 }
 
                 // Remove dropdown-up class when closing the list
-                const list = element[0].querySelector('.scm-autocomplete-list');
+                const list = element[0].querySelector(".scm-autocomplete-list");
                 if (list) {
-                    list.classList.remove('dropdown-up');
+                    list.classList.remove("dropdown-up");
                 }
 
                 scope.results = [];
                 scope.moreResults = false;
                 scope.showResults = false;
-                scope.searchTerm = '';
+                scope.searchTerm = "";
             };
 
             /**
              * Selects an item from the results.
              * @param {Object} item - The selected item from the results list.
              */
-            scope.selectItem = item => {
+            scope.selectItem = (item) => {
                 ngModelCtrl.$setViewValue(item.sysId);
                 scope.displayValue = item.displaySelected;
                 scope.showResults = false;
                 scope.moreResults = false;
                 scope.results = [];
-                scope.searchTerm = '';
+                scope.searchTerm = "";
             };
 
             /**
              * Clears the current selection.
              */
             scope.clearSelection = () => {
-                ngModelCtrl.$setViewValue('');
-                scope.displayValue = '';
+                ngModelCtrl.$setViewValue("");
+                scope.displayValue = "";
             };
 
             /**
              * Handles keyboard navigation within the results list.
              */
-            scope.handleKeyDown = event => {
+            scope.handleKeyDown = (event) => {
                 switch (event.keyCode) {
                     case 27: // ESC
                         scope.closeList();
@@ -412,7 +462,7 @@ function scmRefPicker($http, $timeout) {
                         break;
                 }
             };
-        }
+        },
     };
 }
 ]]></script>
@@ -420,14 +470,14 @@ function scmRefPicker($http, $timeout) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>158</sys_mod_count>
+        <sys_mod_count>159</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 18:13:25</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:38:22</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

@@ -16,28 +16,31 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
     return function (widgetId, scopeCtrl) {
         // Flyover configuration object
         this.flyover = {
-            flyoverId: spUtil.createUid('xxxx-xxxx'), // Unique ID for flyover
-            transactionId: '', // Transaction ID
+            flyoverId: spUtil.createUid("xxxx-xxxx"), // Unique ID for flyover
+            transactionId: "", // Transaction ID
             scope: scopeCtrl, // AngularJS scope controller
             widgetId: widgetId, // Widget identifier
-            title: '', // Flyover title
-            subTitle: '', // Flyover subtitle
+            title: "", // Flyover title
+            subTitle: "", // Flyover subtitle
             hasFullClass: false, // CSS class toggle for full width
             options: {}, // Additional options
             isOpen: false, // Flyover open state
-            functionOnOpen: '', // Function to execute on open
-            functionOnClose: '', // Function to execute on close
+            functionOnOpen: "", // Function to execute on open
+            functionOnClose: "", // Function to execute on close
             width: 85, // Default width percentage
-            appendToBody: false // Whether to append flyover to body
+            appendToBody: false, // Whether to append flyover to body
         };
 
         var that = this;
         that.childScope = null; // Child scope for flyover content
 
         // Listen for external close event (e.g., from flyover 'X' button)
-        scopeCtrl.$on('scmFlyover-close-triggered-' + this.flyover.flyoverId, function (e) {
-            close.apply(that);
-        });
+        scopeCtrl.$on(
+            "scmFlyover-close-triggered-" + this.flyover.flyoverId,
+            function (e) {
+                close.apply(that);
+            }
+        );
 
         // Public API methods
         that.open = open;
@@ -83,11 +86,9 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
         // Create isolated child scope
         that.childScope = that.flyover.scope.$new(true);
 
-        debugger;
-
         // Fetch flyover content
         return spUtil
-            .get('scm-flyover', {
+            .get("scm-flyover", {
                 widgetUid: that.flyover.flyoverId,
                 widgetId: that.flyover.widgetId,
                 transactionId: that.flyover.transactionId,
@@ -95,7 +96,7 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
                 subTitle: that.flyover.subTitle,
                 hasFullClass: that.flyover.hasFullClass,
                 width: that.flyover.width,
-                widgetOptions: that.flyover.options
+                widgetOptions: that.flyover.options,
             })
             .then(function (response) {
                 // Execute onOpen callback if defined
@@ -133,29 +134,37 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
             "<div ng-attr-id='flyoverContainer-{{flyOverId}}'>" +
             "     <div ng-repeat='widget in widgetsFly'>" +
             "         <sp-widget widget='widget'></sp-widget>" +
-            '     </div>' +
-            '</div>';
+            "     </div>" +
+            "</div>";
 
         // Check if a snippet for the current FlyOver already exists
-        if (!document.querySelector('#flyoverContainer-' + that.flyover.flyoverId)) {
+        if (
+            !document.querySelector(
+                "#flyoverContainer-" + that.flyover.flyoverId
+            )
+        ) {
             that.childScope.widgetsFly = [response]; // Contains the main widget to load in the FlyOver
             that.childScope.flyOverId = that.flyover.flyoverId; // FlyOverId
 
             var compiledSnippetHTML = $compile(snippetHTML)(that.childScope); // Compile the HTML snippet using the current scope
 
             if (that.flyover.appendToBody) {
-                $('body').append(compiledSnippetHTML);
+                $("body").append(compiledSnippetHTML);
             } else {
-                var widgetContainers = document.querySelectorAll('.v' + scope.widget.sys_id); // Search all open FlyOvers containing the same widget
-                var lastWidgetContainer = widgetContainers[widgetContainers.length - 1]; // The last container is the current FlyOver
+                var widgetContainers = document.querySelectorAll(
+                    ".v" + scope.widget.sys_id
+                ); // Search all open FlyOvers containing the same widget
+                var lastWidgetContainer =
+                    widgetContainers[widgetContainers.length - 1]; // The last container is the current FlyOver
 
-                angular.element(lastWidgetContainer).append(compiledSnippetHTML); // Include the compiledSnippetHTML as the last node of the container
+                angular
+                    .element(lastWidgetContainer)
+                    .append(compiledSnippetHTML); // Include the compiledSnippetHTML as the last node of the container
             }
         }
     }
 
     function setOptions(optionsObject) {
-        debugger;
         this.flyover.options = optionsObject;
     }
 
@@ -168,7 +177,7 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
     }
 
     function _evalFunction(that, functionToEval) {
-        if (typeof functionToEval === 'string') {
+        if (typeof functionToEval === "string") {
             eval(functionToEval);
         } else {
             functionToEval(that);
@@ -200,7 +209,9 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
                 that.childScope = null;
             }
 
-            var widgetElement = document.querySelector('#flyoverContainer-' + that.flyover.flyoverId);
+            var widgetElement = document.querySelector(
+                "#flyoverContainer-" + that.flyover.flyoverId
+            );
             if (widgetElement) {
                 widgetElement.remove();
             }
@@ -222,14 +233,14 @@ function scmFlyover(spUtil, $timeout, $compile, $location) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 16:54:06</sys_created_on>
         <sys_id>432b29d393732a10e393f6fa3d03d662</sys_id>
-        <sys_mod_count>4</sys_mod_count>
+        <sys_mod_count>5</sys_mod_count>
         <sys_name>scmFlyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_432b29d393732a10e393f6fa3d03d662</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 20:40:22</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:38:55</sys_updated_on>
         <type>service</type>
     </sp_angular_provider>
 </record_update>

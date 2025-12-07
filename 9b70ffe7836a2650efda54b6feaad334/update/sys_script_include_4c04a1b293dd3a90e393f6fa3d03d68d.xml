@@ -10,7 +10,7 @@
         <name>Constants</name>
         <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var Constants = Class.create();
-Constants.SCOPE = 'x_680259_scm';
+Constants.SCOPE = "x_680259_scm";
 
 Constants.LOG_LEVELS = {
     TRACE: -2,
@@ -18,28 +18,32 @@ Constants.LOG_LEVELS = {
     INFO: 0,
     WARN: 1,
     ERROR: 2,
-    FATAL: 3
+    FATAL: 3,
 };
 
-Constants.NAVIGATION_MANAGER_CONFIG_TABLE = Constants.SCOPE + '_navigation_manager_configuration';
+Constants.NAVIGATION_MANAGER_CONFIG_TABLE =
+    Constants.SCOPE + "_navigation_manager_configuration";
+
+Constants.WIDGET_CONFIGURATION_TABLE =
+    Constants.SCOPE + "_widget_configuration";
 
 Constants.prototype = {
     initialize: function () {},
 
-    type: 'Constants'
+    type: "Constants",
 };
 ]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 16:39:58</sys_created_on>
         <sys_id>4c04a1b293dd3a90e393f6fa3d03d68d</sys_id>
-        <sys_mod_count>4</sys_mod_count>
+        <sys_mod_count>5</sys_mod_count>
         <sys_name>Constants</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_4c04a1b293dd3a90e393f6fa3d03d68d</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-02 13:06:17</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:30:57</sys_updated_on>
     </sys_script_include>
 </record_update>

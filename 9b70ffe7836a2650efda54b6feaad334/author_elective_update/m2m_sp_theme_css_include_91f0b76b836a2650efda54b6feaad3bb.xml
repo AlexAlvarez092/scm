@@ -60,7 +60,7 @@
         <update_guid_history>b348560d2ae7e650c7af723859a4f4f0:-2077550632</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="SDX v2.31.1.SCM">e6388b5793d07e10e393f6fa3d03d61f</sys_audit_delete>
+        <sys_audit_delete display_value="">e6388b5793d07e10e393f6fa3d03d61f</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-10-05 20:11:53</sys_created_on>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_number">
+    <sys_number action="INSERT_OR_UPDATE">
+        <category display_value="" name="x_680259_scm_flyover_navigation_manager">x_680259_scm_flyover_navigation_manager</category>
+        <maximum_digits>7</maximum_digits>
+        <number>1000</number>
+        <prefix>FLYNAV-CONFIG</prefix>
+        <sys_class_name>sys_number</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:54:54</sys_created_on>
+        <sys_id>d3508a63c3a1321057b3d4fc050131a2</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>FLYNAV-CONFIG</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_number_d3508a63c3a1321057b3d4fc050131a2</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:54:54</sys_updated_on>
+    </sys_number>
+</record_update>

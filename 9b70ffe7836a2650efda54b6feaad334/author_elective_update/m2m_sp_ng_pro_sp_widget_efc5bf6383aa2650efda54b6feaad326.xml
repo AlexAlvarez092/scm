@@ -41,7 +41,7 @@
         <update_guid_history>67c5bf63deaa2650f90d1009be63e728:-568842160</update_guid_history>
     </sys_update_version>
     <sys_metadata_delete action="INSERT_OR_UPDATE">
-        <sys_audit_delete display_value="sdxReference.Copy of Contract details">c2c6f7e383aa2650efda54b6feaad3da</sys_audit_delete>
+        <sys_audit_delete display_value="">c2c6f7e383aa2650efda54b6feaad3da</sys_audit_delete>
         <sys_class_name>sys_metadata_delete</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:23:54</sys_created_on>

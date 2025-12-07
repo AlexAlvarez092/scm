@@ -8,8 +8,8 @@
 
     c.server
         .get({
-            action: 'getRecord',
-            transactionId: c.data.transactionId
+            action: "getRecord",
+            transactionId: c.data.transactionId,
         })
         .then(function (response) {
             c.number = response.data.number;
@@ -39,42 +39,25 @@
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'incident-details.server.js',
+        source: "incident-details.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
-    const sysId = String($sp.getParameter('sys_id'));
+    const sysId = String($sp.getParameter("sys_id"));
     if (!sysId) {
-        logger.warm({
-            message: 'No sys_id parameter provided'
-        });
+        logger.warn("No sys_id parameter provided");
         return;
     }
 
-    if (input && input.action === 'getRecord') {
-        var grRecord = new GlideRecord('incident');
+    if (input && input.action === "getRecord") {
+        var grRecord = new GlideRecord("incident");
         grRecord.get(sysId);
 
         data.number = grRecord.number.getDisplayValue();
-
-        logger.debug({
-            action: 'getRecord',
-            input: input,
-            data: data,
-            options: options,
-            sysId: sysId
-        });
         return;
     }
-
-    logger.debug({
-        input: input,
-        data: data,
-        options: options,
-        sysId: sysId
-    });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -82,14 +65,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:19:38</sys_created_on>
         <sys_id>27c5bf6383aa2650efda54b6feaad324</sys_id>
-        <sys_mod_count>23</sys_mod_count>
+        <sys_mod_count>24</sys_mod_count>
         <sys_name>incident-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_27c5bf6383aa2650efda54b6feaad324</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 21:35:30</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:40:36</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
     <div class="row margin-bottom-3">
         <div class="col">

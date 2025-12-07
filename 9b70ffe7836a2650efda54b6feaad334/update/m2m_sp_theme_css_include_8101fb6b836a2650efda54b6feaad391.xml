@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_theme_css_include">
     <m2m_sp_theme_css_include action="INSERT_OR_UPDATE">
         <order>20</order>
-        <sp_css_include display_value="scm">8af0b36b836a2650efda54b6feaad3c9</sp_css_include>
+        <sp_css_include display_value="scm-base">8af0b36b836a2650efda54b6feaad3c9</sp_css_include>
         <sp_theme display_value="scm">c7c0b76b836a2650efda54b6feaad377</sp_theme>
         <sys_class_name>m2m_sp_theme_css_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>

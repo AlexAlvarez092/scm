@@ -5,9 +5,9 @@
     const c = this;
 
     c.openFlyover = function () {
-        const flyover = new scmFlyover('scm-flyover-example', $scope);
-        flyover.setTitle('Example flyover');
-        flyover.setSubTitle('This is an example subtitle');
+        const flyover = new scmFlyover("scm-flyover-example", $scope);
+        flyover.setTitle("Example flyover");
+        flyover.setSubTitle("This is an example subtitle");
         flyover.setTransactionId(c.data.transactionId);
         flyover.open();
     };
@@ -59,7 +59,18 @@
         const nodes = []; // Final array of all generated nodes
 
         // Color palette for visual variety in testing
-        const colors = ['navy', 'blue', 'purple', 'turquoise', 'apple', 'petrol', 'iris', 'pink', 'red', 'orange'];
+        const colors = [
+            "navy",
+            "blue",
+            "purple",
+            "turquoise",
+            "apple",
+            "petrol",
+            "iris",
+            "pink",
+            "red",
+            "orange",
+        ];
 
         let nodeId = 1; // Global counter for unique node IDs
 
@@ -70,7 +81,7 @@
                 title: `Root Node ${root}`, // Human-readable title
                 parent: null, // No parent indicates root level
                 color: colors[root % colors.length], // Cycle through color palette
-                template: 'scm-tree-card.html' // Default template for all contract nodes
+                template: "scm-tree-card.html", // Default template for all contract nodes
             });
             const rootId = String(nodeId - 1); // Store parent ID for children
 
@@ -82,7 +93,7 @@
                     title: `Node ${root}.${l1}`, // Hierarchical naming convention
                     parent: rootId, // Links to parent root node
                     color: colors[(root + l1) % colors.length], // Varied coloring
-                    template: 'scm-tree-card.html' // Default template for all contract nodes
+                    template: "scm-tree-card.html", // Default template for all contract nodes
                 });
                 const level1Id = String(nodeId - 1);
 
@@ -96,38 +107,45 @@
                             title: `Node ${root}.${l1}.${l2}`,
                             parent: level1Id,
                             color: colors[(root + l1 + l2) % colors.length],
-                            template: 'scm-tree-card.html' // Default template for all contract nodes
+                            template: "scm-tree-card.html", // Default template for all contract nodes
                         });
                         const level2Id = String(nodeId - 1);
 
                         // LEVEL 3: Further reduced branching (40% probability)
                         // Deeper levels have fewer nodes - realistic tree structure
                         if (Math.random() < 0.4) {
-                            const level3Count = 2 + Math.floor(Math.random() * 4);
+                            const level3Count =
+                                2 + Math.floor(Math.random() * 4);
                             for (let l3 = 1; l3 <= level3Count; l3++) {
                                 nodes.push({
                                     id: String(nodeId++),
                                     title: `Node ${root}.${l1}.${l2}.${l3}`,
                                     parent: level2Id,
-                                    color: colors[(root + l1 + l2 + l3) % colors.length],
-                                    template: 'scm-tree-card.html',
+                                    color: colors[
+                                        (root + l1 + l2 + l3) % colors.length
+                                    ],
+                                    template: "scm-tree-card.html",
                                     callbacks: {
-                                        viewAction: 'openFlyover'
-                                    }
+                                        viewAction: "openFlyover",
+                                    },
                                 });
                                 const level3Id = String(nodeId - 1);
 
                                 // LEVEL 4: Minimal deep branching (20% probability)
                                 // Only some nodes go to maximum depth
                                 if (Math.random() < 0.2) {
-                                    const level4Count = 1 + Math.floor(Math.random() * 3);
+                                    const level4Count =
+                                        1 + Math.floor(Math.random() * 3);
                                     for (let l4 = 1; l4 <= level4Count; l4++) {
                                         nodes.push({
                                             id: String(nodeId++),
                                             title: `Node ${root}.${l1}.${l2}.${l3}.${l4}`,
                                             parent: level3Id,
-                                            color: colors[(root + l1 + l2 + l3 + l4) % colors.length],
-                                            template: 'scm-tree-card.html'
+                                            color: colors[
+                                                (root + l1 + l2 + l3 + l4) %
+                                                    colors.length
+                                            ],
+                                            template: "scm-tree-card.html",
                                         });
                                     }
                                 }
@@ -138,8 +156,6 @@
             }
         }
 
-        gs.info('Generated ' + nodes.length + ' test nodes for SCM Tree widget');
-
         return nodes;
     }
 
@@ -148,26 +164,19 @@
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'scm-contract-tree.server.js',
+        source: "scm-contract-tree.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
     const nodes = generateTestData();
-    data.treeWidget = $sp.getWidget('scm-tree', {
+    data.treeWidget = $sp.getWidget("scm-tree", {
         nodes: nodes,
         transactionId: transactionId,
         availableCallbacks: {
-            openFlyover: 'parent.openFlyover'
-        }
-    });
-
-    logger.debug({
-        input: input,
-        data: data,
-        options: options,
-        nodes: nodes
+            openFlyover: "parent.openFlyover",
+        },
     });
 })();
 ]]></script>
@@ -176,14 +185,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-26 09:02:51</sys_created_on>
         <sys_id>f1b85ad493507210e393f6fa3d03d6b7</sys_id>
-        <sys_mod_count>39</sys_mod_count>
+        <sys_mod_count>40</sys_mod_count>
         <sys_name>scm-contract-tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_f1b85ad493507210e393f6fa3d03d6b7</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 21:19:08</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:41:20</sys_updated_on>
         <template><![CDATA[<sp-widget widget="data.treeWidget"></sp-widget>
 ]]></template>
     </sp_widget>

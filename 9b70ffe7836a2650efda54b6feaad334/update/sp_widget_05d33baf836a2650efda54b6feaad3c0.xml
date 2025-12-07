@@ -4,18 +4,18 @@
         <client_script><![CDATA[api.controller = function ($scope, $location) {
     const c = this;
 
-    c.title = 'SCM Demo Portal';
+    c.title = "SCM Demo Portal";
 
     c.navItems = [
-        { label: 'Incidents', pageId: 'incidents', active: false },
-        { label: 'Contacts', pageId: 'contacts', active: false },
-        { label: 'Contracts tree', pageId: 'scm_contract_tree', active: false }
+        { label: "Incidents", pageId: "incidents", active: false },
+        { label: "Contacts", pageId: "contacts", active: false },
+        { label: "Contracts tree", pageId: "scm_contract_tree", active: false },
     ];
 
     updateActiveNavItem();
 
     // Watch for changes in the URL path to update the active navigation item
-    $scope.$on('$locationChangeSuccess', function () {
+    $scope.$on("$locationChangeSuccess", function () {
         updateActiveNavItem();
     });
 
@@ -26,70 +26,71 @@
      */
     function updateActiveNavItem() {
         const params = $location.search();
-        const pageId = params.id || '';
-        c.navItems.forEach(item => {
+        const pageId = params.id || "";
+        c.navItems.forEach((item) => {
             item.active = item.pageId === pageId;
         });
     }
 };
 ]]></client_script>
         <controller_as>c</controller_as>
-        <css>.nav-content {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    height: inherit;
-}
-
-.nav-title {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    font-weight: var(--scm-font-weight-bold);
-    font-size: var(--scm-font-size-xxlarge);
-    color: var(--scm-color-sc-navy);
-    margin-right: var(--scm-spacing-7);
-    height: inherit;
-}
-
-.nav-title:hover {
-    cursor: pointer;
-}
-
-.nav-title a {
-    color: inherit;
-}
-
-.nav-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    font-size: var(--scm-font-size-medium);
-    color: var(--scm-color-sc-navy);
-    margin-right: var(--scm-spacing-5);
-    height: inherit;
-    cursor: pointer;
-}
-
-.nav-item-active {
-    color: var(--scm-color-int-azure-active);
-}
-
-.nav-item a,
-.nav-item a:visited,
-.nav-item a:hover,
-.nav-item a:focus,
-.nav-item a:active {
-    text-decoration: none !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    color: inherit;
-}
-
-.nav-item:hover {
-    font-weight: var(--scm-font-weight-semibold);
-}
+        <css>.nav-content {&#13;
+    display: flex;&#13;
+    flex-direction: row;&#13;
+    align-items: center;&#13;
+    height: inherit;&#13;
+}&#13;
+&#13;
+.nav-title {&#13;
+    display: flex;&#13;
+    flex-direction: row;&#13;
+    align-items: center;&#13;
+    font-weight: var(--scm-font-weight-bold);&#13;
+    font-size: var(--scm-font-size-xxlarge);&#13;
+    color: var(--scm-color-sc-navy);&#13;
+    margin-right: var(--scm-spacing-7);&#13;
+    height: inherit;&#13;
+}&#13;
+&#13;
+.nav-title:hover {&#13;
+    cursor: pointer;&#13;
+    font-weight: 701;&#13;
+}&#13;
+&#13;
+.nav-title a {&#13;
+    color: inherit;&#13;
+}&#13;
+&#13;
+.nav-item {&#13;
+    display: flex;&#13;
+    flex-direction: row;&#13;
+    align-items: center;&#13;
+    font-size: var(--scm-font-size-medium);&#13;
+    color: var(--scm-color-sc-navy);&#13;
+    margin-right: var(--scm-spacing-5);&#13;
+    height: inherit;&#13;
+    cursor: pointer;&#13;
+}&#13;
+&#13;
+.nav-item-active {&#13;
+    color: var(--scm-color-int-azure-active);&#13;
+}&#13;
+&#13;
+.nav-item a,&#13;
+.nav-item a:visited,&#13;
+.nav-item a:hover,&#13;
+.nav-item a:focus,&#13;
+.nav-item a:active {&#13;
+    text-decoration: none !important;&#13;
+    border: none !important;&#13;
+    outline: none !important;&#13;
+    box-shadow: none !important;&#13;
+    color: inherit;&#13;
+}&#13;
+&#13;
+.nav-item:hover {&#13;
+    font-weight: var(--scm-font-weight-semibold);&#13;
+}&#13;
 </css>
         <data_table>sp_instance</data_table>
         <demo_data/>
@@ -111,16 +112,10 @@
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'scm-menu-instance.server.js',
+        source: "scm-menu-instance.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
-    });
-
-    logger.debug({
-        input: input,
-        data: data,
-        options: options
+        includeSessionId: true,
     });
 })();
 ]]></script>
@@ -129,19 +124,23 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:11:08</sys_created_on>
         <sys_id>05d33baf836a2650efda54b6feaad3c0</sys_id>
-        <sys_mod_count>17</sys_mod_count>
+        <sys_mod_count>18</sys_mod_count>
         <sys_name>scm-menu-instance</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_05d33baf836a2650efda54b6feaad3c0</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 21:37:15</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:43:41</sys_updated_on>
         <template><![CDATA[<div class="nav-content">
     <div class="nav-title">
-        <a href="?" ng-bind="::c.title"></a>
+        <a href="?id=scm_homepage" ng-bind="::c.title"></a>
     </div>
-    <div class="nav-item" ng-repeat="item in c.navItems" ng-class="{'nav-item-active': item.active}">
+    <div
+        class="nav-item"
+        ng-repeat="item in c.navItems"
+        ng-class="{'nav-item-active': item.active}"
+    >
         <a href="?id={{::item.pageId}}" ng-bind="::item.label"></a>
     </div>
 </div>

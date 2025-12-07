@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl">
+    <sys_security_acl action="DELETE">
+        <active>true</active>
+        <admin_overrides>true</admin_overrides>
+        <advanced>false</advanced>
+        <applies_to/>
+        <condition/>
+        <controlled_by_refs/>
+        <decision_type>allow</decision_type>
+        <description>Default access control on x_680259_scm_scm_widget_configuration</description>
+        <local_or_existing>Existing</local_or_existing>
+        <name>x_680259_scm_scm_widget_configuration</name>
+        <operation display_value="create">create</operation>
+        <script/>
+        <security_attribute/>
+        <sys_class_name>sys_security_acl</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:24:03</sys_created_on>
+        <sys_id>a3493963c361321057b3d4fc0501311f</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_680259_scm_scm_widget_configuration</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_security_acl_a3493963c361321057b3d4fc0501311f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:24:03</sys_updated_on>
+        <type display_value="record">record</type>
+    </sys_security_acl>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>0b3f5611db8eb1d8b1eb9027c59619fa</instance_id>
+        <instance_name>dev193025</instance_name>
+        <name>sys_security_acl_a3493963c361321057b3d4fc0501311f</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl"><sys_security_acl action="INSERT_OR_UPDATE"><active>true</active><admin_overrides>true</admin_overrides><advanced>false</advanced><applies_to/><condition/><controlled_by_refs/><decision_type>allow</decision_type><description>Default access control on x_680259_scm_scm_widget_configuration</description><local_or_existing>Existing</local_or_existing><name>x_680259_scm_scm_widget_configuration</name><operation display_value="create">create</operation><script/><security_attribute/><sys_class_name>sys_security_acl</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-12-07 12:24:03</sys_created_on><sys_id>a3493963c361321057b3d4fc0501311f</sys_id><sys_mod_count>0</sys_mod_count><sys_name>x_680259_scm_scm_widget_configuration</sys_name><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>sys_security_acl_a3493963c361321057b3d4fc0501311f</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-12-07 12:24:03</sys_updated_on><type display_value="record">record</type></sys_security_acl></record_update>]]></payload>
+        <payload_hash>258576268</payload_hash>
+        <record_name>x_680259_scm_scm_widget_configuration</record_name>
+        <reverted_from/>
+        <source>bf5875afc321321057b3d4fc05013158</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:24:04</sys_created_on>
+        <sys_id>b3493963c361321057b3d4fc05013126</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19af8c4e29d0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:24:04</sys_updated_on>
+        <type>Access Control</type>
+        <update_guid>7349396383613210b0bc9f47accf5d25</update_guid>
+        <update_guid_history>7349396383613210b0bc9f47accf5d25:258576268</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:24:53</sys_created_on>
+        <sys_db_object display_value="" name="sys_security_acl">sys_security_acl</sys_db_object>
+        <sys_id>0ccc314b0e3240b08faa78590ca05d90</sys_id>
+        <sys_metadata>a3493963c361321057b3d4fc0501311f</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_680259_scm_scm_widget_configuration</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent display_value="">b3493963c361321057b3d4fc0501315f</sys_parent>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_security_acl_a3493963c361321057b3d4fc0501311f</sys_update_name>
+        <sys_update_version display_value="sys_security_acl_a3493963c361321057b3d4fc0501311f">b3493963c361321057b3d4fc05013126</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:24:53</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

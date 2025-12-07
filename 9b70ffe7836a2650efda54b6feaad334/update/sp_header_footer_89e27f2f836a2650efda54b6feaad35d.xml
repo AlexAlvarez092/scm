@@ -8,20 +8,20 @@ api.controller = function (scmNavFlyoverManager) {
     // Load the menu
     c.server
         .get({
-            action: 'loadMenu',
-            transactionId: c.data.transactionId
+            action: "loadMenu",
+            transactionId: c.data.transactionId,
         })
-        .then(response => {
+        .then((response) => {
             c.menuWidget = response.data.menu;
         });
 
     // Get the user initials
     c.server
         .get({
-            action: 'getUserInitials',
-            transactionId: c.data.transactionId
+            action: "getUserInitials",
+            transactionId: c.data.transactionId,
         })
-        .then(response => {
+        .then((response) => {
             c.userInitials = response.data.userInitials;
         });
 };
@@ -82,41 +82,24 @@ api.controller = function (scmNavFlyoverManager) {
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'scm-header.server.js',
+        source: "scm-header.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
-    if (input && input.action === 'getUserInitials') {
-        data.userInitials = 'AA';
-
-        logger.debug({
-            action: 'getUserInitials',
-            input: input
-        });
+    if (input && input.action === "getUserInitials") {
+        data.userInitials = "AA";
         return;
     }
 
-    if (input && input.action === 'loadMenu') {
-        const instance = $sp.getValue('sp_rectangle_menu');
+    if (input && input.action === "loadMenu") {
+        const instance = $sp.getValue("sp_rectangle_menu");
         const menu = $sp.getWidgetFromInstance(instance);
 
         data.menu = JSON.parse(JSON.stringify(menu));
-
-        logger.debug({
-            action: 'loadMenu',
-            input: input,
-            menu: data.menu
-        });
         return;
     }
-
-    // logger.debug({
-    //     input: input,
-    //     data: data,
-    //     options: options
-    // });
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -125,14 +108,14 @@ api.controller = function (scmNavFlyoverManager) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:07:08</sys_created_on>
         <sys_id>89e27f2f836a2650efda54b6feaad35d</sys_id>
-        <sys_mod_count>17</sys_mod_count>
+        <sys_mod_count>18</sys_mod_count>
         <sys_name>scm-header</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_header_footer_89e27f2f836a2650efda54b6feaad35d</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-02 20:14:04</sys_updated_on>
+        <sys_updated_on>2025-12-07 12:42:46</sys_updated_on>
         <template><![CDATA[<nav class="nav">
     <div class="nav-container">
         <div class="nav-logo logo">
