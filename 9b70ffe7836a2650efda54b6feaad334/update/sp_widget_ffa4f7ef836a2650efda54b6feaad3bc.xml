@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($scope, $timeout, scmFlyover, scmNavFlyoverManager) {
+        <client_script><![CDATA[api.controller = function (
+    $scope,
+    $timeout,
+    scmFlyover,
+    scmNavFlyoverManager,
+    scmBreadcrumbsManager
+) {
     var c = this;
 
     const TIMEOUT = 500;
@@ -9,6 +15,8 @@
     c.userHtml = "";
 
     $timeout(() => (c.showSpinner = false), TIMEOUT);
+
+    scmBreadcrumbsManager.set(c.data.breadkcrumbs);
 
     c.openFlyover = function () {
         const flyover = new scmFlyover("scm-flyover-example", $scope);
@@ -52,6 +60,8 @@
         includeUserInfo: true,
         includeSessionId: true,
     });
+
+    data.breadkcrumbs = Constants.HOME_BREADCRUMB;
 })();
 ]]></script>
         <servicenow>false</servicenow>
@@ -59,14 +69,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:14:45</sys_created_on>
         <sys_id>ffa4f7ef836a2650efda54b6feaad3bc</sys_id>
-        <sys_mod_count>60</sys_mod_count>
+        <sys_mod_count>63</sys_mod_count>
         <sys_name>scm-homepage</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_ffa4f7ef836a2650efda54b6feaad3bc</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:43:11</sys_updated_on>
+        <sys_updated_on>2025-12-12 21:47:44</sys_updated_on>
         <template><![CDATA[<sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
 
 <div class="scm-container" ng-if="!c.showSpinner">

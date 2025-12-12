@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($sce, spUtil) {
+        <client_script><![CDATA[api.controller = function ($sce, spUtil, scmBreadcrumbsManager) {
     const c = this;
 
     init();
@@ -199,6 +199,19 @@
         document.getElementById(c.filtersDialogId).close();
     };
 
+    function getBreadcrumbs() {
+        return c.server
+            .get({
+                action: "getBreadcrumbs",
+                transactionId: c.data.transactionId,
+                configurationRecordSysId: c.data.configurationRecordSysId,
+            })
+            .then((response) => {
+                const breadcrumbs = response.data.breadcrumbs || [];
+                scmBreadcrumbsManager.set(breadcrumbs);
+            });
+    }
+
     function getTableColumns() {
         return c.server
             .get({
@@ -346,6 +359,7 @@
 
         getTotalRecords();
         getTableData();
+        getBreadcrumbs();
 
         c.selectedFieldsList = angular.copy(c.data.columns);
         c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable);
@@ -365,221 +379,197 @@
 };
 ]]></client_script>
         <controller_as>c</controller_as>
-        <css>#table-header {&#13;
-    display: flex;&#13;
-    flex-direction: row;&#13;
-    align-items: center;&#13;
-    justify-content: space-between;&#13;
-}&#13;
-&#13;
-#table-wrapper {&#13;
-    width: 100%;&#13;
-    overflow-x: auto;&#13;
-&#13;
-    table {&#13;
-        width: 100%;&#13;
-        min-width: max-content;&#13;
-        border-collapse: separate;&#13;
-        border-spacing: 0 var(--scm-spacing-2);&#13;
-        table-layout: fixed;&#13;
-&#13;
-        thead {&#13;
-            tr {&#13;
-                background-color: var(--scm-color-horizon);&#13;
-                height: var(--scm-spacing-5);&#13;
-                border-radius: var(--scm-border-radius-small);&#13;
-&#13;
-                th {&#13;
-                    margin: 0;&#13;
-                    text-align: left;&#13;
-                    vertical-align: middle;&#13;
-                    font-weight: var(--scm-font-weight-semibold);&#13;
-                    font-size: var(--scm-icon-size-xsmall);&#13;
-                    color: var(--scm-color-gray);&#13;
-                    background-color: var(--scm-color-horizon);&#13;
-                    height: var(--scm-spacing-5);&#13;
-                    width: 200px;&#13;
-                    min-width: 200px;&#13;
-                    padding-left: var(--scm-padding-2);&#13;
-                    padding-right: var(--scm-padding-2);&#13;
-                    white-space: nowrap;&#13;
-                    overflow: hidden;&#13;
-                    text-overflow: ellipsis;&#13;
-&#13;
-                    &amp;:first-child {&#13;
-                        border-top-left-radius: var(--scm-border-radius-small);&#13;
-                        border-bottom-left-radius: var(&#13;
-                            --scm-border-radius-small&#13;
-                        );&#13;
-                    }&#13;
-&#13;
-                    &amp;:last-child {&#13;
-                        border-top-right-radius: var(--scm-border-radius-small);&#13;
-                        border-bottom-right-radius: var(&#13;
-                            --scm-border-radius-small&#13;
-                        );&#13;
-                    }&#13;
-                }&#13;
-            }&#13;
-        }&#13;
-&#13;
-        tbody {&#13;
-            tr {&#13;
-                &amp;:hover {&#13;
-                    td {&#13;
-                        background-color: var(--scm-color-blue-tint-3);&#13;
-&#13;
-                        &amp;:hover {&#13;
-                            background-color: var(--scm-color-blue-tint-2);&#13;
-                        }&#13;
-                    }&#13;
-                }&#13;
-&#13;
-                td {&#13;
-                    margin: 0;&#13;
-                    text-align: left;&#13;
-                    vertical-align: middle;&#13;
-                    font-weight: var(--scm-font-weight-regular);&#13;
-                    font-size: var(--scm-icon-size-xsmall);&#13;
-                    background-color: var(--scm-color-sc-white);&#13;
-                    height: var(--scm-spacing-5);&#13;
-                    width: 200px;&#13;
-                    min-width: 200px;&#13;
-                    padding-left: var(--scm-padding-2);&#13;
-                    padding-right: var(--scm-padding-2);&#13;
-                    white-space: nowrap;&#13;
-                    overflow: hidden;&#13;
-                    text-overflow: ellipsis;&#13;
-                    a {&#13;
-                        text-decoration: none !important;&#13;
-                        border: none !important;&#13;
-                        outline: none !important;&#13;
-                        box-shadow: none !important;&#13;
-                        color: inherit !important;&#13;
-&#13;
-                        &amp;:visited,&#13;
-                        &amp;:focus,&#13;
-                        &amp;:active {&#13;
-                            text-decoration: none !important;&#13;
-                            border: none !important;&#13;
-                            outline: none !important;&#13;
-                            box-shadow: none !important;&#13;
-                            color: inherit !important;&#13;
-                        }&#13;
-&#13;
-                        &amp;:hover {&#13;
-                            text-decoration: none !important;&#13;
-                            border: none !important;&#13;
-                            outline: none !important;&#13;
-                            box-shadow: none !important;&#13;
-                            font-weight: var(--scm-font-weight-semibold);&#13;
-                            color: inherit !important;&#13;
-                        }&#13;
-                    }&#13;
-&#13;
-                    &amp;:first-child {&#13;
-                        border-top-left-radius: var(--scm-border-radius-medium);&#13;
-                        border-bottom-left-radius: var(&#13;
-                            --scm-border-radius-medium&#13;
-                        );&#13;
-                    }&#13;
-&#13;
-                    &amp;:last-child {&#13;
-                        border-top-right-radius: var(&#13;
-                            --scm-border-radius-medium&#13;
-                        );&#13;
-                        border-bottom-right-radius: var(&#13;
-                            --scm-border-radius-medium&#13;
-                        );&#13;
-                    }&#13;
-                }&#13;
-            }&#13;
-        }&#13;
-    }&#13;
-}&#13;
-&#13;
-#controller-wrapper {&#13;
-    display: flex;&#13;
-    flex-direction: row;&#13;
-    align-items: center;&#13;
-    justify-content: space-between;&#13;
-    padding-left: var(--scm-padding-2);&#13;
-    padding-right: var(--scm-padding-2);&#13;
-&#13;
-    div {&#13;
-        display: flex;&#13;
-        align-items: center;&#13;
-        gap: var(--scm-spacing-2);&#13;
-    }&#13;
-&#13;
-    #metadata-wrapper {&#13;
-        display: flex;&#13;
-        flex-direction: row;&#13;
-        align-items: center;&#13;
-&#13;
-        div {&#13;
-            color: var(--scm-color-gray);&#13;
-            font-weight: var(--scm-font-weight-light);&#13;
-            font-size: var(--scm-font-size-xsmall);&#13;
-            margin-right: var(--scm-spacing-4);&#13;
-        }&#13;
-    }&#13;
-&#13;
-    sdx-dialog sdx-dialog-toggle sdx-icon {&#13;
-        color: var(--scm-color-int-blue);&#13;
-        cursor: pointer;&#13;
-    }&#13;
-&#13;
-    sdx-dialog sdx-dialog-toggle sdx-icon:hover {&#13;
-        color: var(--scm-color-int-blue-active);&#13;
-    }&#13;
-}&#13;
-&#13;
-#filters-wrapper {&#13;
-    margin-top: var(--scm-spacing-6);&#13;
-    margin-bottom: var(--scm-spacing-6);&#13;
-&#13;
-    #filters-header {&#13;
-        display: flex;&#13;
-        justify-content: space-between;&#13;
-        align-items: center;&#13;
-        margin-bottom: var(--scm-spacing-3);&#13;
-        gap: var(--scm-spacing-4);&#13;
-    }&#13;
-&#13;
-    #filters-form {&#13;
-        display: grid;&#13;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));&#13;
-        gap: var(--scm-spacing-3);&#13;
-    }&#13;
-}&#13;
-&#13;
-#applied-filters-wrapper {&#13;
-    margin-top: var(--scm-spacing-3);&#13;
-    margin-bottom: var(--scm-spacing-3);&#13;
-&#13;
-    #applied-filters-header {&#13;
-        display: flex;&#13;
-        justify-content: space-between;&#13;
-        align-items: center;&#13;
-        margin-bottom: var(--scm-spacing-1);&#13;
-        font-weight: var(--scm-font-weight-semibold);&#13;
-        font-size: var(--scm-icon-size-xsmall);&#13;
-        color: var(--scm-color-gray);&#13;
-    }&#13;
-&#13;
-    #applied-filters-list {&#13;
-        color: var(--scm-color-gray);&#13;
-        font-weight: var(--scm-font-weight-light);&#13;
-        font-size: var(--scm-font-size-xsmall);&#13;
-&#13;
-        .filter-separator {&#13;
-            margin: 0 var(--scm-spacing-2);&#13;
-            font-weight: var(--scm-font-weight-semibold);&#13;
-            color: var(--scm-color-int-blue);&#13;
-        }&#13;
-    }&#13;
-}&#13;
+        <css>#table-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+
+    table {
+        width: 100%;
+        min-width: max-content;
+        border-collapse: separate;
+        border-spacing: 0 var(--scm-spacing-2);
+        table-layout: fixed;
+
+        thead {
+            tr {
+                background-color: var(--scm-color-horizon);
+                height: var(--scm-spacing-5);
+                border-radius: var(--scm-border-radius-small);
+
+                th {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-semibold);
+                    font-size: var(--scm-icon-size-xsmall);
+                    color: var(--scm-color-gray);
+                    background-color: var(--scm-color-horizon);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-small);
+                        border-bottom-left-radius: var(
+                            --scm-border-radius-small
+                        );
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(--scm-border-radius-small);
+                        border-bottom-right-radius: var(
+                            --scm-border-radius-small
+                        );
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                &amp;:hover {
+                    td {
+                        background-color: var(--scm-color-blue-tint-3);
+
+                        &amp;:hover {
+                            background-color: var(--scm-color-blue-tint-2);
+                        }
+                    }
+                }
+
+                td {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-regular);
+                    font-size: var(--scm-icon-size-xsmall);
+                    background-color: var(--scm-color-sc-white);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    /* a tag is styles in the general scm styles file */
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-medium);
+                        border-bottom-left-radius: var(
+                            --scm-border-radius-medium
+                        );
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(
+                            --scm-border-radius-medium
+                        );
+                        border-bottom-right-radius: var(
+                            --scm-border-radius-medium
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#controller-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: var(--scm-padding-2);
+    padding-right: var(--scm-padding-2);
+
+    div {
+        display: flex;
+        align-items: center;
+        gap: var(--scm-spacing-2);
+    }
+
+    #metadata-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        div {
+            color: var(--scm-color-gray);
+            font-weight: var(--scm-font-weight-light);
+            font-size: var(--scm-font-size-xsmall);
+            margin-right: var(--scm-spacing-4);
+        }
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon {
+        color: var(--scm-color-int-blue);
+        cursor: pointer;
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon:hover {
+        color: var(--scm-color-int-blue-active);
+    }
+}
+
+#filters-wrapper {
+    margin-top: var(--scm-spacing-6);
+    margin-bottom: var(--scm-spacing-6);
+
+    #filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-3);
+        gap: var(--scm-spacing-4);
+    }
+
+    #filters-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--scm-spacing-3);
+    }
+}
+
+#applied-filters-wrapper {
+    margin-top: var(--scm-spacing-3);
+    margin-bottom: var(--scm-spacing-3);
+
+    #applied-filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-1);
+        font-weight: var(--scm-font-weight-semibold);
+        font-size: var(--scm-icon-size-xsmall);
+        color: var(--scm-color-gray);
+    }
+
+    #applied-filters-list {
+        color: var(--scm-color-gray);
+        font-weight: var(--scm-font-weight-light);
+        font-size: var(--scm-font-size-xsmall);
+
+        .filter-separator {
+            margin: 0 var(--scm-spacing-2);
+            font-weight: var(--scm-font-weight-semibold);
+            color: var(--scm-color-int-blue);
+        }
+    }
+}
 </css>
         <data_table>sp_instance</data_table>
         <demo_data/>
@@ -767,6 +757,11 @@
         return;
     }
 
+    if (input && input.action === "getBreadcrumbs") {
+        data.breadcrumbs = widgetHelper.getBreadcrumbs();
+        return;
+    }
+
     if (input && input.action === "getTableColumns") {
         data.columns = widgetHelper.getTableColumns();
         return;
@@ -822,14 +817,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:21:31</sys_created_on>
         <sys_id>c736f3a383aa2650efda54b6feaad3f2</sys_id>
-        <sys_mod_count>129</sys_mod_count>
+        <sys_mod_count>135</sys_mod_count>
         <sys_name>scm-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_c736f3a383aa2650efda54b6feaad3f2</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:44:18</sys_updated_on>
+        <sys_updated_on>2025-12-12 21:54:31</sys_updated_on>
         <template><![CDATA[<div>
     <div id="table-header">
         <h1 class="h1" ng-bind="::data.title"></h1>
@@ -898,7 +893,7 @@
                     >
                         <a
                             ng-href="?id={{data.detailViewPage}}&scm_record_id={{record[data.idField]}}"
-                            target="_blank"
+                            target="_self"
                             rel="noopener"
                             ng-bind="record[field.name]"
                         ></a>

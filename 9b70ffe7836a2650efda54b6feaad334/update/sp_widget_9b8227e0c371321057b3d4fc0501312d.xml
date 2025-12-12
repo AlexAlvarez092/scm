@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function ($scope) {
+    const c = this;
+
+    c.breadcrumbs = [];
+
+    c.breadcrumbs.push({ text: "Home", link: "/", icon: "icon-home" });
+
+    $scope.$on("scm-navigation-breadcrumbs_set", function (event, breadcrumbs) {
+        c.breadcrumbs = breadcrumbs;
+    });
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-navigation-breadcrumbs</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-navigation-breadcrumbs</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {})();
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-10 22:38:10</sys_created_on>
+        <sys_id>9b8227e0c371321057b3d4fc0501312d</sys_id>
+        <sys_mod_count>23</sys_mod_count>
+        <sys_name>scm-navigation-breadcrumbs</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_9b8227e0c371321057b3d4fc0501312d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-12 21:31:49</sys_updated_on>
+        <template><![CDATA[<div>
+    <span ng-repeat="breadcrumb in c.breadcrumbs track by $index">
+        <a href="{{breadcrumb.link}}">
+            <sdx-icon
+                ng-if="breadcrumb.icon"
+                icon-name="{{breadcrumb.icon}}"
+            ></sdx-icon>
+            {{breadcrumb.title}}
+        </a>
+        <span ng-if="!$last"> &rarr; </span>
+    </span>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

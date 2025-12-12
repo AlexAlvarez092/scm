@@ -11,7 +11,7 @@
         <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var ContactDetailsWidgetHelper = Class.create();
 ContactDetailsWidgetHelper.prototype = {
-    initialize: function(options) {
+    initialize: function (options) {
         this.transactionId = options.transactionId || gs.generateGUID();
         this.tableHelper = new ContactHelper({
             transactionId: this.transactionId,
@@ -36,7 +36,18 @@ ContactDetailsWidgetHelper.prototype = {
         });
     },
 
-    getCompanyAdvancedSearchConfigurationObjectId: function() {
+    getBreadcrumbsForRecord: function ({ displayValue, linkValue }) {
+        // TODO
+        return [
+            ...ContactMainListWidgetHelper.CONTACT_MAIN_LIST_BREADCRUMB,
+            {
+                title: displayValue,
+                link: "?id=contact_details&scm_record_id=" + linkValue,
+            },
+        ];
+    },
+
+    getCompanyAdvancedSearchConfigurationObjectId: function () {
         // TODO
         return "66aa35a3c361321057b3d4fc050131f3";
     },
@@ -45,7 +56,7 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {String} userName
      * @returns {Object|null}
      */
-    getContactDataByUserName: function(userName) {
+    getContactDataByUserName: function (userName) {
         try {
             const sysId = this.tableHelper.getRecordSysIdByUserName(userName);
             if (!sysId) {
@@ -72,7 +83,7 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {String} sysId
      * @returns {Object|null}
      */
-    getContactDataBySysId: function(sysId) {
+    getContactDataBySysId: function (sysId) {
         try {
             const record = this.tableHelper.getRecordBySysId(sysId);
             if (!record) {
@@ -85,8 +96,8 @@ ContactDetailsWidgetHelper.prototype = {
             }
             const contactData = {};
             for (const [frontEndField, dbField] of Object.entries(
-                    this.mappingFrontEndFieldsToDbFields
-                )) {
+                this.mappingFrontEndFieldsToDbFields
+            )) {
                 if (record.isValidField(dbField)) {
                     contactData[frontEndField] = record.getValue(dbField) || "";
                 } else {
@@ -98,6 +109,12 @@ ContactDetailsWidgetHelper.prototype = {
                     });
                 }
             }
+
+            contactData.breadcrumbs = this.getBreadcrumbsForRecord({
+                displayValue: record.getDisplayValue(),
+                linkValue: record.getValue("user_name"),
+            });
+
             return contactData;
         } catch (error) {
             this.logger.error({
@@ -113,12 +130,12 @@ ContactDetailsWidgetHelper.prototype = {
     /**
      * @returns {Array<String>}
      */
-    getMandatoryFields: function() {
+    getMandatoryFields: function () {
         const dbMandatoryFields = this.tableHelper.getMandatoryFields();
         const frontEndMandatoryFields = [];
         for (const [frontEndField, dbField] of Object.entries(
-                this.mappingFrontEndFieldsToDbFields
-            )) {
+            this.mappingFrontEndFieldsToDbFields
+        )) {
             if (dbMandatoryFields.includes(dbField)) {
                 frontEndMandatoryFields.push(frontEndField);
             }
@@ -129,7 +146,7 @@ ContactDetailsWidgetHelper.prototype = {
     /**
      * @returns {String}
      */
-    getTableName: function() {
+    getTableName: function () {
         return this.tableHelper.getTableName();
     },
 
@@ -137,7 +154,7 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {Object} data
      * @returns {Boolean}
      */
-    validateContactData: function(data) {
+    validateContactData: function (data) {
         try {
             const mappedData = this._mapFrontEndToDbFields(data);
             const isValid = this.tableHelper.validateContactData(mappedData);
@@ -165,7 +182,7 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {Object} data
      * @returns {Boolean}
      */
-    saveDataToContactRecord: function(sysId, data) {
+    saveDataToContactRecord: function (sysId, data) {
         try {
             const mappedData = this._mapFrontEndToDbFields(data);
             return this.tableHelper.saveDataToRecord(sysId, mappedData);
@@ -186,7 +203,7 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {Object} data
      * @returns {Boolean}
      */
-    saveDataToContactRecordByUserName: function(userName, data) {
+    saveDataToContactRecordByUserName: function (userName, data) {
         try {
             const sysId = this.tableHelper.getRecordSysIdByUserName(userName);
             if (!sysId) {
@@ -214,11 +231,11 @@ ContactDetailsWidgetHelper.prototype = {
      * @param {Object} data
      * @returns {Object}
      */
-    _mapFrontEndToDbFields: function(data) {
+    _mapFrontEndToDbFields: function (data) {
         const mappedData = {};
         for (const [frontEndField, dbField] of Object.entries(
-                this.mappingFrontEndFieldsToDbFields
-            )) {
+            this.mappingFrontEndFieldsToDbFields
+        )) {
             if (data.hasOwnProperty(frontEndField)) {
                 mappedData[dbField] = data[frontEndField];
             }
@@ -227,18 +244,19 @@ ContactDetailsWidgetHelper.prototype = {
     },
 
     type: "ContactDetailsWidgetHelper",
-};]]></script>
+};
+]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 14:52:54</sys_created_on>
         <sys_id>db6bc9b2931d3a90e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>27</sys_mod_count>
+        <sys_mod_count>32</sys_mod_count>
         <sys_name>ContactDetailsWidgetHelper</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_db6bc9b2931d3a90e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 20:47:33</sys_updated_on>
+        <sys_updated_on>2025-12-12 21:37:12</sys_updated_on>
     </sys_script_include>
 </record_update>
