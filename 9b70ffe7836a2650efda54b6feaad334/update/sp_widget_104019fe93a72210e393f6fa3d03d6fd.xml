@@ -13,7 +13,6 @@
         arrWatchedFields.push("c.data." + field);
     }
 
-    // Load existing contact details if not a new record
     if (!c.data.isNewRecord) {
         c.server
             .get({
@@ -36,30 +35,20 @@
         c.loading = false;
     }
 
-    // Watch mandatory fields to enable/disable submit button
     $scope.$watchGroup(arrWatchedFields, function (newValues) {
         c.canSubmit = newValues.every((value) => !!value);
     });
 
-    // scmRecordWatcher.subscribe(c.data.tableName, c.data.sysId, function () {
-    //     spUtil.addInfoMessage('This contact record has been updated by another user.');
-    //     c.server.refresh();
-    // });
-
-    // Handle VCF file parsing
     c.onVcfParsed = function (vcfData) {
-        // Map VCF data to form fields
         if (vcfData.firstName) c.data.firstName = vcfData.firstName;
         if (vcfData.lastName) c.data.lastName = vcfData.lastName;
         if (vcfData.email) c.data.email = vcfData.email;
         if (vcfData.mobilePhone || vcfData.workPhone)
             c.data.phone = vcfData.mobilePhone || vcfData.workPhone;
         if (vcfData.jobTitle) c.data.title = vcfData.jobTitle;
-        // Clear any previous errors
         c.dropzoneError = null;
     };
 
-    // Submit contact details
     c.submitContact = function () {
         c.submitting = true;
 
@@ -113,16 +102,13 @@
         includeSessionId: true,
     });
 
-    const utils = new ContactDetailsWidgetHelper({
+    const utils = new ContactDetails({
         transactionId: transactionId,
     });
 
     data.isNewRecord = !!!userName;
     data.arrMandatoryFields = utils.getMandatoryFields();
-    data.companyAdvancedSearchConfigId =
-        utils.getCompanyAdvancedSearchConfigurationObjectId();
 
-    // Handle getting existing record details
     if (input && input.action === "getRecord") {
         const contactData = utils.getContactDataByUserName(userName);
         if (!contactData) {
@@ -141,7 +127,6 @@
         return;
     }
 
-    // Handle submitting contact details
     if (input && input.action === "submitContact") {
         try {
             const isDataValid = utils.validateContactData(input.data);
@@ -170,7 +155,7 @@
         try {
             const isSavedSuccessfully = utils.saveDataToContactRecordByUserName(
                 userName,
-                input.data
+                input.data,
             );
             if (!isSavedSuccessfully) {
                 logger.error({
@@ -201,14 +186,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-27 15:23:40</sys_created_on>
         <sys_id>104019fe93a72210e393f6fa3d03d6fd</sys_id>
-        <sys_mod_count>130</sys_mod_count>
+        <sys_mod_count>134</sys_mod_count>
         <sys_name>contact-details</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_104019fe93a72210e393f6fa3d03d6fd</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-12 21:50:02</sys_updated_on>
+        <sys_updated_on>2026-06-20 22:20:34</sys_updated_on>
         <template><![CDATA[<div class="scm-container">
     <div class="row margin-bottom-3">
         <div class="col">
@@ -218,7 +203,6 @@
 
     <sdx-loading-spinner ng-if="c.loading"></sdx-loading-spinner>
 
-    <!-- Dropzone -->
     <div ng-if="!c.loading && data.isNewRecord">
         <scm-vcf-dropzone
             on-vcf-parsed="c.onVcfParsed(vcfData)"
@@ -324,7 +308,7 @@
                     reference-qualifier="nameISNOTEMPTY"
                     ng-model="c.data.company"
                     page-size="10"
-                    advanced-search-configuration-object="{{data.companyAdvancedSearchConfigId}}"
+                    advanced-search-list-provider="CoreCompanyAdvancedSearch"
                 ></scm-ref-picker>
             </div>
         </div>

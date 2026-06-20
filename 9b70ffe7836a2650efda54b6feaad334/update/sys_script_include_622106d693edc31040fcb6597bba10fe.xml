@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.NavigatorHistory</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>NavigatorHistory</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const NavigatorHistory = Class.create();
+NavigatorHistory.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+    },
+
+    getHistoryEntries: function () {
+        const historyEntries = [];
+        const historyEntry = new GlideRecord(
+            Constants.NAVIGATION_HISTORY_TABLE,
+        );
+        historyEntry.addQuery("user", gs.getUserID());
+        historyEntry.orderByDesc("last_accessed");
+        historyEntry.setLimit(10);
+        historyEntry.query();
+
+        while (historyEntry.next()) {
+            historyEntries.push({
+                url: historyEntry.getValue("url"),
+                title: historyEntry.getValue("title"),
+                subtitle: historyEntry.getValue("subtitle"),
+                lastAccessed: historyEntry.getValue("last_accessed"),
+            });
+        }
+
+        return historyEntries;
+    },
+
+    upsertHistoryEntry: function (url) {
+        if (!url) {
+            this.logger.error("upsertHistoryEntry called with no url");
+            return;
+        }
+
+        const relativeUrl = this._getRelativeUrlWithParams(url);
+
+        const existingEntry = this._getNavigatorHistoryEntry(relativeUrl);
+        if (existingEntry) {
+            this._updateNavigatorHistoryEntry(existingEntry.getUniqueValue());
+            return;
+        }
+
+        const subtitle = this._getSubtitleFromUrl(url);
+        const title = this._getTitleFromUrl(url);
+        const transformedTitle = this._transformTitle(title);
+
+        this._insertNavigatorHistoryEntry(
+            relativeUrl,
+            transformedTitle,
+            subtitle,
+        );
+    },
+
+    _getNavigatorHistoryEntry: function (relativeUrl) {
+        const historyEntry = new GlideRecord(
+            Constants.NAVIGATION_HISTORY_TABLE,
+        );
+        historyEntry.addQuery("url", relativeUrl);
+        historyEntry.addQuery("user", gs.getUserID());
+        historyEntry.setLimit(1);
+        historyEntry.query();
+
+        if (historyEntry.next()) {
+            return historyEntry;
+        }
+    },
+
+    _insertNavigatorHistoryEntry: function (relativeUrl, title, subtitle) {
+        const historyEntry = new GlideRecord(
+            Constants.NAVIGATION_HISTORY_TABLE,
+        );
+        historyEntry.initialize();
+        historyEntry.setValue("url", relativeUrl);
+        historyEntry.setValue("title", title);
+        historyEntry.setValue("subtitle", subtitle);
+        historyEntry.setValue("user", gs.getUserID());
+        historyEntry.setValue("last_accessed", new GlideDateTime());
+        historyEntry.insert();
+    },
+
+    _updateNavigatorHistoryEntry: function (entrySysId) {
+        const historyEntry = new GlideRecord(
+            Constants.NAVIGATION_HISTORY_TABLE,
+        );
+        if (historyEntry.get(entrySysId)) {
+            historyEntry.setValue("last_accessed", new GlideDateTime());
+            historyEntry.update();
+        }
+    },
+
+    _getRelativeUrlWithParams: function (url) {
+        const normalizedUrl = String(url).trim();
+        const withoutDomain = normalizedUrl.replace(
+            /^[a-zA-Z]+:\/\/[^/]+\/?/,
+            "",
+        );
+
+        return withoutDomain.replace(/^\/+/, "");
+    },
+
+    _getSubtitleFromUrl: function (url) {
+        const subtitleRegex = /[?&]scm_record_id=([^&#]*)/;
+        const subtitleMatch = url.match(subtitleRegex);
+        return subtitleMatch ? subtitleMatch[1] : null;
+    },
+
+    _getTitleFromUrl: function (url) {
+        const titleRegex = /[?&]id=([^&#]*)/;
+        const titleMatch = url.match(titleRegex);
+        return titleMatch ? titleMatch[1] : null;
+    },
+
+    _transformTitle: function (title) {
+        if (!title) return null;
+        return title
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    },
+
+    type: "NavigatorHistory",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 11:57:18</sys_created_on>
+        <sys_id>622106d693edc31040fcb6597bba10fe</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>NavigatorHistory</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_622106d693edc31040fcb6597bba10fe</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 13:08:45</sys_updated_on>
+    </sys_script_include>
+</record_update>

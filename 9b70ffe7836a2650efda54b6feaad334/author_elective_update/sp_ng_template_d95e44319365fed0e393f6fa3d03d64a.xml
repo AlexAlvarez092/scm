@@ -1,0 +1,522 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="DELETE">
+        <id>scm-table-settings</id>
+        <sp_widget/>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-01 18:07:39</sys_created_on>
+        <sys_id>d95e44319365fed0e393f6fa3d03d64a</sys_id>
+        <sys_mod_count>5</sys_mod_count>
+        <sys_name>scm-table-settings</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_d95e44319365fed0e393f6fa3d03d64a</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 11:45:04</sys_updated_on>
+        <template><![CDATA[<sdx-dialog
+    label="Please, choose the columns to include in the list"
+    id="{{c.settingsDialogId}}"
+    class="align-header-center"
+>
+    <sdx-dialog-toggle>
+        <sdx-icon
+            icon-name="icon-settings"
+            size="1"
+            id="scm-table-columns-selector-settings-icon"
+            title="Select the columns to include in the list"
+        ></sdx-icon>
+    </sdx-dialog-toggle>
+    <sdx-dialog-content>
+        <div class="scm-settings-dialog-fields-selector-container">
+            <div class="scm-settings-dialog-fields-selector-fields-container">
+                <h3
+                    class="scm-settings-dialog-fields-selector-fields-header"
+                    ng-bind="::'Available fields'"
+                ></h3>
+                <ul class="scm-settings-dialog-fields-selector-fields-list">
+                    <li
+                        ng-repeat="field in c.unselectedFieldsList"
+                        ng-click="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null;"
+                        ng-dblclick="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null; c.addField();"
+                        ng-class="{'scm-table-fields-selector-selected': c.fieldToAdd.name === field.name}"
+                        class="scm-settings-dialog-fields-selector-fields-list-item"
+                        ng-bind="field.label"
+                    ></li>
+                </ul>
+            </div>
+            <div class="scm-settings-dialog-fields-selector-actions-container">
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-right"
+                    icon-size="3"
+                    ng-click="c.addField()"
+                    ng-disabled="!c.fieldToAdd"
+                ></sdx-button>
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-left"
+                    icon-size="3"
+                    ng-click="c.removeField()"
+                    ng-disabled="!c.fieldToRemove"
+                ></sdx-button>
+            </div>
+            <div class="scm-settings-dialog-fields-selector-fields-container">
+                <h3
+                    class="scm-settings-dialog-fields-selector-fields-header"
+                    ng-bind="::'Selected fields'"
+                ></h3>
+                <ul class="scm-settings-dialog-fields-selector-fields-list">
+                    <li
+                        class="scm-settings-dialog-fields-selector-fields-list-item"
+                        ng-repeat="field in c.selectedFieldsList"
+                        ng-click="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null;"
+                        ng-dblclick="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null; c.removeField()"
+                        ng-class="{'scm-table-fields-selector-selected': c.fieldToRemove.name === field.name}"
+                        ng-bind="field.label"
+                    ></li>
+                </ul>
+            </div>
+            <div
+                class="scm-settings-dialog-fields-selector-selected-fields-actions"
+            >
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-up"
+                    icon-size="3"
+                    ng-click="c.moveFieldUp()"
+                    ng-disabled="!c.fieldToRemove"
+                ></sdx-button>
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-down"
+                    icon-size="3"
+                    ng-click="c.moveFieldDown()"
+                    ng-disabled="!c.fieldToRemove"
+                ></sdx-button>
+            </div>
+        </div>
+        <div class="scm-settings-dialog-limit-container">
+            <label
+                for="{{c.limitSelectId}}"
+                ng-bind="::'Records per page:'"
+            ></label>
+            <select
+                id="{{c.limitSelectId}}"
+                ng-model="c.data.limit"
+                ng-change="c.setLimit()"
+            >
+                <option value="10" ng-selected="c.data.limit == 10">10</option>
+                <option value="20" ng-selected="c.data.limit == 20">20</option>
+                <option value="50" ng-selected="c.data.limit == 50">50</option>
+                <option value="100" ng-selected="c.data.limit == 100">
+                    100
+                </option>
+            </select>
+        </div>
+        <div class="scm-settings-dialog-actions-container">
+            <sdx-button
+                theme="transparent"
+                icon-name="icon-reply-message"
+                icon-size="2"
+                ng-click="c.revertListViewToDefault()"
+                ng-if="!c.revertingListView"
+                ng-disabled="c.savingListView || c.cancelingListView"
+                label="Revert to default"
+            ></sdx-button>
+            <sdx-loading-spinner
+                ng-if="c.revertingListView"
+            ></sdx-loading-spinner>
+            <div
+                class="scm-settings-dialog-actions-container-save-cancel-group"
+            >
+                <sdx-button
+                    id="scm-table-columns-selector-cancel-changes"
+                    theme="transparent"
+                    icon-name="icon-close"
+                    icon-size="2"
+                    ng-click="c.cancelListView()"
+                    ng-if="!c.cancelingListView"
+                    ng-disabled="c.revertingListView || c.savingListView"
+                    label="Cancel"
+                ></sdx-button>
+                <sdx-loading-spinner
+                    ng-if="c.cancelingListView"
+                ></sdx-loading-spinner>
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-save"
+                    icon-size="2"
+                    ng-click="c.saveListView()"
+                    ng-if="!c.savingListView"
+                    ng-disabled="c.revertingListView || c.cancelingListView"
+                    label="Save"
+                ></sdx-button>
+                <sdx-loading-spinner
+                    ng-if="c.savingListView"
+                ></sdx-loading-spinner>
+            </div>
+        </div>
+    </sdx-dialog-content>
+</sdx-dialog>
+
+<style>
+    .scm-settings-dialog-fields-selector-container {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-between;
+        height: 400px;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-container {
+        flex: 0 0 40%;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-header {
+        font-weight: var(--scm-font-weight-regular);
+        font-size: var(--scm-font-size-medium);
+        color: var(--scm-color-gray-tint-4);
+        margin-bottom: var(--scm-spacing-1);
+        flex: 0 0 auto;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex: 1 1 0;
+        border: var(--scm-border-width-thin) var(--scm-border-style-default)
+            var(--scm-color-gray-tint-4);
+        border-radius: 5px;
+        overflow-y: auto;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-list-item {
+        padding: var(--scm-padding-2) var(--scm-padding-3);
+        cursor: pointer;
+    }
+
+    .scm-settings-dialog-fields-selector-actions-container {
+        display: flex;
+        flex: 0 0 10%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+    }
+
+    .scm-settings-dialog-fields-selector-selected-fields-actions {
+        display: flex;
+        flex: 0 0 10%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+    }
+
+    .scm-settings-dialog-limit-container {
+        box-sizing: border-box;
+        margin-left: var(--scm-spacing-2);
+        width: 50%;
+    }
+
+    .scm-settings-dialog-actions-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: var(--scm-spacing-3);
+    }
+
+    .scm-settings-dialog-actions-container-save-cancel-group {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: var(--scm-spacing-3);
+    }
+</style>
+]]></template>
+    </sp_ng_template>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sp_ng_template_d95e44319365fed0e393f6fa3d03d64a</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_ng_template"&gt;&lt;sp_ng_template action="INSERT_OR_UPDATE"&gt;&lt;id&gt;scm-table-settings&lt;/id&gt;&lt;sp_widget/&gt;&lt;sys_class_name&gt;sp_ng_template&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-01 18:07:39&lt;/sys_created_on&gt;&lt;sys_id&gt;d95e44319365fed0e393f6fa3d03d64a&lt;/sys_id&gt;&lt;sys_mod_count&gt;5&lt;/sys_mod_count&gt;&lt;sys_name&gt;scm-table-settings&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_ng_template_d95e44319365fed0e393f6fa3d03d64a&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 11:45:04&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;sdx-dialog
+    label="Please, choose the columns to include in the list"
+    id="{{c.settingsDialogId}}"
+    class="align-header-center"
+&gt;
+    &lt;sdx-dialog-toggle&gt;
+        &lt;sdx-icon
+            icon-name="icon-settings"
+            size="1"
+            id="scm-table-columns-selector-settings-icon"
+            title="Select the columns to include in the list"
+        &gt;&lt;/sdx-icon&gt;
+    &lt;/sdx-dialog-toggle&gt;
+    &lt;sdx-dialog-content&gt;
+        &lt;div class="scm-settings-dialog-fields-selector-container"&gt;
+            &lt;div class="scm-settings-dialog-fields-selector-fields-container"&gt;
+                &lt;h3
+                    class="scm-settings-dialog-fields-selector-fields-header"
+                    ng-bind="::'Available fields'"
+                &gt;&lt;/h3&gt;
+                &lt;ul class="scm-settings-dialog-fields-selector-fields-list"&gt;
+                    &lt;li
+                        ng-repeat="field in c.unselectedFieldsList"
+                        ng-click="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null;"
+                        ng-dblclick="c.fieldToAdd = { name: field.name, label: field.label }; c.fieldToRemove = null; c.addField();"
+                        ng-class="{'scm-table-fields-selector-selected': c.fieldToAdd.name === field.name}"
+                        class="scm-settings-dialog-fields-selector-fields-list-item"
+                        ng-bind="field.label"
+                    &gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/div&gt;
+            &lt;div class="scm-settings-dialog-fields-selector-actions-container"&gt;
+                &lt;sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-right"
+                    icon-size="3"
+                    ng-click="c.addField()"
+                    ng-disabled="!c.fieldToAdd"
+                &gt;&lt;/sdx-button&gt;
+                &lt;sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-left"
+                    icon-size="3"
+                    ng-click="c.removeField()"
+                    ng-disabled="!c.fieldToRemove"
+                &gt;&lt;/sdx-button&gt;
+            &lt;/div&gt;
+            &lt;div class="scm-settings-dialog-fields-selector-fields-container"&gt;
+                &lt;h3
+                    class="scm-settings-dialog-fields-selector-fields-header"
+                    ng-bind="::'Selected fields'"
+                &gt;&lt;/h3&gt;
+                &lt;ul class="scm-settings-dialog-fields-selector-fields-list"&gt;
+                    &lt;li
+                        class="scm-settings-dialog-fields-selector-fields-list-item"
+                        ng-repeat="field in c.selectedFieldsList"
+                        ng-click="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null;"
+                        ng-dblclick="c.fieldToRemove = { name: field.name, label: field.label }; c.fieldToAdd = null; c.removeField()"
+                        ng-class="{'scm-table-fields-selector-selected': c.fieldToRemove.name === field.name}"
+                        ng-bind="field.label"
+                    &gt;&lt;/li&gt;
+                &lt;/ul&gt;
+            &lt;/div&gt;
+            &lt;div
+                class="scm-settings-dialog-fields-selector-selected-fields-actions"
+            &gt;
+                &lt;sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-up"
+                    icon-size="3"
+                    ng-click="c.moveFieldUp()"
+                    ng-disabled="!c.fieldToRemove"
+                &gt;&lt;/sdx-button&gt;
+                &lt;sdx-button
+                    theme="transparent"
+                    icon-name="icon-chevron-normal-down"
+                    icon-size="3"
+                    ng-click="c.moveFieldDown()"
+                    ng-disabled="!c.fieldToRemove"
+                &gt;&lt;/sdx-button&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="scm-settings-dialog-limit-container"&gt;
+            &lt;label
+                for="{{c.limitSelectId}}"
+                ng-bind="::'Records per page:'"
+            &gt;&lt;/label&gt;
+            &lt;select
+                id="{{c.limitSelectId}}"
+                ng-model="c.data.limit"
+                ng-change="c.setLimit()"
+            &gt;
+                &lt;option value="10" ng-selected="c.data.limit == 10"&gt;10&lt;/option&gt;
+                &lt;option value="20" ng-selected="c.data.limit == 20"&gt;20&lt;/option&gt;
+                &lt;option value="50" ng-selected="c.data.limit == 50"&gt;50&lt;/option&gt;
+                &lt;option value="100" ng-selected="c.data.limit == 100"&gt;
+                    100
+                &lt;/option&gt;
+            &lt;/select&gt;
+        &lt;/div&gt;
+        &lt;div class="scm-settings-dialog-actions-container"&gt;
+            &lt;sdx-button
+                theme="transparent"
+                icon-name="icon-reply-message"
+                icon-size="2"
+                ng-click="c.revertListViewToDefault()"
+                ng-if="!c.revertingListView"
+                ng-disabled="c.savingListView || c.cancelingListView"
+                label="Revert to default"
+            &gt;&lt;/sdx-button&gt;
+            &lt;sdx-loading-spinner
+                ng-if="c.revertingListView"
+            &gt;&lt;/sdx-loading-spinner&gt;
+            &lt;div
+                class="scm-settings-dialog-actions-container-save-cancel-group"
+            &gt;
+                &lt;sdx-button
+                    id="scm-table-columns-selector-cancel-changes"
+                    theme="transparent"
+                    icon-name="icon-close"
+                    icon-size="2"
+                    ng-click="c.cancelListView()"
+                    ng-if="!c.cancelingListView"
+                    ng-disabled="c.revertingListView || c.savingListView"
+                    label="Cancel"
+                &gt;&lt;/sdx-button&gt;
+                &lt;sdx-loading-spinner
+                    ng-if="c.cancelingListView"
+                &gt;&lt;/sdx-loading-spinner&gt;
+                &lt;sdx-button
+                    theme="transparent"
+                    icon-name="icon-save"
+                    icon-size="2"
+                    ng-click="c.saveListView()"
+                    ng-if="!c.savingListView"
+                    ng-disabled="c.revertingListView || c.cancelingListView"
+                    label="Save"
+                &gt;&lt;/sdx-button&gt;
+                &lt;sdx-loading-spinner
+                    ng-if="c.savingListView"
+                &gt;&lt;/sdx-loading-spinner&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+    &lt;/sdx-dialog-content&gt;
+&lt;/sdx-dialog&gt;
+
+&lt;style&gt;
+    .scm-settings-dialog-fields-selector-container {
+        display: flex;
+        flex-direction: row;
+        align-items: stretch;
+        justify-content: space-between;
+        height: 400px;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-container {
+        flex: 0 0 40%;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-header {
+        font-weight: var(--scm-font-weight-regular);
+        font-size: var(--scm-font-size-medium);
+        color: var(--scm-color-gray-tint-4);
+        margin-bottom: var(--scm-spacing-1);
+        flex: 0 0 auto;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        flex: 1 1 0;
+        border: var(--scm-border-width-thin) var(--scm-border-style-default)
+            var(--scm-color-gray-tint-4);
+        border-radius: 5px;
+        overflow-y: auto;
+    }
+
+    .scm-settings-dialog-fields-selector-fields-list-item {
+        padding: var(--scm-padding-2) var(--scm-padding-3);
+        cursor: pointer;
+    }
+
+    .scm-settings-dialog-fields-selector-actions-container {
+        display: flex;
+        flex: 0 0 10%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+    }
+
+    .scm-settings-dialog-fields-selector-selected-fields-actions {
+        display: flex;
+        flex: 0 0 10%;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: var(--scm-padding-2);
+    }
+
+    .scm-settings-dialog-limit-container {
+        box-sizing: border-box;
+        margin-left: var(--scm-spacing-2);
+        width: 50%;
+    }
+
+    .scm-settings-dialog-actions-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: var(--scm-spacing-3);
+    }
+
+    .scm-settings-dialog-actions-container-save-cancel-group {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: var(--scm-spacing-3);
+    }
+&lt;/style&gt;
+]]&gt;&lt;/template&gt;&lt;/sp_ng_template&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>1768046895</payload_hash>
+        <record_name>scm-table-settings</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:22:11</sys_created_on>
+        <sys_id>a63058629361471040fcb6597bba10af</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee7208fe70000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:22:11</sys_updated_on>
+        <type>Angular ng-template</type>
+        <update_guid>ba265d9e4f69c3105ae3d5cd89143e30</update_guid>
+        <update_guid_history>ba265d9e4f69c3105ae3d5cd89143e30:156272132,066ebd120dedc310c322a11bc9d5ba11:-1858231005,ba265d9e4f69c3105ae3d5cd89143e30:156272132,5f17c4ce7d214310bc839ca0a3869d4a:460144188</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm-table-settings">af9018a29361471040fcb6597bba10a6</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:23:53</sys_created_on>
+        <sys_db_object display_value="" name="sp_ng_template">sp_ng_template</sys_db_object>
+        <sys_id>e363041e637e463293d736284047edc4</sys_id>
+        <sys_metadata>d95e44319365fed0e393f6fa3d03d64a</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm-table-settings</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_ng_template_d95e44319365fed0e393f6fa3d03d64a</sys_update_name>
+        <sys_update_version display_value="sp_ng_template_d95e44319365fed0e393f6fa3d03d64a">a63058629361471040fcb6597bba10af</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:23:53</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

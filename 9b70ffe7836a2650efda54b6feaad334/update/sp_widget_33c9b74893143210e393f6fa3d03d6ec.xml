@@ -1,348 +1,166 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[/**
- * ========================================================================
- * SCM TREE WIDGET - CLIENT SIDE CONTROLLER
- * ========================================================================
- *
- * PURPOSE:
- * This client-side controller manages the interactive behavior of a hierarchical
- * tree widget. It provides expand/collapse functionality, node traversal methods,
- * and state management for large tree structures.
- *
- * FUNCTIONALITY:
- * 1. Tree Navigation: Methods to traverse parent-child relationships
- * 2. State Management: Tracks expanded/collapsed state of each node
- * 3. Utility Functions: Helper methods for tree operations
- * 4. Auto-initialization: Sets up initial tree state
- *
- * DATA DEPENDENCIES:
- * - c.data.nodes: Array of node objects from server
- * - Each node must have: id, parent (null for roots)
- *
- * STATE MANAGEMENT:
- * - c.expandedNodes: Object tracking which nodes are expanded
- * - Key = nodeId, Value = boolean (true = expanded, false/undefined = collapsed)
- */
-api.controller = function ($scope) {
+        <client_script><![CDATA[api.controller = function ($scope) {
     const c = this;
 
-    /**
-     * EXPAND/COLLAPSE STATE STORAGE
-     *
-     * Object that tracks which nodes are currently expanded
-     * Structure: { nodeId: boolean }
-     * - Key: Node ID (string)
-     * - Value: true = expanded, false/undefined = collapsed
-     *
-     * PERFORMANCE NOTE: Using object lookup (O(1)) instead of array search (O(n))
-     */
     c.expandedNodes = {};
 
-    /**
-     * Get all root nodes (nodes without parent)
-     *
-     * ROOT DEFINITION: Nodes where parent is null, undefined, or empty string
-     *
-     * USAGE: Called by main template to render top-level nodes
-     * PERFORMANCE: O(n) - filters entire nodes array
-     *
-     * @returns {Array} Array of root node objects
-     */
-    c.getRootNodes = () => c.data.nodes.filter(node => !node.parent);
+    c.getRootNodes = () => c.data.nodes.filter((node) => !node.parent);
 
-    /**
-     * Get all child nodes of a specific parent
-     *
-     * CHILD DEFINITION: Nodes whose parent property matches the given parentId
-     *
-     * USAGE: Called by recursive templates to render child hierarchies
-     * PERFORMANCE: O(n) - filters entire nodes array each call
-     *
-     * OPTIMIZATION OPPORTUNITY: Could cache results if data is static
-     *
-     * @param {string} parentId - The ID of the parent node
-     * @returns {Array} Array of child node objects
-     */
-    c.getChildren = parentId => c.data.nodes.filter(node => node.parent === parentId);
+    c.getChildren = (parentId) =>
+        c.data.nodes.filter((node) => node.parent === parentId);
 
-    /**
-     * Check if a node has any children
-     *
-     * USAGE: Determines whether to show expand/collapse buttons
-     * PERFORMANCE: O(n) worst case - stops at first match using .some()
-     *
-     * @param {string} nodeId - The ID of the node to check
-     * @returns {boolean} true if node has children, false otherwise
-     */
-    c.hasChildren = nodeId => c.data.nodes.some(node => node.parent === nodeId);
+    c.hasChildren = (nodeId) =>
+        c.data.nodes.some((node) => node.parent === nodeId);
 
-    /**
-     * Check if a specific node is currently expanded
-     *
-     * STATE LOOKUP: Checks the expandedNodes object for the node's state
-     * DEFAULT BEHAVIOR: Returns false for undefined entries (collapsed by default)
-     *
-     * USAGE: Templates use this to conditionally render children
-     * PERFORMANCE: O(1) - direct object property access
-     *
-     * @param {string} nodeId - The ID of the node to check
-     * @returns {boolean} true if expanded, false if collapsed
-     */
-    c.isExpanded = nodeId => c.expandedNodes[nodeId] === true;
+    c.isExpanded = (nodeId) => c.expandedNodes[nodeId] === true;
 
-    /**
-     * Toggle the expand/collapse state of a node
-     *
-     * BEHAVIOR:
-     * - If currently expanded (true) -> set to collapsed (false)
-     * - If currently collapsed (false/undefined) -> set to expanded (true)
-     *
-     * STATE PERSISTENCE: Changes persist until page reload
-     *
-     * USAGE: Called by expand/collapse button click handlers
-     * PERFORMANCE: O(1) - direct object property modification
-     *
-     * @param {string} nodeId - The ID of the node to toggle
-     */
-    c.toggleExpanded = nodeId => {
+    c.toggleExpanded = (nodeId) => {
         c.expandedNodes[nodeId] = !c.expandedNodes[nodeId];
     };
 
-    /**
-     * Get the template for a specific node
-     *
-     * INDIVIDUAL NODE TEMPLATES:
-     * Each node must specify its own template via the 'template' property
-     * No fallback or default template - each node is responsible for its own rendering
-     *
-     * USAGE:
-     * Returns the template filename directly from node.template property
-     * Template string can be used directly in ng-include src attribute
-     *
-     * @param {Object} node - Node object that contains template property
-     * @returns {string} Template filename for this node
-     */
     c.getNodeTemplate = function (node) {
         return node.template;
     };
 
-    /**
-     * Execute callback functions from parent widget scope
-     *
-     * INTER-WIDGET COMMUNICATION:
-     * This function enables the generic tree widget to execute functions
-     * defined in parent/specific widgets (e.g., scm-contract-tree calls scm-tree)
-     *
-     * CALLBACK RESOLUTION PATTERN:
-     * 1. Lookup callback name in availableCallbacks configuration
-     * 2. Parse function path (supports 'parent.' prefix)
-     * 3. Navigate to parent scope and execute function
-     * 4. Pass node data as parameter to callback function
-     *
-     * SCOPE NAVIGATION:
-     * - Uses $scope.$parent to access parent widget's scope
-     * - Assumes parent controller uses alias 'c' (configurable)
-     * - Falls back gracefully if parent scope or function not found
-     *
-     * ERROR HANDLING:
-     * - Logs warning if callback name not found in configuration
-     * - Silently fails if parent scope or function doesn't exist
-     * - Prevents JavaScript errors from breaking tree functionality
-     *
-     * USAGE EXAMPLE:
-     * Template: ng-click="c.executeCallback('openDialog', node)"
-     * Configuration: availableCallbacks: { openDialog: 'parent.showDialog' }
-     * Result: Calls $scope.$parent.c.showDialog(nodeData)
-     *
-     * @param {string} callbackName - Name of callback to execute (key in availableCallbacks)
-     * @param {Object} nodeData - Node data object to pass to callback function
-     */
     c.executeCallback = function (callbackName, nodeData) {
-        if (c.data.availableCallbacks && c.data.availableCallbacks[callbackName]) {
+        if (
+            c.data.availableCallbacks &&
+            c.data.availableCallbacks[callbackName]
+        ) {
             const functionPath = c.data.availableCallbacks[callbackName];
 
-            if (functionPath.startsWith('parent.')) {
-                const functionName = functionPath.replace('parent.', '');
-                // Acceder al scope padre y ejecutar la función
+            if (functionPath.startsWith("parent.")) {
+                const functionName = functionPath.replace("parent.", "");
                 if ($scope.$parent && $scope.$parent.c[functionName]) {
                     $scope.$parent.c[functionName](nodeData);
                 }
             }
         } else {
-            console.warn('Callback not found:', callbackName);
+            console.warn("Callback not found:", callbackName);
         }
     };
 
-    /**
-     * INITIALIZATION LOGIC
-     *
-     * AUTO-EXPAND STRATEGY:
-     * Automatically expands all nodes that have children on widget load
-     * This provides immediate visual feedback of the tree structure
-     *
-     * EXECUTION TIMING:
-     * Runs after all function definitions to ensure hasChildren() is available
-     *
-     * PERFORMANCE IMPACT:
-     * - Calls hasChildren() for every node: O(n²) worst case
-     * - For large datasets, this could cause initial load delay
-     *
-     * ALTERNATIVE STRATEGIES:
-     * - Expand only root nodes: Better performance, less visual information
-     * - Lazy expansion: Expand on first interaction
-     * - Configurable default state: Let server/options control initial state
-     */
-    c.data.nodes.forEach(node => {
+    c.data.nodes.forEach((node) => {
         if (c.hasChildren(node.id)) c.expandedNodes[node.id] = true;
     });
 };
 ]]></client_script>
         <controller_as>c</controller_as>
-        <css>// ================================
-// TREE MASTER VARIABLES
-// ================================
-$tree-indent-horizontal: 320px; // How much children move to the right (total indentation)
-$tree-indent-vertical: 8px; // How much children move down (spacing between nodes)
+        <css>$tree-indent-horizontal: 320px;
+$tree-indent-vertical: 8px;
 
-// Derived variables (calculated from master variables)
 $tree-border-width: 2px;
 $tree-border-color: #e0e0e0;
-$tree-vertical-line-offset: 20px; // FIXED position for vertical line under parent
-$tree-horizontal-line-length: ($tree-indent-horizontal - $tree-vertical-line-offset); // Length of horizontal connector
+$tree-vertical-line-offset: 20px;
+$tree-horizontal-line-length: (
+    $tree-indent-horizontal - $tree-vertical-line-offset
+);
 
-// Additional derived variables for precise positioning
-$tree-horizontal-line-position: 20px; // Where horizontal lines connect to cards (align with card center)
-$tree-mask-start-position: ($tree-horizontal-line-position + $tree-border-width); // Just below horizontal line
-$tree-mask-extend-bottom: ($tree-indent-vertical * 3); // How much the mask extends below to cover excess line
-$tree-background-color: white; // Background color for masking (should match page background)
+$tree-horizontal-line-position: 20px;
+$tree-mask-start-position: (
+    $tree-horizontal-line-position + $tree-border-width
+);
+$tree-mask-extend-bottom: ($tree-indent-vertical * 3);
+$tree-background-color: white;
 
-// Layout and spacing variables
-$tree-container-padding: 16px; // Padding around the entire tree container
-$tree-content-gap: 8px; // Gap between card and button in tree-node-content
-$tree-card-min-width: 300px; // Minimum width for tree cards
-$tree-card-max-width: 500px; // Maximum width for tree cards
+$tree-container-padding: 16px;
+$tree-content-gap: 8px;
+$tree-card-min-width: 300px;
+$tree-card-max-width: 500px;
 
-// Button alignment variables
-$tree-button-alignment-offset: $tree-indent-vertical; // Align button with card header (based on spacing)
+$tree-button-alignment-offset: $tree-indent-vertical;
 
-// ================================
-// TREE STYLES
-// ================================
-
-// Tree container - The outermost wrapper that contains the entire tree
 .tree-container {
-    padding: $tree-container-padding; // Creates breathing room around the entire tree structure
+    padding: $tree-container-padding;
 }
 
-// Each tree node - Represents a single item in the tree hierarchy
 .tree-node {
-    position: relative; // Enables absolute positioning of child elements (lines)
-    margin-bottom: $tree-indent-vertical; // Vertical space between sibling nodes - creates visual separation
+    position: relative;
+    margin-bottom: $tree-indent-vertical;
 
-    // Vertical line under parent - Short connector line from parent to children area
-    // Only appears on nodes that have children (creates the "└" or "├" visual effect)
     &amp;:has(.tree-children)::after {
-        content: ''; // Creates an empty pseudo-element for styling
-        position: absolute; // Positions relative to the parent node
-        left: $tree-vertical-line-offset; // Fixed distance from left edge of parent card
-        top: 100%; // Starts immediately below the parent card
-        width: $tree-border-width; // Thickness of the connector line
-        height: $tree-indent-vertical; // Length of the short connector (distance to children)
-        background: $tree-border-color; // Color of the connecting line
-        z-index: 1; // Ensures line appears above background elements
+        content: "";
+        position: absolute;
+        left: $tree-vertical-line-offset;
+        top: 100%;
+        width: $tree-border-width;
+        height: $tree-indent-vertical;
+        background: $tree-border-color;
+        z-index: 1;
     }
 }
 
-// Tree children container - Groups all child nodes of a parent
-// Creates the indented hierarchy that users see as the tree structure
 .tree-children {
-    margin-left: $tree-indent-horizontal; // Indents children to the right - creates hierarchy depth
-    position: relative; // Enables absolute positioning for connecting lines
-    margin-top: $tree-indent-vertical; // Vertical space between parent and its children
+    margin-left: $tree-indent-horizontal;
+    position: relative;
+    margin-top: $tree-indent-vertical;
 
-    // Main vertical line - Connects all children in a group
-    // This is the long vertical line that runs along the left side of all children
     &amp;::before {
-        content: ''; // Creates pseudo-element for the vertical line
-        position: absolute; // Positioned relative to the children container
-        left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Aligns with parent's vertical line
-        top: 0; // Starts from the top of the children area
-        bottom: 0; // Extends to the bottom of the children area
-        width: $tree-border-width; // Thickness of the vertical line
-        background: $tree-border-color; // Color of the connecting line
+        content: "";
+        position: absolute;
+        left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
+        top: 0;
+        bottom: 0;
+        width: $tree-border-width;
+        background: $tree-border-color;
     }
 
-    // Mask element - Hides excess vertical line after the last child
-    // This creates the visual effect where the line stops at the last child
     &gt; div:last-child &gt; .tree-node::before {
-        content: ''; // Creates pseudo-element for masking
-        position: absolute; // Positioned relative to the last child node
-        left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Same position as vertical line
-        top: $tree-mask-start-position; // Starts just below the child's horizontal line
-        bottom: (-$tree-mask-extend-bottom); // Extends below to cover unwanted line portions
-        width: $tree-border-width; // Same width as the line being masked
-        background: $tree-background-color; // White rectangle that "erases" the line visually
+        content: "";
+        position: absolute;
+        left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
+        top: $tree-mask-start-position;
+        bottom: (-$tree-mask-extend-bottom);
+        width: $tree-border-width;
+        background: $tree-background-color;
     }
 
-    // Horizontal connector lines - Connect each child to the main vertical line
-    // These are the short horizontal lines that connect from vertical line to each card
     &gt; div &gt; .tree-node::after {
-        content: ''; // Creates pseudo-element for horizontal line
-        position: absolute; // Positioned relative to each child node
-        left: (-$tree-indent-horizontal + $tree-vertical-line-offset); // Starts from the vertical line position
-        top: $tree-horizontal-line-position; // Aligns with center of the child card
-        width: $tree-horizontal-line-length; // Length from vertical line to card edge
-        height: $tree-border-width; // Thickness of the horizontal connector
-        background: $tree-border-color; // Color of the connecting line
+        content: "";
+        position: absolute;
+        left: (-$tree-indent-horizontal + $tree-vertical-line-offset);
+        top: $tree-horizontal-line-position;
+        width: $tree-horizontal-line-length;
+        height: $tree-border-width;
+        background: $tree-border-color;
     }
 }
 
-// Progressive visual depth indicators - Cards get smaller as hierarchy gets deeper
-// This creates visual depth perception where deeper items appear "further away"
-
-// Second-level cards (children of root) - Slightly smaller and more transparent
 .tree-node .tree-node .card {
-    opacity: 0.95; // 5% more transparent than root level - subtle depth indication
-    transform: scale(0.98); // 2% smaller than root level - creates depth perception
+    opacity: 0.95;
+    transform: scale(0.98);
 }
 
-// Third-level cards (grandchildren) - Even smaller and more transparent
 .tree-node .tree-node .tree-node .card {
-    opacity: 0.9; // 10% more transparent than root level - deeper depth indication
-    transform: scale(0.96); // 4% smaller than root level - stronger depth perception
+    opacity: 0.9;
+    transform: scale(0.96);
 }
 
-// Card styling overrides - Ensures cards fit properly within the tree layout
 .tree-node .card {
-    margin-left: 0; // Removes default card left margin to align with tree structure
-    margin-bottom: 0 !important; // Removes default bottom margin to prevent extra spacing
-    // width: fit-content; // Card only takes space needed for its content
+    margin-left: 0;
+    margin-bottom: 0 !important;
     width: $tree-card-min-width;
-    min-width: $tree-card-min-width; // Ensures cards aren't too narrow for readability
-    max-width: $tree-card-max-width; // Prevents cards from becoming too wide and breaking layout
+    min-width: $tree-card-min-width;
+    max-width: $tree-card-max-width;
 }
 
-// Flexbox layout for card + expand/collapse button arrangement
-// Creates horizontal layout where card and button sit side by side
 .tree-node-content {
-    display: flex; // Horizontal layout for card and button
-    align-items: flex-start; // Aligns card and button to top (prevents button from stretching)
-    gap: $tree-content-gap; // Space between card and button - provides visual separation
+    display: flex;
+    align-items: flex-start;
+    gap: $tree-content-gap;
 }
 
-// Card wrapper - Controls how the card behaves in the flex layout
 .tree-card-wrapper {
-    flex-shrink: 1; // Allows card to shrink if space is limited (responsive behavior)
-    min-width: 0; // Enables proper shrinking behavior in flex containers
+    flex-shrink: 1;
+    min-width: 0;
 }
 
-// Expand/collapse button styling - Controls the appearance and positioning of tree controls
 .tree-toggle-button {
-    flex-shrink: 0; // Prevents button from shrinking - maintains consistent size
-    align-self: flex-start; // Aligns button to top of its container
-    margin-top: $tree-button-alignment-offset; // Vertical offset to align with card header text
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: $tree-button-alignment-offset;
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -359,119 +177,26 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
         <option_schema/>
         <public>false</public>
         <roles/>
-        <script><![CDATA[/**
- * ========================================================================
- * SCM TREE WIDGET - SERVER SIDE SCRIPT
- * ========================================================================
- *
- * PURPOSE:
- * This server-side script generates or configures data for a hierarchical
- * tree widget. It provides flexible data generation for performance testing
- * and allows customization of node templates.
- *
- * FUNCTIONALITY:
- * 1. Generates large hierarchical datasets for performance testing
- * 2. Supports individual node templates via node.template property
- * 3. Creates realistic tree structures with controlled depth and branching
- * 4. Provides logging for debugging and performance analysis
- *
- * DATA STRUCTURE:
- * Each node must have:
- * - id: Unique identifier (string)
- * - parent: Parent node ID (null for root nodes)
- * - Additional properties depend on the chosen template
- *
- * WIDGET OPTIONS SUPPORTED:
- * - nodes: Custom node array (overrides generated data)
- * - availableCallbacks: Callback mapping for inter-widget communication
- */
-(function () {
+        <script><![CDATA[(function () {
     const transactionId = input?.transactionId || gs.generateGUID();
     data.transactionId = transactionId;
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'scm-tree.server.js',
+        source: "scm-tree.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
-    /**
-     * DATA CONFIGURATION
-     *
-     * The widget supports two data sources:
-     * 1. Custom data via options.nodes (for production use)
-     * 2. Generated test data (for development/testing)
-     *
-     * NODE STRUCTURE REQUIREMENTS:
-     * - Every node MUST have 'id' and 'parent' attributes
-     * - 'parent' should be null for root nodes
-     * - 'template' (required): Template file name for this specific node
-     * - Additional attributes depend on the chosen template
-     * - IDs should be strings for consistency
-     *
-     * NODE TEMPLATE EXAMPLES:
-     * { id: '1', parent: null, template: 'detailed-card.html', title: 'Root' }
-     * { id: '2', parent: '1', template: 'simple-card.html', title: 'Child' }
-     * { id: '3', parent: '1', template: 'admin-card.html', title: 'Child' }
-     */
     data.nodes = options.nodes;
 
-    /**
-     * INTER-WIDGET CALLBACK CONFIGURATION
-     *
-     * Enables communication between generic tree widget and specific parent widgets
-     * Maps callback names to function paths for execution in parent widget scopes
-     *
-     * PURPOSE:
-     * - Allows node templates to trigger functions in parent/specific widgets
-     * - Maintains separation between generic tree logic and specific business logic
-     * - Provides flexible callback system without tight coupling
-     *
-     * DATA STRUCTURE:
-     * Object mapping callback names to function paths
-     * Key: Callback identifier used in templates (e.g., 'openDialog')
-     * Value: Function path with scope prefix (e.g., 'parent.showDialog')
-     *
-     * SUPPORTED PREFIXES:
-     * - 'parent.': Executes function in parent widget's controller scope
-     * - Future: 'service.', 'global.', etc. for other execution contexts
-     *
-     * USAGE EXAMPLES:
-     *
-     * Basic callback mapping:
-     * availableCallbacks: {
-     *   openFlyover: 'parent.openFlyover',
-     *   editRecord: 'parent.editRecord',
-     *   deleteRecord: 'parent.deleteRecord'
-     * }
-     *
-     * Template usage:
-     * <button ng-click="c.executeCallback('openFlyover', node)">View</button>
-     *
-     * Parent widget implementation:
-     * c.openFlyover = function(nodeData) { business logic here };
-     *
-     * CONFIGURATION FLOW:
-     * 1. Parent widget passes availableCallbacks in widget options
-     * 2. Generic tree widget stores mapping in data.availableCallbacks
-     * 3. Node templates call c.executeCallback(callbackName, nodeData)
-     * 4. executeCallback resolves path and executes parent function
-     *
-     * ERROR HANDLING:
-     * - Missing callback names log warnings but don't break functionality
-     * - Invalid function paths fail silently to prevent UI crashes
-     * - Empty or undefined configuration defaults to empty object
-     *
-     * @type {Object} Mapping of callback names to function paths
-     */
     data.availableCallbacks = options.availableCallbacks || {};
 
     logger.debug({
         input: input,
         data: data,
-        options: options
+        options: options,
     });
 })();
 ]]></script>
@@ -480,43 +205,19 @@ $tree-button-alignment-offset: $tree-indent-vertical; // Align button with card 
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-25 21:28:43</sys_created_on>
         <sys_id>33c9b74893143210e393f6fa3d03d6ec</sys_id>
-        <sys_mod_count>119</sys_mod_count>
+        <sys_mod_count>123</sys_mod_count>
         <sys_name>scm-tree</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_33c9b74893143210e393f6fa3d03d6ec</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-01 21:38:53</sys_updated_on>
-        <template><![CDATA[<!--
-========================================================================
-SCM TREE WIDGET - MAIN TEMPLATE
-========================================================================
-
-PURPOSE:
-Entry point template for the hierarchical tree widget. This template
-initializes the root level of the tree and delegates individual node
-rendering to the recursive template.
-
-ARCHITECTURE:
-- Container: Provides styling context and structure
-- Root Loop: Iterates through top-level nodes only
-- Template Delegation: Uses ng-include for recursive node rendering
-
-PERFORMANCE CONSIDERATIONS:
-- Only processes root nodes initially (not entire dataset)
-- Recursive rendering is lazy-loaded as nodes expand
-- track by node.id optimizes Angular's digest cycle
--->
-
-<div class="tree-container">
-    <!-- 
-	ROOT NODES ITERATION:
-	- c.getRootNodes(): Returns only nodes with parent=null
-	- track by node.id: Optimizes Angular change detection
-	- Each root spawns a recursive template instance
-	-->
-    <div ng-repeat="node in c.getRootNodes() track by node.id" ng-include="'scm-tree-node-recursive.html'"></div>
+        <sys_updated_on>2026-06-20 11:45:12</sys_updated_on>
+        <template><![CDATA[<div class="tree-container">
+    <div
+        ng-repeat="node in c.getRootNodes() track by node.id"
+        ng-include="'scm-tree-node-recursive'"
+    ></div>
 </div>
 ]]></template>
     </sp_widget>

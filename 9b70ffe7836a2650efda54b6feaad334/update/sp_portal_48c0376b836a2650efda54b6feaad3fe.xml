@@ -11,7 +11,7 @@
         <enable_embeddables>false</enable_embeddables>
         <enable_favorites>false</enable_favorites>
         <hide_portal_name>false</hide_portal_name>
-        <homepage display_value="scm_homepage">7a4477ef836a2650efda54b6feaad3bb</homepage>
+        <homepage display_value="homepage">7a4477ef836a2650efda54b6feaad3bb</homepage>
         <icon/>
         <inactive>false</inactive>
         <kb_knowledge_base/>
@@ -28,7 +28,7 @@
         <search_application/>
         <search_results_configuration/>
         <sp_chat_queue/>
-        <sp_rectangle_menu display_value="SCM Menu Instance">1cb337af836a2650efda54b6feaad314</sp_rectangle_menu>
+        <sp_rectangle_menu display_value="Menu instance">1cb337af836a2650efda54b6feaad314</sp_rectangle_menu>
         <sys_class_name>sp_portal</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 17:57:38</sys_created_on>

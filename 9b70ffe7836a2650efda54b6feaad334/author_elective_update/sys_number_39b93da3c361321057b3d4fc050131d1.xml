@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_number">
+    <sys_number action="DELETE">
+        <category display_value="" name="x_680259_scm_widget_configuration">x_680259_scm_widget_configuration</category>
+        <maximum_digits>7</maximum_digits>
+        <number>1000</number>
+        <prefix>WDT-CONFIG</prefix>
+        <sys_class_name>sys_number</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:25:50</sys_created_on>
+        <sys_id>39b93da3c361321057b3d4fc050131d1</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>WDT-CONFIG</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_number_39b93da3c361321057b3d4fc050131d1</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:25:50</sys_updated_on>
+    </sys_number>
+<sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_number_39b93da3c361321057b3d4fc050131d1</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_number">
+    <sys_number action="INSERT_OR_UPDATE">
+        <category display_value="" name="x_680259_scm_widget_configuration">x_680259_scm_widget_configuration</category>
+        <maximum_digits>7</maximum_digits>
+        <number>1000</number>
+        <prefix>WDT-CONFIG</prefix>
+        <sys_class_name>sys_number</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:25:50</sys_created_on>
+        <sys_id>39b93da3c361321057b3d4fc050131d1</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>WDT-CONFIG</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_number_39b93da3c361321057b3d4fc050131d1</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2025-12-07 12:25:50</sys_updated_on>
+    </sys_number>
+</record_update>]]></payload>
+        <payload_hash>-2084133560</payload_hash>
+        <record_name>WDT-CONFIG</record_name>
+        <reverted_from/>
+        <source>ef0740ce9321431040fcb6597bba1020</source>
+        <source_table>sys_upgrade_history</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-19 08:25:26</sys_created_on>
+        <sys_id>731708ce9321431040fcb6597bba1054</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19edefc240a0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-19 08:25:26</sys_updated_on>
+        <type>Number</type>
+        <update_guid>331708ce5a214310bbde3a3939edeb54</update_guid>
+        <update_guid_history>331708ce5a214310bbde3a3939edeb54:-2084133560</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:27:46</sys_created_on>
+        <sys_db_object display_value="" name="sys_number">sys_number</sys_db_object>
+        <sys_id>0b2d7233100f4ba081f891a2d98beb90</sys_id>
+        <sys_metadata>39b93da3c361321057b3d4fc050131d1</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>WDT-CONFIG</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent display_value="">f189b5a3c361321057b3d4fc05013156</sys_parent>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_number_39b93da3c361321057b3d4fc050131d1</sys_update_name>
+        <sys_update_version display_value="sys_number_39b93da3c361321057b3d4fc050131d1">731708ce9321431040fcb6597bba1054</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:27:46</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_section action="DELETE" caption="" section_id="e31a7de3c361321057b3d4fc0501312c" sys_domain="global" table="x_680259_scm_widget_configuration" version="3" view="">
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>number</element>
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:03</sys_created_on>
+            <sys_id>1577efde93e9071040fcb6597bba1068</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:03</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.split</element>
+            <position>1</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:03</sys_created_on>
+            <sys_id>9577efde93e9071040fcb6597bba1075</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:03</sys_updated_on>
+            <sys_user/>
+            <type>.split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>sys_scope</element>
+            <position>2</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:03</sys_created_on>
+            <sys_id>5177efde93e9071040fcb6597bba1076</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:03</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>.end_split</element>
+            <position>3</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:04</sys_created_on>
+            <sys_id>2d77efde93e9071040fcb6597bba1076</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:04</sys_updated_on>
+            <sys_user/>
+            <type>.end_split</type>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>short_description</element>
+            <position>4</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:04</sys_created_on>
+            <sys_id>e577efde93e9071040fcb6597bba1077</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:04</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>description</element>
+            <position>5</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:04</sys_created_on>
+            <sys_id>a177efde93e9071040fcb6597bba1078</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:04</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>script</element>
+            <position>6</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2026-06-20 19:24:04</sys_created_on>
+            <sys_id>6d77efde93e9071040fcb6597bba1078</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2026-06-20 19:24:04</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_section action="DELETE">
+            <caption/>
+            <header>false</header>
+            <name>x_680259_scm_widget_configuration</name>
+            <roles/>
+            <sys_class_name>sys_ui_section</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-07 12:28:09</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>e31a7de3c361321057b3d4fc0501312c</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_680259_scm_widget_configuration</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+            <sys_update_name>sys_ui_section_e31a7de3c361321057b3d4fc0501312c</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-07 12:28:09</sys_updated_on>
+            <sys_user/>
+            <title>false</title>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_section>
+    </sys_ui_section>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_ui_section_e31a7de3c361321057b3d4fc0501312c</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update><sys_ui_section caption="" section_id="e31a7de3c361321057b3d4fc0501312c" sys_domain="global" table="x_680259_scm_widget_configuration" version="3" view=""><sys_ui_element action="INSERT_OR_UPDATE"><element>number</element><position>0</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:03</sys_created_on><sys_id>1577efde93e9071040fcb6597bba1068</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:03</sys_updated_on><sys_user/><type/></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>.split</element><position>1</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:03</sys_created_on><sys_id>9577efde93e9071040fcb6597bba1075</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:03</sys_updated_on><sys_user/><type>.split</type></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>sys_scope</element><position>2</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:03</sys_created_on><sys_id>5177efde93e9071040fcb6597bba1076</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:03</sys_updated_on><sys_user/><type/></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>.end_split</element><position>3</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:04</sys_created_on><sys_id>2d77efde93e9071040fcb6597bba1076</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:04</sys_updated_on><sys_user/><type>.end_split</type></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>short_description</element><position>4</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:04</sys_created_on><sys_id>e577efde93e9071040fcb6597bba1077</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:04</sys_updated_on><sys_user/><type/></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>description</element><position>5</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:04</sys_created_on><sys_id>a177efde93e9071040fcb6597bba1078</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:04</sys_updated_on><sys_user/><type/></sys_ui_element><sys_ui_element action="INSERT_OR_UPDATE"><element>script</element><position>6</position><sys_created_by>admin</sys_created_by><sys_created_on>2026-06-20 19:24:04</sys_created_on><sys_id>6d77efde93e9071040fcb6597bba1078</sys_id><sys_mod_count>0</sys_mod_count><sys_ui_formatter/><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2026-06-20 19:24:04</sys_updated_on><sys_user/><type/></sys_ui_element><sys_ui_section action="INSERT_OR_UPDATE"><caption/><header>false</header><name>x_680259_scm_widget_configuration</name><roles/><sys_class_name>sys_ui_section</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-12-07 12:28:09</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>e31a7de3c361321057b3d4fc0501312c</sys_id><sys_mod_count>0</sys_mod_count><sys_name>x_680259_scm_widget_configuration</sys_name><sys_overrides/><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>sys_ui_section_e31a7de3c361321057b3d4fc0501312c</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-12-07 12:28:09</sys_updated_on><sys_user/><title>false</title><view display_value="Default view" name="NULL">Default view</view><view_name/></sys_ui_section></sys_ui_section></record_update>]]></payload>
+        <payload_hash>1306698012</payload_hash>
+        <record_name>Widget Configuration</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 19:24:04</sys_created_on>
+        <sys_id>2177efde93e9071040fcb6597bba107d</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee67d7d8e0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:24:04</sys_updated_on>
+        <type>Form Layout</type>
+        <update_guid>2177efde8be907108df303330b4b7b7c</update_guid>
+        <update_guid_history>2177efde8be907108df303330b4b7b7c:1306698012,e4576bde34e907107241941f0a4bccdd:-841028152,012788ced82143105b083ecf15cc7448:1312016199</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:27:45</sys_created_on>
+        <sys_db_object display_value="" name="sys_ui_section">sys_ui_section</sys_db_object>
+        <sys_id>011fc3b63ca74fa1a2a04e1ec7f90939</sys_id>
+        <sys_metadata>e31a7de3c361321057b3d4fc0501312c</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_680259_scm_widget_configuration</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent display_value="">f189b5a3c361321057b3d4fc05013156</sys_parent>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_ui_section_e31a7de3c361321057b3d4fc0501312c</sys_update_name>
+        <sys_update_version display_value="sys_ui_section_e31a7de3c361321057b3d4fc0501312c">2177efde93e9071040fcb6597bba107d</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:27:45</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

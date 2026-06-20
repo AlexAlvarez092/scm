@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="DELETE">
+        <id>scm-table-metadata</id>
+        <sp_widget/>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-01 18:07:58</sys_created_on>
+        <sys_id>0f7eccbd9325fed0e393f6fa3d03d63f</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>scm-table-metadata</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_0f7eccbd9325fed0e393f6fa3d03d63f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 11:45:01</sys_updated_on>
+        <template><![CDATA[<div id="metadata-wrapper">
+    <div ng-bind="'Total records:' + c.totalRecords"></div>
+    <div ng-bind="'Records per page:' + c.data.limit"></div>
+    <div
+        ng-bind="'Displaying records ' + c.getFirstRecordIndex() + ' to ' + c.getLastRecordIndex()"
+    ></div>
+    <div ng-bind="'Page:' + c.page"></div>
+</div>
+]]></template>
+    </sp_ng_template>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sp_ng_template_0f7eccbd9325fed0e393f6fa3d03d63f</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_ng_template"&gt;&lt;sp_ng_template action="INSERT_OR_UPDATE"&gt;&lt;id&gt;scm-table-metadata&lt;/id&gt;&lt;sp_widget/&gt;&lt;sys_class_name&gt;sp_ng_template&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-01 18:07:58&lt;/sys_created_on&gt;&lt;sys_id&gt;0f7eccbd9325fed0e393f6fa3d03d63f&lt;/sys_id&gt;&lt;sys_mod_count&gt;4&lt;/sys_mod_count&gt;&lt;sys_name&gt;scm-table-metadata&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_ng_template_0f7eccbd9325fed0e393f6fa3d03d63f&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 11:45:01&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;div id="metadata-wrapper"&gt;
+    &lt;div ng-bind="'Total records:' + c.totalRecords"&gt;&lt;/div&gt;
+    &lt;div ng-bind="'Records per page:' + c.data.limit"&gt;&lt;/div&gt;
+    &lt;div
+        ng-bind="'Displaying records ' + c.getFirstRecordIndex() + ' to ' + c.getLastRecordIndex()"
+    &gt;&lt;/div&gt;
+    &lt;div ng-bind="'Page:' + c.page"&gt;&lt;/div&gt;
+&lt;/div&gt;
+]]&gt;&lt;/template&gt;&lt;/sp_ng_template&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-1836832933</payload_hash>
+        <record_name>scm-table-metadata</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:22:11</sys_created_on>
+        <sys_id>2a3058629361471040fcb6597bba10ab</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee7208f5d0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:22:11</sys_updated_on>
+        <type>Angular ng-template</type>
+        <update_guid>4e261d9e0f69c310e849fa84136aa5ed</update_guid>
+        <update_guid_history>4e261d9e0f69c310e849fa84136aa5ed:-1175148161,156e7d1299edc3108271131f1c1171c2:1396459903,4e261d9e0f69c310e849fa84136aa5ed:-1175148161,1b17c4ce872143102c3c28678b45cd3d:76587107</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm-table-metadata">178094a29361471040fcb6597bba1056</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:23:36</sys_created_on>
+        <sys_db_object display_value="" name="sp_ng_template">sp_ng_template</sys_db_object>
+        <sys_id>a48aff25520f4628971ba63cf7984984</sys_id>
+        <sys_metadata>0f7eccbd9325fed0e393f6fa3d03d63f</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm-table-metadata</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_ng_template_0f7eccbd9325fed0e393f6fa3d03d63f</sys_update_name>
+        <sys_update_version display_value="sp_ng_template_0f7eccbd9325fed0e393f6fa3d03d63f">2a3058629361471040fcb6597bba10ab</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:23:36</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

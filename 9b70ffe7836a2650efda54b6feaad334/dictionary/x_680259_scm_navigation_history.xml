@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="a48f75d293edc31040fcb6597bba109e" label="Navigation history" max_length="40" name="x_680259_scm_navigation_history" type="collection">
+        <element label="Title" max_length="40" name="title" type="string"/>
+        <element label="Last accessed" max_length="40" name="last_accessed" type="glide_date_time"/>
+        <element label="Url" max_length="1024" name="url" type="url"/>
+        <element label="Subtitle" max_length="40" name="subtitle" type="string"/>
+        <element label="User" max_length="32" name="user" reference="sys_user" type="reference"/>
+        <index name="index">
+            <element name="user"/>
+        </index>
+    </element>
+</database>

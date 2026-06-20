@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
     <sp_angular_provider action="INSERT_OR_UPDATE">
         <name>scmRefPicker</name>
-        <script><![CDATA[/**
- * scmReference Directive
- * This directive provides a reference input field that allows users to search and select records from a specified table. It supports searching by multiple fields, displaying results, and handling selections.
- */
-function scmRefPicker($http, $timeout, scmFlyover) {
+        <script><![CDATA[function scmRefPicker($http, $timeout, scmFlyover) {
     "use_strict";
     return {
         restrict: "E",
@@ -23,13 +19,9 @@ function scmRefPicker($http, $timeout, scmFlyover) {
             displayFields: "@?",
             orderBy: "@?",
             orderDirection: "@?",
-            advancedSearchConfigurationObject: "@?",
+            advancedSearchListProvider: "@?",
         },
 
-        /**
-         * The tag li uses the event ng-mousedown to select the item.
-         * Usually, the event ng-click is used, but in this case, it does not work because the event ng-blur of the input is triggered before the ng-click of the li.
-         */
         template: `
             <div class="scm-reference-wrapper">
                 <label
@@ -38,25 +30,28 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 </label>
                 <div class="scm-reference-input-wrapper">
                     <input 
-                    class="input scm-reference-input"
-                    ng-class="{'scm-reference-list-open': showResults}"
-                    id="{{displayUid}}"
-                    type="text"
-                    ng-model="displayValue"
-                    ng-click="openList()"
-                    placeholder="{{ placeholder || 'Select an option' }}"
+                        class="input scm-reference-input"
+                        ng-class="{'scm-reference-list-open': showResults}"
+                        id="{{displayUid}}"
+                        type="text"
+                        ng-model="displayValue"
+                        ng-click="openList()"
+                        placeholder="{{ placeholder || 'Select an option' }}"
                     >
                     <a
                         ng-if="displayValue"
                         ng-click="clearSelection()"
                         class="scm-reference-clear-icon">
-                        <sdx-icon icon-name="icon-close" size="1"></sdx-icon>
+                        <sdx-icon 
+                            icon-name="icon-close" 
+                            size="1">
+                        </sdx-icon>
                     </a>
                     </input>
                     <sdx-icon 
-                    class="scm-reference-magnifying-glass-icon" 
-                    icon-name="icon-search" size="3"
-                    ng-click="openFlyover()">
+                        class="scm-reference-magnifying-glass-icon" 
+                        icon-name="icon-search" size="3"
+                        ng-click="openFlyover()">
                     </sdx-icon>
                 </div>
                 <div class="scm-reference-dropdown-container" ng-show="showResults">
@@ -75,31 +70,31 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                     </div>
                     <ul class="scm-autocomplete-list">
                         <li 
-                        class="scm-autocomplete-item"
-                        ng-repeat="item in results track by item.sysId"
-                        ng-mousedown="selectItem(item)">
+                            class="scm-autocomplete-item"
+                            ng-repeat="item in results track by item.sysId"
+                            ng-mousedown="selectItem(item)">
                             {{ item.displayList }}
                         </li>
                         <li
-                        class="scm-autocomplete-item scm-autocomplete-load-more"
-                        ng-if="moreResults && !isLoading"
-                        ng-mousedown="loadMore()">
-                        Load more results…
+                            class="scm-autocomplete-item scm-autocomplete-load-more"
+                            ng-if="moreResults && !isLoading"
+                            ng-mousedown="loadMore()">
+                            Load more results...
                         </li>
                         <li
-                        class="scm-autocomplete-item scm-autocomplete-loading"
-                        ng-if="isLoading">
-                        Loading…
+                            class="scm-autocomplete-item scm-autocomplete-loading"
+                            ng-if="isLoading">
+                            Loading...
                         </li>
                         <li
-                        class="scm-autocomplete-item scm-autocomplete-no-results"
-                        ng-if="results.length == 0 && !isLoading">
-                        No results…
+                            class="scm-autocomplete-item scm-autocomplete-no-results"
+                            ng-if="results.length == 0 && !isLoading">
+                            No results...
                         </li>
                         <li
-                        class="scm-autocomplete-item scm-autocomplete-no-more"
-                        ng-if="!moreResults && results.length && !isLoading">
-                        No more results…
+                            class="scm-autocomplete-item scm-autocomplete-no-more"
+                            ng-if="!moreResults && results.length && !isLoading">
+                            No more results...
                         </li>
                     </ul>
                 </div>
@@ -108,12 +103,11 @@ function scmRefPicker($http, $timeout, scmFlyover) {
         controller: ($scope, $http, spUtil) => {
             if (!$scope.label || !$scope.table || !$scope.displayField) {
                 console.error(
-                    "scmRefPicker: Missing required attributes. Please provide label, table, and displayField."
+                    "scmRefPicker: Missing required attributes. Please provide label, table, and displayField.",
                 );
                 return;
             }
 
-            // Unique ID for label-for and input
             $scope.displayUid = spUtil.createUid("xxxx-xxxx");
             $scope.searchUid = spUtil.createUid("xxxx-xxxx");
 
@@ -124,7 +118,6 @@ function scmRefPicker($http, $timeout, scmFlyover) {
             $scope.showResults = false;
             $scope.results = [];
 
-            // Configuration values
             const table = $scope.table;
             const displayField = $scope.displayField;
             const searchFields = $scope.searchFields || $scope.displayField;
@@ -161,20 +154,14 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 fetchDisplayValue(sysId);
             };
 
-            /**
-             * Loads more results when the user clicks on "Load more results…".
-             */
             function loadMore() {
                 page++;
                 fetchPage();
             }
 
-            /**
-             * Initializes the search when the user types in the input field.
-             */
             function search() {
                 $scope.results = [];
-                $scope.moreResults = false; // Reset "Load more" when starting new search
+                $scope.moreResults = false;
 
                 if (
                     !$scope.searchTerm ||
@@ -187,33 +174,24 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 fetchPage();
             }
 
-            /**
-             * Constructs the query string based on the search term and fields.
-             * It formats the search fields using CONTAINS and applies the reference qualifier if provided.
-             * @param {String} term
-             * @returns {String} the formatted query string
-             */
             function buildQuery(term) {
                 let searchConditions = [];
 
-                // Split searchFields by semicolon and create CONTAINS conditions
                 const fields = searchFields.split(";").map((f) => f.trim());
                 if (term) {
                     searchConditions = fields.map(
-                        (field) => field + "CONTAINS" + term
+                        (field) => field + "CONTAINS" + term,
                     );
                 }
 
                 let finalQuery = searchConditions.join("^OR") || "";
 
-                // Add reference qualifier if provided
                 if (finalQuery && referenceQualifier) {
                     finalQuery = referenceQualifier + "^" + finalQuery;
                 } else if (referenceQualifier) {
                     finalQuery = referenceQualifier;
                 }
 
-                // Add ordering
                 if (orderDirection === "asc") {
                     if (finalQuery) {
                         finalQuery += "^ORDERBY" + orderBy;
@@ -231,45 +209,31 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 return finalQuery;
             }
 
-            /**
-             * Fetches a page of results from the server using ServiceNow REST API.
-             * It sends a GET request to the standard REST API endpoint with proper query parameters. The results are then processed and displayed in the directive.
-             * This function is called when the user types in the input field or clicks on "Load more results…".
-             */
             function fetchPage() {
                 $scope.isLoading = true;
 
-                // Build the ServiceNow REST API URL for the specified table
                 let apiUrl = "/api/now/table/" + table;
 
-                // Build query parameters array
                 let params = [];
 
-                // Add search query
-                // params.push('sysparm_query=' + encodeURIComponent(buildQuery($scope.searchTerm)));
                 params.push("sysparm_query=" + buildQuery($scope.searchTerm));
 
-                // Include both value and display_value in response
                 params.push("sysparm_display_value=all");
 
-                // Build fields parameter - always include sys_id, plus displayFields if specified or displayField
                 let fields = ["sys_id", displayField];
                 fields = fields.concat(
-                    displayFields.split(";").map((f) => f.trim())
+                    displayFields.split(";").map((f) => f.trim()),
                 );
 
                 params.push(
-                    "sysparm_fields=" + encodeURIComponent(fields.join(","))
+                    "sysparm_fields=" + encodeURIComponent(fields.join(",")),
                 );
 
-                // Pagination parameters
                 params.push("sysparm_limit=" + pageSize);
                 params.push("sysparm_offset=" + page * pageSize);
 
-                // Append parameters to URL
                 apiUrl += "?" + params.join("&");
 
-                // Make HTTP GET request to ServiceNow REST API
                 $http
                     .get(apiUrl)
                     .then((response) => {
@@ -279,7 +243,6 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                             const newResults = items.map((record) => {
                                 let display = "";
 
-                                // Handle multiple display fields - concatenate with comma
                                 let fields = displayFields
                                     .split(";")
                                     .map((field) => field.trim());
@@ -291,7 +254,7 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                                         record[field].display_value
                                     ) {
                                         displayValues.push(
-                                            record[field].display_value
+                                            record[field].display_value,
                                         );
                                     }
                                 });
@@ -315,7 +278,7 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                     .catch((error) => {
                         console.error(
                             "scmRefPicker: Error loading results",
-                            error
+                            error,
                         );
                         $scope.showResults = false;
                     })
@@ -324,9 +287,6 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                     });
             }
 
-            /**
-             * Fetches the display value for a specific sys_id when initializing the directive
-             */
             function fetchDisplayValue(sysId) {
                 if (!sysId) {
                     return;
@@ -338,7 +298,7 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 let fields = ["sys_id", displayField];
 
                 params.push(
-                    "sysparm_fields=" + encodeURIComponent(fields.join(","))
+                    "sysparm_fields=" + encodeURIComponent(fields.join(",")),
                 );
 
                 apiUrl += "?" + params.join("&");
@@ -356,14 +316,13 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                     .catch((error) => {
                         console.error(
                             "scmRefPicker: Error loading display value",
-                            error
+                            error,
                         );
                     });
             }
         },
 
         link: (scope, element, attrs, ngModelCtrl) => {
-            // We have to expose the ngModelCtrl to the scope so that we can use it in the template.
             scope.ngModelCtrl = ngModelCtrl;
 
             ngModelCtrl.$render = function () {
@@ -375,13 +334,9 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 }
             };
 
-            /**
-             * Opens the list of results.
-             */
             scope.openList = () => {
                 scope.showResults = true;
 
-                // Initial search to show results to the user
                 if (scope.results.length === 0) {
                     scope.searchTerm = "";
                     scope.page = 0;
@@ -393,32 +348,50 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 }, 0);
             };
 
-            /**
-             * Opens the flyover for advanced search.
-             * @returns
-             */
             scope.openFlyover = () => {
-                const flyover = new scmFlyover("scm-table", scope);
+                const flyover = new scmFlyover("scm-ref-picker-flyover", scope);
                 flyover.setAppendToBody(true);
                 flyover.setOptions({
-                    configurationRecordSysId:
-                        scope.advancedSearchConfigurationObject,
+                    tableProviderScriptInclude:
+                        scope.advancedSearchListProvider,
                 });
                 flyover.setTitle("Advanced Search");
+                scope.activeFlyover = flyover;
                 flyover.open();
             };
 
-            /**
-             * Closes the list of results.
-             */
+            scope.$on("scmRefPicker:select", (e, params) => {
+                const payload = params?.payload || {};
+
+                if (
+                    payload.targetDisplayUid &&
+                    payload.targetDisplayUid !== scope.displayUid
+                ) {
+                    return;
+                }
+
+                if (!payload.sysId) {
+                    return;
+                }
+
+                ngModelCtrl.$setViewValue(payload.sysId);
+                scope.displayValue = payload.displayValue || "";
+                scope.$applyAsync();
+
+                if (
+                    payload.closeFlyover === true &&
+                    scope.activeFlyover &&
+                    scope.activeFlyover.isOpen()
+                ) {
+                    scope.activeFlyover.close();
+                }
+            });
+
             scope.closeList = () => {
-                // When the user clicks load more, by default the input loses focus triggering closeList.
-                // We need to prevent closing the list if we are still loading more results.
                 if (scope.isLoading) {
                     return;
                 }
 
-                // Remove dropdown-up class when closing the list
                 const list = element[0].querySelector(".scm-autocomplete-list");
                 if (list) {
                     list.classList.remove("dropdown-up");
@@ -430,10 +403,6 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 scope.searchTerm = "";
             };
 
-            /**
-             * Selects an item from the results.
-             * @param {Object} item - The selected item from the results list.
-             */
             scope.selectItem = (item) => {
                 ngModelCtrl.$setViewValue(item.sysId);
                 scope.displayValue = item.displaySelected;
@@ -443,20 +412,14 @@ function scmRefPicker($http, $timeout, scmFlyover) {
                 scope.searchTerm = "";
             };
 
-            /**
-             * Clears the current selection.
-             */
             scope.clearSelection = () => {
                 ngModelCtrl.$setViewValue("");
                 scope.displayValue = "";
             };
 
-            /**
-             * Handles keyboard navigation within the results list.
-             */
             scope.handleKeyDown = (event) => {
                 switch (event.keyCode) {
-                    case 27: // ESC
+                    case 27:
                         scope.closeList();
                         event.preventDefault();
                         break;
@@ -470,14 +433,14 @@ function scmRefPicker($http, $timeout, scmFlyover) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>159</sys_mod_count>
+        <sys_mod_count>165</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:38:22</sys_updated_on>
+        <sys_updated_on>2026-06-20 22:55:51</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

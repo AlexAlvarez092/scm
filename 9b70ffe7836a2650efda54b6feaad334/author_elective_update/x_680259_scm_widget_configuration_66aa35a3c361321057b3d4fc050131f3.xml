@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="x_680259_scm_widget_configuration">
+    <x_680259_scm_widget_configuration action="DELETE">
+        <description/>
+        <number>WDT-CONFIG0001003</number>
+        <script><![CDATA[(function executeConfig() {
+    const transactionId = gs.generateGUID();
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: "WDT-CONFIG0001003.js",
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true,
+    });
+
+    try {
+        const widgetHelper = new CoreCompanyAdvancedSearch({
+            transactionId: transactionId,
+        });
+        return widgetHelper.getTableConfigObject();
+    } catch (error) {
+        logger.error(
+            "Error getting table configuration object: " + error.message,
+        );
+        throw error;
+    }
+})();
+]]></script>
+        <short_description>Core company advanced search table configuration object</short_description>
+        <sys_class_name>x_680259_scm_widget_configuration</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:30:21</sys_created_on>
+        <sys_id>66aa35a3c361321057b3d4fc050131f3</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name/>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>x_680259_scm_widget_configuration_66aa35a3c361321057b3d4fc050131f3</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 12:09:40</sys_updated_on>
+    </x_680259_scm_widget_configuration>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>x_680259_scm_widget_configuration_66aa35a3c361321057b3d4fc050131f3</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="x_680259_scm_widget_configuration"&gt;&lt;x_680259_scm_widget_configuration action="INSERT_OR_UPDATE"&gt;&lt;description/&gt;&lt;number&gt;WDT-CONFIG0001003&lt;/number&gt;&lt;script&gt;&lt;![CDATA[(function executeConfig() {
+    const transactionId = gs.generateGUID();
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: "WDT-CONFIG0001003.js",
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true,
+    });
+
+    try {
+        const widgetHelper = new CoreCompanyAdvancedSearch({
+            transactionId: transactionId,
+        });
+        return widgetHelper.getTableConfigObject();
+    } catch (error) {
+        logger.error(
+            "Error getting table configuration object: " + error.message,
+        );
+        throw error;
+    }
+})();
+]]&gt;&lt;/script&gt;&lt;short_description&gt;Core company advanced search table configuration object&lt;/short_description&gt;&lt;sys_class_name&gt;x_680259_scm_widget_configuration&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-07 12:30:21&lt;/sys_created_on&gt;&lt;sys_id&gt;66aa35a3c361321057b3d4fc050131f3&lt;/sys_id&gt;&lt;sys_mod_count&gt;1&lt;/sys_mod_count&gt;&lt;sys_name/&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;x_680259_scm_widget_configuration_66aa35a3c361321057b3d4fc050131f3&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 12:09:40&lt;/sys_updated_on&gt;&lt;/x_680259_scm_widget_configuration&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-1566048819</payload_hash>
+        <record_name/>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 12:09:40</sys_created_on>
+        <sys_id>1e04425e93edc31040fcb6597bba10b9</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee4efcae30000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 12:09:40</sys_updated_on>
+        <type>Widget Configuration</type>
+        <update_guid>9a04025e86edc3108f8d407aa4227943</update_guid>
+        <update_guid_history>9a04025e86edc3108f8d407aa4227943:-1566048819,012788ce0621431040fc2c24c2fef9ad:874048299</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="">c66194269361471040fcb6597bba10c0</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:27:20</sys_created_on>
+        <sys_db_object display_value="">x_680259_scm_widget_configuration</sys_db_object>
+        <sys_id>e5125bbd1ef84f80900c4244ded0c944</sys_id>
+        <sys_metadata>66aa35a3c361321057b3d4fc050131f3</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name/>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>x_680259_scm_widget_configuration_66aa35a3c361321057b3d4fc050131f3</sys_update_name>
+        <sys_update_version display_value="x_680259_scm_widget_configuration_66aa35a3c361321057b3d4fc050131f3">1e04425e93edc31040fcb6597bba10b9</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:27:20</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

@@ -2,16 +2,16 @@
     <sys_script_include action="INSERT_OR_UPDATE">
         <access>package_private</access>
         <active>true</active>
-        <api_name>x_680259_scm.ContactHelper</api_name>
+        <api_name>x_680259_scm.Contact</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
         <description/>
         <mobile_callable>false</mobile_callable>
-        <name>ContactHelper</name>
+        <name>Contact</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[var ContactHelper = Class.create();
-ContactHelper.prototype = {
-    initialize: function(options) {
+        <script><![CDATA[const Contact = Class.create();
+Contact.prototype = {
+    initialize: function (options) {
         this.transactionId = options.transactionId || gs.generateGUID();
         this.CONTACT_TABLE = "sys_user";
         this.MANDATORY_FIELDS = [
@@ -31,18 +31,11 @@ ContactHelper.prototype = {
         });
     },
 
-    /**
-     * @returns {Array<String>}
-     */
-    getMandatoryFields: function() {
+    getMandatoryFields: function () {
         return this.MANDATORY_FIELDS;
     },
 
-    /**
-     * @param {String} sysId
-     * @returns {GlideRecord|null}
-     */
-    getRecordBySysId: function(sysId) {
+    getRecordBySysId: function (sysId) {
         if (!sysId || typeof sysId !== "string" || sysId.length !== 32) {
             this.logger.warn({
                 method: "getRecordBySysId",
@@ -65,11 +58,7 @@ ContactHelper.prototype = {
         return null;
     },
 
-    /**
-     * @param {string} userName
-     * @returns {string|null}
-     */
-    getRecordSysIdByUserName: function(userName) {
+    getRecordSysIdByUserName: function (userName) {
         if (
             !userName ||
             typeof userName !== "string" ||
@@ -81,7 +70,7 @@ ContactHelper.prototype = {
                 message: "Invalid userName provided",
             });
             throw new Error(
-                "Invalid userName provided: " + JSON.stringify(userName)
+                "Invalid userName provided: " + JSON.stringify(userName),
             );
         }
 
@@ -101,28 +90,14 @@ ContactHelper.prototype = {
         return null;
     },
 
-    /**
-     * @returns {String}
-     */
-    getTableName: function() {
+    getTableName: function () {
         return this.CONTACT_TABLE;
     },
-
-    /**
-     * @param {Object} data
-     * @returns {Boolean}
-     */
-    validateContactData: function(data) {
-        // TODO
+    validateContactData: function (data) {
         return true;
     },
 
-    /**
-     * @param {String} sysId
-     * @param {Object} data
-     * @return {Boolean}
-     */
-    saveDataToRecord: function(sysId, data) {
+    saveDataToRecord: function (sysId, data) {
         try {
             const grContact = this.getRecordBySysId(sysId);
             if (!grContact || !grContact.isValidRecord()) {
@@ -134,7 +109,7 @@ ContactHelper.prototype = {
                 });
                 throw new Error(
                     "Invalid or non-existent record for sysId: " +
-                    JSON.stringify(sysId)
+                        JSON.stringify(sysId),
                 );
             }
 
@@ -183,7 +158,7 @@ ContactHelper.prototype = {
                 return true;
             } else {
                 throw new Error(
-                    "Failed to update executing update() on GlideRecord"
+                    "Failed to update executing update() on GlideRecord",
                 );
             }
         } catch (error) {
@@ -198,19 +173,20 @@ ContactHelper.prototype = {
         }
     },
 
-    type: "ContactHelper",
-};]]></script>
+    type: "Contact",
+};
+]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 15:17:13</sys_created_on>
         <sys_id>44111d7e931d3a90e393f6fa3d03d6a5</sys_id>
-        <sys_mod_count>22</sys_mod_count>
-        <sys_name>ContactHelper</sys_name>
+        <sys_mod_count>25</sys_mod_count>
+        <sys_name>Contact</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_44111d7e931d3a90e393f6fa3d03d6a5</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:32:42</sys_updated_on>
+        <sys_updated_on>2026-06-20 12:02:26</sys_updated_on>
     </sys_script_include>
 </record_update>

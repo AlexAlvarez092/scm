@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.ContactList</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>ContactList</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const ContactList = Class.create();
+
+ContactList.CONTACT_MAIN_LIST_BREADCRUMB = [
+    ...Constants.HOME_BREADCRUMB,
+    { title: "Contacts", link: "?id=contacts" },
+];
+
+ContactList.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+    },
+
+    getTableConfigObject: function (params) {
+        try {
+            return {
+                table: "sys_user",
+                static_query: "active=true",
+                show_new_record_button: "true",
+                page_title: "Contacts",
+                order_by: "user_name",
+                order_direction: "ASC",
+                limit: "10",
+                can_save_preferences: "true",
+                fields_preference_name: "scm_portal.contacts.fields",
+                order_by_preference_name: "scm_portal.contacts.order_by",
+                order_direction_preference_name:
+                    "scm_portal.contacts.order_direction",
+                limit_preference_name: "scm_portal.contacts.limit",
+                can_configure_columns: "true",
+                detail_view_page: "contact_details",
+                columns: [
+                    {
+                        label: "User ID",
+                        name: "user_name",
+                        default: true,
+                    },
+                    {
+                        label: "First name",
+                        name: "first_name",
+                        default: true,
+                    },
+                    {
+                        label: "Last name",
+                        name: "last_name",
+                        default: true,
+                    },
+                    {
+                        label: "Email",
+                        name: "email",
+                        default: true,
+                    },
+                    {
+                        label: "Business Phone",
+                        name: "phone",
+                    },
+                    {
+                        label: "Title",
+                        name: "title",
+                        default: true,
+                    },
+                    {
+                        label: "Department",
+                        name: "department",
+                    },
+                    {
+                        label: "Company",
+                        name: "company",
+                    },
+                    {
+                        label: "Manager",
+                        name: "manager",
+                    },
+                ],
+                can_filter: "true",
+                id_field: "user_name",
+                filter_fields: [
+                    {
+                        field: "department",
+                        label: "Department",
+                        type: "reference",
+                        referenceTable: "cmn_department",
+                        displayFields: "name;id",
+                        displayField: "name",
+                        searchFields: "name;id",
+                        referenceQualifier: "nameISNOTEMPTY^idISNOTEMPTY",
+                        placeholder: "Select a department",
+                        pageSize: "10",
+                        minimumInputLength: "2",
+                        orderBy: "name",
+                        orderDirection: "desc",
+                    },
+                ],
+                breadcrumbs: ContactList.CONTACT_MAIN_LIST_BREADCRUMB,
+            };
+        } catch (error) {
+            this.logger.error({
+                method: "getTableConfigObject",
+                error: error.message,
+                params: params,
+            });
+            throw error;
+        }
+    },
+    type: "ContactList",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:33:02</sys_created_on>
+        <sys_id>0d5bb5a7c361321057b3d4fc0501317c</sys_id>
+        <sys_mod_count>6</sys_mod_count>
+        <sys_name>ContactList</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_0d5bb5a7c361321057b3d4fc0501317c</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:09:44</sys_updated_on>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_script_include_0d5bb5a7c361321057b3d4fc0501317c</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_script_include"&gt;&lt;sys_script_include action="INSERT_OR_UPDATE"&gt;&lt;access&gt;package_private&lt;/access&gt;&lt;active&gt;true&lt;/active&gt;&lt;api_name&gt;x_680259_scm.ContactList&lt;/api_name&gt;&lt;caller_access/&gt;&lt;client_callable&gt;false&lt;/client_callable&gt;&lt;description/&gt;&lt;mobile_callable&gt;false&lt;/mobile_callable&gt;&lt;name&gt;ContactList&lt;/name&gt;&lt;sandbox_callable&gt;false&lt;/sandbox_callable&gt;&lt;script&gt;&lt;![CDATA[const ContactList = Class.create();
+
+ContactList.CONTACT_MAIN_LIST_BREADCRUMB = [
+    ...Constants.HOME_BREADCRUMB,
+    { title: "Contacts", link: "?id=contacts" },
+];
+
+ContactList.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+    },
+
+    getTableConfigObject: function (params) {
+        try {
+            return {
+                table: "sys_user",
+                static_query: "active=true",
+                show_new_record_button: "true",
+                page_title: "Contacts",
+                order_by: "user_name",
+                order_direction: "ASC",
+                limit: "10",
+                can_save_preferences: "true",
+                fields_preference_name: "scm_portal.contacts.fields",
+                order_by_preference_name: "scm_portal.contacts.order_by",
+                order_direction_preference_name:
+                    "scm_portal.contacts.order_direction",
+                limit_preference_name: "scm_portal.contacts.limit",
+                can_configure_columns: "true",
+                detail_view_page: "contact_details",
+                columns: [
+                    {
+                        label: "User ID",
+                        name: "user_name",
+                        default: true,
+                    },
+                    {
+                        label: "First name",
+                        name: "first_name",
+                        default: true,
+                    },
+                    {
+                        label: "Last name",
+                        name: "last_name",
+                        default: true,
+                    },
+                    {
+                        label: "Email",
+                        name: "email",
+                        default: true,
+                    },
+                    {
+                        label: "Business Phone",
+                        name: "phone",
+                    },
+                    {
+                        label: "Title",
+                        name: "title",
+                        default: true,
+                    },
+                    {
+                        label: "Department",
+                        name: "department",
+                    },
+                    {
+                        label: "Company",
+                        name: "company",
+                    },
+                    {
+                        label: "Manager",
+                        name: "manager",
+                    },
+                ],
+                can_filter: "true",
+                id_field: "user_name",
+                filter_fields: [
+                    {
+                        field: "department",
+                        label: "Department",
+                        type: "reference",
+                        referenceTable: "cmn_department",
+                        displayFields: "name;id",
+                        displayField: "name",
+                        searchFields: "name;id",
+                        referenceQualifier: "nameISNOTEMPTY^idISNOTEMPTY",
+                        placeholder: "Select a department",
+                        pageSize: "10",
+                        minimumInputLength: "2",
+                        orderBy: "name",
+                        orderDirection: "desc",
+                    },
+                ],
+                breadcrumbs: ContactList.CONTACT_MAIN_LIST_BREADCRUMB,
+            };
+        } catch (error) {
+            this.logger.error({
+                method: "getTableConfigObject",
+                error: error.message,
+                params: params,
+            });
+            throw error;
+        }
+    },
+    type: "ContactList",
+};
+]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sys_script_include&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-07 12:33:02&lt;/sys_created_on&gt;&lt;sys_id&gt;0d5bb5a7c361321057b3d4fc0501317c&lt;/sys_id&gt;&lt;sys_mod_count&gt;6&lt;/sys_mod_count&gt;&lt;sys_name&gt;ContactList&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy&gt;read&lt;/sys_policy&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_script_include_0d5bb5a7c361321057b3d4fc0501317c&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 19:09:44&lt;/sys_updated_on&gt;&lt;/sys_script_include&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>647686703</payload_hash>
+        <record_name>ContactList</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 19:09:44</sys_created_on>
+        <sys_id>e7242b5a93e9071040fcb6597bba1041</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee670601e0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:09:44</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>67242b5a24e907102e4037cbdc6f5040</update_guid>
+        <update_guid_history>67242b5a24e907102e4037cbdc6f5040:647686703,3fa2469a3bedc310c46e1700d3236942:-1579966512,dfc7add26c2dc3102170b06788bef012:1930741746,142708ceb12143105573a6c2f4667add:-1773711277</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:10:13</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>27cfd52f9d544d56bab9e45a177e85e4</sys_id>
+        <sys_metadata>0d5bb5a7c361321057b3d4fc0501317c</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>ContactList</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_script_include_0d5bb5a7c361321057b3d4fc0501317c</sys_update_name>
+        <sys_update_version display_value="sys_script_include_0d5bb5a7c361321057b3d4fc0501317c">e7242b5a93e9071040fcb6597bba1041</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:10:13</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

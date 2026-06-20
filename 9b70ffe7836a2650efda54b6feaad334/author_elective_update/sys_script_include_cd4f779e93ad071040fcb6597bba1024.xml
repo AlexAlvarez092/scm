@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableWidgetV2</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableWidgetV2</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const TableWidgetV2 = Class.create();
+TableWidgetV2.prototype = {
+    initialize: function (params) {
+        this.transactionId = params.transactionId || gs.generateGUID();
+        this.tableProviderScriptInclude = params.tableProviderScriptInclude;
+        this.params = params || {};
+
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+
+        this.provider = this._initializeProvider();
+    },
+
+    canCreate: function () {
+        return this._invokeProviderMethod("canCreate", [], false);
+    },
+
+    canFilter: function () {
+        return this._invokeProviderMethod("canFilter", [], false);
+    },
+
+    canSavePreferences: function () {
+        return this._invokeProviderMethod("canSavePreferences", [], false);
+    },
+
+    canConfigureColumns: function () {
+        return this._invokeProviderMethod("canConfigureColumns", [], true);
+    },
+
+    getAllAvailableColumns: function () {
+        return this._invokeProviderMethod("getAllAvailableColumns", [], []);
+    },
+
+    getAppliedFiltersInfoMessage: function (appliedFilters = []) {
+        return this._invokeProviderMethod(
+            "getAppliedFiltersInfoMessage",
+            [appliedFilters],
+            "",
+        );
+    },
+
+    getBreadcrumbs: function () {
+        return this._invokeProviderMethod("getBreadcrumbs", [], []);
+    },
+
+    getChoiceValues: function (fieldName) {
+        return this._invokeProviderMethod("getChoiceValues", [fieldName], []);
+    },
+
+    getDefaultColumns: function () {
+        return this._invokeProviderMethod("getDefaultColumns", [], []);
+    },
+
+    getDetailViewPage: function () {
+        return this._invokeProviderMethod("getDetailViewPage", [], "error-404");
+    },
+
+    getFilterFields: function () {
+        return this._invokeProviderMethod("getFilterFields", [], []);
+    },
+
+    getIdField: function () {
+        return this._invokeProviderMethod("getIdField", [], "sys_id");
+    },
+
+    getOrderBy: function () {
+        return this._invokeProviderMethod("getOrderBy", [], "");
+    },
+
+    getOrderDirection: function () {
+        return this._invokeProviderMethod("getOrderDirection", [], "ASC");
+    },
+
+    getPageTitle: function () {
+        return this._invokeProviderMethod("getPageTitle", [], "");
+    },
+
+    getTableColumns: function () {
+        return this._invokeProviderMethod("getTableColumns", [], []);
+    },
+
+    getTableData: function ({ filters = [], page = 1 }) {
+        return this._invokeProviderMethod(
+            "getTableData",
+            [{ filters: filters, page: page }],
+            [],
+        );
+    },
+
+    getTableLimit: function () {
+        return this._invokeProviderMethod("getTableLimit", [], 10);
+    },
+
+    getTotalRecords: function (filters = []) {
+        return this._invokeProviderMethod("getTotalRecords", [filters], 0);
+    },
+
+    saveUserPreference: function (preferenceName, preferenceValue) {
+        this._invokeProviderMethod(
+            "saveUserPreference",
+            [preferenceName, preferenceValue],
+            null,
+        );
+    },
+
+    showAppliedFilters: function () {
+        return this._invokeProviderMethod("showAppliedFilters", [], true);
+    },
+
+    showTableMetadata: function () {
+        return this._invokeProviderMethod("showTableMetadata", [], true);
+    },
+
+    _initializeProvider: function () {
+        if (
+            !this.tableProviderScriptInclude ||
+            typeof this.tableProviderScriptInclude !== "string"
+        ) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Invalid tableProviderScriptInclude",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Invalid tableProviderScriptInclude");
+        }
+
+        if (!/^[A-Za-z0-9_.$]+$/.test(this.tableProviderScriptInclude)) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Unsafe provider Script Include name",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Unsafe provider Script Include name");
+        }
+
+        const ProviderClass = this._resolveProviderClass(
+            this.tableProviderScriptInclude,
+        );
+
+        if (typeof ProviderClass !== "function") {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Provider Script Include not found",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Provider Script Include not found");
+        }
+
+        try {
+            return new ProviderClass({
+                transactionId: this.transactionId,
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+                providerParams: this.params.providerParams,
+            });
+        } catch (error) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Error initializing provider",
+                error: error.message,
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw error;
+        }
+    },
+
+    _invokeProviderMethod: function (methodName, args, fallback) {
+        if (!this.provider || typeof this.provider[methodName] !== "function") {
+            this.logger.warn({
+                method: "_invokeProviderMethod",
+                message: "Provider method not implemented",
+                provider: this.tableProviderScriptInclude,
+                providerMethod: methodName,
+            });
+            return fallback;
+        }
+
+        try {
+            return this.provider[methodName].apply(this.provider, args || []);
+        } catch (error) {
+            this.logger.error({
+                method: "_invokeProviderMethod",
+                message: "Error executing provider method",
+                provider: this.tableProviderScriptInclude,
+                providerMethod: methodName,
+                error: error.message,
+            });
+            return fallback;
+        }
+    },
+
+    _resolveProviderClass: function (providerName) {
+        try {
+            const scopeName = gs.getCurrentScopeName();
+            const apiName =
+                providerName.indexOf(".") !== -1
+                    ? providerName
+                    : scopeName + "." + providerName;
+
+            const gr = new GlideRecord("sys_script_include");
+            gr.addQuery("api_name", apiName);
+            gr.setLimit(1);
+            gr.query();
+
+            if (!gr.next()) {
+                this.logger.error({
+                    method: "_resolveProviderClass",
+                    message: "Script Include record not found",
+                    apiName: apiName,
+                });
+                return null;
+            }
+
+            const evaluator = new GlideScopedEvaluator();
+            return evaluator.evaluateScript(gr, "script");
+        } catch (error) {
+            this.logger.error({
+                method: "_resolveProviderClass",
+                message: "Error resolving provider class",
+                providerName: providerName,
+                error: error.message,
+            });
+            return null;
+        }
+    },
+
+    type: "TableWidgetV2",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 21:08:17</sys_created_on>
+        <sys_id>cd4f779e93ad071040fcb6597bba1024</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>TableWidgetV2</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_cd4f779e93ad071040fcb6597bba1024</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 21:31:39</sys_updated_on>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_script_include_cd4f779e93ad071040fcb6597bba1024</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_script_include"&gt;&lt;sys_script_include action="INSERT_OR_UPDATE"&gt;&lt;access&gt;package_private&lt;/access&gt;&lt;active&gt;true&lt;/active&gt;&lt;api_name&gt;x_680259_scm.TableWidgetV2&lt;/api_name&gt;&lt;caller_access/&gt;&lt;client_callable&gt;false&lt;/client_callable&gt;&lt;description/&gt;&lt;mobile_callable&gt;false&lt;/mobile_callable&gt;&lt;name&gt;TableWidgetV2&lt;/name&gt;&lt;sandbox_callable&gt;false&lt;/sandbox_callable&gt;&lt;script&gt;&lt;![CDATA[const TableWidgetV2 = Class.create();
+TableWidgetV2.prototype = {
+    initialize: function (params) {
+        this.transactionId = params.transactionId || gs.generateGUID();
+        this.tableProviderScriptInclude = params.tableProviderScriptInclude;
+        this.params = params || {};
+
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+
+        this.provider = this._initializeProvider();
+    },
+
+    canCreate: function () {
+        return this._invokeProviderMethod("canCreate", [], false);
+    },
+
+    canFilter: function () {
+        return this._invokeProviderMethod("canFilter", [], false);
+    },
+
+    canSavePreferences: function () {
+        return this._invokeProviderMethod("canSavePreferences", [], false);
+    },
+
+    canConfigureColumns: function () {
+        return this._invokeProviderMethod("canConfigureColumns", [], true);
+    },
+
+    getAllAvailableColumns: function () {
+        return this._invokeProviderMethod("getAllAvailableColumns", [], []);
+    },
+
+    getAppliedFiltersInfoMessage: function (appliedFilters = []) {
+        return this._invokeProviderMethod(
+            "getAppliedFiltersInfoMessage",
+            [appliedFilters],
+            "",
+        );
+    },
+
+    getBreadcrumbs: function () {
+        return this._invokeProviderMethod("getBreadcrumbs", [], []);
+    },
+
+    getChoiceValues: function (fieldName) {
+        return this._invokeProviderMethod("getChoiceValues", [fieldName], []);
+    },
+
+    getDefaultColumns: function () {
+        return this._invokeProviderMethod("getDefaultColumns", [], []);
+    },
+
+    getDetailViewPage: function () {
+        return this._invokeProviderMethod("getDetailViewPage", [], "error-404");
+    },
+
+    getFilterFields: function () {
+        return this._invokeProviderMethod("getFilterFields", [], []);
+    },
+
+    getIdField: function () {
+        return this._invokeProviderMethod("getIdField", [], "sys_id");
+    },
+
+    getOrderBy: function () {
+        return this._invokeProviderMethod("getOrderBy", [], "");
+    },
+
+    getOrderDirection: function () {
+        return this._invokeProviderMethod("getOrderDirection", [], "ASC");
+    },
+
+    getPageTitle: function () {
+        return this._invokeProviderMethod("getPageTitle", [], "");
+    },
+
+    getTableColumns: function () {
+        return this._invokeProviderMethod("getTableColumns", [], []);
+    },
+
+    getTableData: function ({ filters = [], page = 1 }) {
+        return this._invokeProviderMethod(
+            "getTableData",
+            [{ filters: filters, page: page }],
+            [],
+        );
+    },
+
+    getTableLimit: function () {
+        return this._invokeProviderMethod("getTableLimit", [], 10);
+    },
+
+    getTotalRecords: function (filters = []) {
+        return this._invokeProviderMethod("getTotalRecords", [filters], 0);
+    },
+
+    saveUserPreference: function (preferenceName, preferenceValue) {
+        this._invokeProviderMethod(
+            "saveUserPreference",
+            [preferenceName, preferenceValue],
+            null,
+        );
+    },
+
+    showAppliedFilters: function () {
+        return this._invokeProviderMethod("showAppliedFilters", [], true);
+    },
+
+    showTableMetadata: function () {
+        return this._invokeProviderMethod("showTableMetadata", [], true);
+    },
+
+    _initializeProvider: function () {
+        if (
+            !this.tableProviderScriptInclude ||
+            typeof this.tableProviderScriptInclude !== "string"
+        ) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Invalid tableProviderScriptInclude",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Invalid tableProviderScriptInclude");
+        }
+
+        if (!/^[A-Za-z0-9_.$]+$/.test(this.tableProviderScriptInclude)) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Unsafe provider Script Include name",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Unsafe provider Script Include name");
+        }
+
+        const ProviderClass = this._resolveProviderClass(
+            this.tableProviderScriptInclude,
+        );
+
+        if (typeof ProviderClass !== "function") {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Provider Script Include not found",
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw new Error("Provider Script Include not found");
+        }
+
+        try {
+            return new ProviderClass({
+                transactionId: this.transactionId,
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+                providerParams: this.params.providerParams,
+            });
+        } catch (error) {
+            this.logger.error({
+                method: "_initializeProvider",
+                message: "Error initializing provider",
+                error: error.message,
+                tableProviderScriptInclude: this.tableProviderScriptInclude,
+            });
+            throw error;
+        }
+    },
+
+    _invokeProviderMethod: function (methodName, args, fallback) {
+        if (!this.provider || typeof this.provider[methodName] !== "function") {
+            this.logger.warn({
+                method: "_invokeProviderMethod",
+                message: "Provider method not implemented",
+                provider: this.tableProviderScriptInclude,
+                providerMethod: methodName,
+            });
+            return fallback;
+        }
+
+        try {
+            return this.provider[methodName].apply(this.provider, args || []);
+        } catch (error) {
+            this.logger.error({
+                method: "_invokeProviderMethod",
+                message: "Error executing provider method",
+                provider: this.tableProviderScriptInclude,
+                providerMethod: methodName,
+                error: error.message,
+            });
+            return fallback;
+        }
+    },
+
+    _resolveProviderClass: function (providerName) {
+        try {
+            const scopeName = gs.getCurrentScopeName();
+            const apiName =
+                providerName.indexOf(".") !== -1
+                    ? providerName
+                    : scopeName + "." + providerName;
+
+            const gr = new GlideRecord("sys_script_include");
+            gr.addQuery("api_name", apiName);
+            gr.setLimit(1);
+            gr.query();
+
+            if (!gr.next()) {
+                this.logger.error({
+                    method: "_resolveProviderClass",
+                    message: "Script Include record not found",
+                    apiName: apiName,
+                });
+                return null;
+            }
+
+            const evaluator = new GlideScopedEvaluator();
+            return evaluator.evaluateScript(gr, "script");
+        } catch (error) {
+            this.logger.error({
+                method: "_resolveProviderClass",
+                message: "Error resolving provider class",
+                providerName: providerName,
+                error: error.message,
+            });
+            return null;
+        }
+    },
+
+    type: "TableWidgetV2",
+};
+]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sys_script_include&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2026-06-20 21:08:17&lt;/sys_created_on&gt;&lt;sys_id&gt;cd4f779e93ad071040fcb6597bba1024&lt;/sys_id&gt;&lt;sys_mod_count&gt;4&lt;/sys_mod_count&gt;&lt;sys_name&gt;TableWidgetV2&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy&gt;read&lt;/sys_policy&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_script_include_cd4f779e93ad071040fcb6597bba1024&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 21:31:39&lt;/sys_updated_on&gt;&lt;/sys_script_include&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-1542932225</payload_hash>
+        <record_name>TableWidgetV2</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 21:31:39</sys_created_on>
+        <sys_id>92a4c06a93ed071040fcb6597bba105e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee6f24bb90000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 21:31:39</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>52a4c06a15ed07107e29e42331c1db5d</update_guid>
+        <update_guid_history>52a4c06a15ed07107e29e42331c1db5d:-1542932225,157380263aed0710876e6d7104ad7efe:-1297941576,4e2280260bed0710f4b7a4255c2d69f5:-1128713948,7fd148e244ed07103c622aae0bb0adbb:-881490821,945fb79ed7ad071017353787b3684d79:152335932</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 21:33:54</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>20203e2765314b2194b08379b5731261</sys_id>
+        <sys_metadata>cd4f779e93ad071040fcb6597bba1024</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>TableWidgetV2</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_script_include_cd4f779e93ad071040fcb6597bba1024</sys_update_name>
+        <sys_update_version display_value="sys_script_include_cd4f779e93ad071040fcb6597bba1024">92a4c06a93ed071040fcb6597bba105e</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 21:33:54</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

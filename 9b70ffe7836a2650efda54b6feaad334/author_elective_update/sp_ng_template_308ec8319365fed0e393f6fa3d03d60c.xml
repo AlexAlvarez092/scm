@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="DELETE">
+        <id>scm-table-pagination</id>
+        <sp_widget/>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-01 18:08:06</sys_created_on>
+        <sys_id>308ec8319365fed0e393f6fa3d03d60c</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>scm-table-pagination</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_308ec8319365fed0e393f6fa3d03d60c</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 11:45:02</sys_updated_on>
+        <template><![CDATA[<div id="pagination-wrapper">
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-rewind-filled"
+        icon-size="1"
+        ng-click="c.goToFirstPage()"
+        ng-disabled="c.page === 1"
+        title="Go to first page"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to previous page"
+        ng-click="c.goToPreviousPage()"
+        class="scm-go-to-previous-page"
+        ng-disabled="c.page === 1"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to next page"
+        ng-click="c.goToNextPage()"
+        ng-disabled="c.totalPages === c.page"
+    ></sdx-button>
+    <sdx-button
+        theme="transparent"
+        icon-name="icon-forward-filled"
+        icon-size="1"
+        title="Go to last page"
+        ng-click="c.goToLastPage()"
+        ng-disabled="c.totalPages === c.page"
+    ></sdx-button>
+</div>
+
+<style>
+    .scm-go-to-previous-page {
+        transform: scaleX(-1);
+    }
+</style>
+]]></template>
+    </sp_ng_template>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sp_ng_template_308ec8319365fed0e393f6fa3d03d60c</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_ng_template"&gt;&lt;sp_ng_template action="INSERT_OR_UPDATE"&gt;&lt;id&gt;scm-table-pagination&lt;/id&gt;&lt;sp_widget/&gt;&lt;sys_class_name&gt;sp_ng_template&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-01 18:08:06&lt;/sys_created_on&gt;&lt;sys_id&gt;308ec8319365fed0e393f6fa3d03d60c&lt;/sys_id&gt;&lt;sys_mod_count&gt;4&lt;/sys_mod_count&gt;&lt;sys_name&gt;scm-table-pagination&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_ng_template_308ec8319365fed0e393f6fa3d03d60c&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 11:45:02&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;div id="pagination-wrapper"&gt;
+    &lt;sdx-button
+        theme="transparent"
+        icon-name="icon-rewind-filled"
+        icon-size="1"
+        ng-click="c.goToFirstPage()"
+        ng-disabled="c.page === 1"
+        title="Go to first page"
+    &gt;&lt;/sdx-button&gt;
+    &lt;sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to previous page"
+        ng-click="c.goToPreviousPage()"
+        class="scm-go-to-previous-page"
+        ng-disabled="c.page === 1"
+    &gt;&lt;/sdx-button&gt;
+    &lt;sdx-button
+        theme="transparent"
+        icon-name="icon-play-filled"
+        icon-size="1"
+        title="Go to next page"
+        ng-click="c.goToNextPage()"
+        ng-disabled="c.totalPages === c.page"
+    &gt;&lt;/sdx-button&gt;
+    &lt;sdx-button
+        theme="transparent"
+        icon-name="icon-forward-filled"
+        icon-size="1"
+        title="Go to last page"
+        ng-click="c.goToLastPage()"
+        ng-disabled="c.totalPages === c.page"
+    &gt;&lt;/sdx-button&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+    .scm-go-to-previous-page {
+        transform: scaleX(-1);
+    }
+&lt;/style&gt;
+]]&gt;&lt;/template&gt;&lt;/sp_ng_template&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>2078847077</payload_hash>
+        <record_name>scm-table-pagination</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:22:11</sys_created_on>
+        <sys_id>e63058629361471040fcb6597bba10ad</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee7208fbc0000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:22:11</sys_updated_on>
+        <type>Angular ng-template</type>
+        <update_guid>d2265d9e1369c3106e6d674266e4f60e</update_guid>
+        <update_guid_history>d2265d9e1369c3106e6d674266e4f60e:884056255,296e7d1230edc31031a118110489bbe2:-2048527425,d2265d9e1369c3106e6d674266e4f60e:884056255,db17c4ce9021431069fbd5745dc81840:1023162969</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm-table-pagination">9590d4a29361471040fcb6597bba1015</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:23:43</sys_created_on>
+        <sys_db_object display_value="" name="sp_ng_template">sp_ng_template</sys_db_object>
+        <sys_id>73d55ea69ec0488ab89120ba65a571c4</sys_id>
+        <sys_metadata>308ec8319365fed0e393f6fa3d03d60c</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm-table-pagination</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_ng_template_308ec8319365fed0e393f6fa3d03d60c</sys_update_name>
+        <sys_update_version display_value="sp_ng_template_308ec8319365fed0e393f6fa3d03d60c">e63058629361471040fcb6597bba10ad</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:23:43</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

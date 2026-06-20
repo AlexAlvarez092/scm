@@ -2,81 +2,253 @@
     <sys_script_include action="INSERT_OR_UPDATE">
         <access>package_private</access>
         <active>true</active>
-        <api_name>x_680259_scm.CoreCompanyAdvancedSearchTableWidgetHelper</api_name>
+        <api_name>x_680259_scm.CoreCompanyAdvancedSearch</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
         <description/>
         <mobile_callable>false</mobile_callable>
-        <name>CoreCompanyAdvancedSearchTableWidgetHelper</name>
+        <name>CoreCompanyAdvancedSearch</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[var CoreCompanyAdvancedSearchTableWidgetHelper = Class.create();
-CoreCompanyAdvancedSearchTableWidgetHelper.prototype = {
-    initialize: function(options) {
-        this.transactionId = options.transactionId || gs.generateGUID();
+        <script><![CDATA[var CoreCompanyAdvancedSearch = Class.create();
+CoreCompanyAdvancedSearch.prototype = {
+    initialize: function (params) {
+        params = params || {};
+
+        this.transactionId = params.transactionId || gs.generateGUID();
+        this.providerParams = params.providerParams || {};
+
         this.logger = new Logger({
             transactionId: this.transactionId,
-            source: "CoreCompanyAdvancedSearchTableWidgetHelper",
+            source: this.type,
             includeTimeStamp: true,
             includeUserInfo: true,
             includeSessionId: true,
         });
+
+        this.configObject = this._initializeConfigObject();
     },
 
-    getTableConfigObject: function(params) {
+    canCreate: function () {
+        return false;
+    },
+
+    canFilter: function () {
+        return false;
+    },
+
+    canSavePreferences: function () {
+        return false;
+    },
+
+    canConfigureColumns: function () {
+        return false;
+    },
+
+    getAllAvailableColumns: function () {
+        return this.configObject.columns;
+    },
+
+    getAppliedFiltersInfoMessage: function () {
+        return "";
+    },
+
+    getBreadcrumbs: function () {
+        return [];
+    },
+
+    getChoiceValues: function () {
+        return [];
+    },
+
+    getDefaultColumns: function () {
+        return this.configObject.columns.filter(function (column) {
+            return column.default === true;
+        });
+    },
+
+    getDetailViewPage: function () {
+        return this.configObject.detail_view_page || "error-404";
+    },
+
+    getFilterFields: function () {
+        return [];
+    },
+
+    getIdField: function () {
+        return this.configObject.id_field || "sys_id";
+    },
+
+    getPrimaryCellClickAction: function () {
+        return {
+            type: "event",
+            eventName: "scmRefPicker:select",
+            payloadField: "_primaryPayload",
+        };
+    },
+
+    getCellContent: function (field, record) {
+        return {
+            layout: "stack",
+            blocks: [{ value: record[field.name] || "" }],
+        };
+    },
+
+    getOrderBy: function () {
+        return this.configObject.order_by;
+    },
+
+    getOrderDirection: function () {
+        return this.configObject.order_direction;
+    },
+
+    getPageTitle: function () {
+        return this.configObject.page_title;
+    },
+
+    getTableColumns: function () {
+        return this.getDefaultColumns();
+    },
+
+    getTableData: function (options) {
+        var filters = (options && options.filters) || [];
+        var page = (options && options.page) || 1;
+
         try {
-            return {
-                table: "core_company",
-                static_query: "nameISNOTEMPTY",
-                page_title: "Companies",
-                order_by: "name",
-                order_direction: "ASC",
-                can_save_preferences: "false",
-                columns: [{
-                        label: "Name",
-                        name: "name",
-                        default: true
-                    },
-                    {
-                        label: "Street",
-                        name: "street",
-                        default: true
-                    },
-                    {
-                        label: "City",
-                        name: "city",
-                        default: true
-                    },
-                    {
-                        label: "Postal code",
-                        name: "zip",
-                        default: true
-                    },
-                ],
-                can_filter: "false",
-            };
+            var records = [];
+
+            var tableName = this.configObject.table;
+            var limit = this.getTableLimit();
+            var firstRow = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+            var lastRow = firstRow + parseInt(limit, 10);
+            var columns = this.getTableColumns();
+
+            if (columns.length === 0) return records;
+
+            var grRecord = new GlideRecord(tableName);
+
+            if (this.configObject.static_query) {
+                grRecord.addEncodedQuery(this.configObject.static_query);
+            }
+
+            grRecord.setLimit(parseInt(limit, 10));
+            grRecord.chooseWindow(firstRow, lastRow);
+
+            if (this.configObject.order_direction === "ASC") {
+                grRecord.orderBy(this.configObject.order_by);
+            } else {
+                grRecord.orderByDesc(this.configObject.order_by);
+            }
+
+            grRecord.query();
+
+            while (grRecord.next()) {
+                var record = {};
+
+                for (var i = 0; i < columns.length; i++) {
+                    var columnName = columns[i].name;
+                    record[columnName] =
+                        grRecord.getDisplayValue(columnName) || "";
+                }
+
+                record.sys_id = grRecord.getUniqueValue();
+                record._primaryPayload = {
+                    sysId: record.sys_id,
+                    displayValue: record.name,
+                    closeFlyover: true,
+                };
+
+                records.push(record);
+            }
+
+            return records;
         } catch (error) {
             this.logger.error({
-                method: "getTableConfigObject",
+                method: "getTableData",
+                message: "Error getting table data",
                 error: error.message,
-                params: params,
+                page: page,
             });
-            throw error;
+            return [];
         }
     },
 
-    type: "CoreCompanyAdvancedSearchTableWidgetHelper",
-};]]></script>
+    getTableLimit: function () {
+        return parseInt(this.configObject.limit || 10, 10);
+    },
+
+    getTotalRecords: function () {
+        try {
+            var gaRecord = new GlideAggregate(this.configObject.table);
+
+            if (this.configObject.static_query) {
+                gaRecord.addEncodedQuery(this.configObject.static_query);
+            }
+
+            gaRecord.addAggregate("COUNT");
+            gaRecord.query();
+            gaRecord.next();
+
+            return gaRecord.getAggregate("COUNT");
+        } catch (error) {
+            this.logger.error({
+                method: "getTotalRecords",
+                message: "Error getting total records",
+                error: error.message,
+            });
+            return -1;
+        }
+    },
+
+    saveUserPreference: function () {
+        return;
+    },
+
+    showAppliedFilters: function () {
+        return false;
+    },
+
+    showTableMetadata: function () {
+        return (
+            this.configObject.show_table_metadata === "true" ||
+            !this.configObject.hasOwnProperty("show_table_metadata")
+        );
+    },
+
+    _initializeConfigObject: function () {
+        return {
+            table: "core_company",
+            static_query: "nameISNOTEMPTY",
+            page_title: "Companies",
+            order_by: "name",
+            order_direction: "ASC",
+            limit: "10",
+            detail_view_page: "error-404",
+            id_field: "sys_id",
+            columns: [
+                { label: "Name", name: "name", default: true },
+                { label: "Street", name: "street", default: true },
+                { label: "City", name: "city", default: true },
+                { label: "Postal code", name: "zip", default: true },
+            ],
+        };
+    },
+
+    type: "CoreCompanyAdvancedSearch",
+};
+
+answer = CoreCompanyAdvancedSearch;
+]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-07 12:31:18</sys_created_on>
         <sys_id>52ea7967c361321057b3d4fc05013172</sys_id>
-        <sys_mod_count>3</sys_mod_count>
-        <sys_name>CoreCompanyAdvancedSearchTableWidgetHelper</sys_name>
+        <sys_mod_count>13</sys_mod_count>
+        <sys_name>CoreCompanyAdvancedSearch</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_52ea7967c361321057b3d4fc05013172</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 20:46:21</sys_updated_on>
+        <sys_updated_on>2026-06-20 23:14:50</sys_updated_on>
     </sys_script_include>
 </record_update>

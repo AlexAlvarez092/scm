@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.Header</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>Header</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const Header = Class.create();
+Header.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+    },
+
+    setNavigatorHistory: function (newUrl) {
+        if (!newUrl) {
+            this.logger.error("setNavigatorHistory called with no newUrl");
+            return;
+        }
+
+        const relativeUrl = this._getRelativeUrlWithParams(newUrl);
+
+        const description = this._getDescriptionFromUrl(newUrl);
+        const title = this._getTitleFromUrl(newUrl);
+        const transformedTitle = this._transformTitle(title);
+
+        global.HeaderGlobal.setNavigatorHistory({
+            description: description,
+            transformedTitle: transformedTitle,
+            newUrl: relativeUrl,
+        });
+    },
+
+    _getRelativeUrlWithParams: function (url) {
+        if (!url) return null;
+
+        const normalizedUrl = String(url).trim();
+        const withoutDomain = normalizedUrl.replace(
+            /^[a-zA-Z]+:\/\/[^/]+\/?/,
+            "",
+        );
+
+        return withoutDomain.replace(/^\/+/, "");
+    },
+
+    _getDescriptionFromUrl: function (url) {
+        const descriptionRegex = /[?&]scm_record_id=([^&#]*)/;
+        const descriptionMatch = url.match(descriptionRegex);
+        return descriptionMatch ? descriptionMatch[1] : null;
+    },
+
+    _getTitleFromUrl: function (url) {
+        const titleRegex = /[?&]id=([^&#]*)/;
+        const titleMatch = url.match(titleRegex);
+        return titleMatch ? titleMatch[1] : null;
+    },
+
+    _transformTitle: function (title) {
+        if (!title) return null;
+        return title
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    },
+
+    type: "Header",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 10:03:38</sys_created_on>
+        <sys_id>4d276992932dc31040fcb6597bba1043</sys_id>
+        <sys_mod_count>7</sys_mod_count>
+        <sys_name>Header</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_4d276992932dc31040fcb6597bba1043</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 12:10:20</sys_updated_on>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_script_include_4d276992932dc31040fcb6597bba1043</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_script_include"&gt;&lt;sys_script_include action="INSERT_OR_UPDATE"&gt;&lt;access&gt;package_private&lt;/access&gt;&lt;active&gt;true&lt;/active&gt;&lt;api_name&gt;x_680259_scm.Header&lt;/api_name&gt;&lt;caller_access/&gt;&lt;client_callable&gt;false&lt;/client_callable&gt;&lt;description/&gt;&lt;mobile_callable&gt;false&lt;/mobile_callable&gt;&lt;name&gt;Header&lt;/name&gt;&lt;sandbox_callable&gt;false&lt;/sandbox_callable&gt;&lt;script&gt;&lt;![CDATA[const Header = Class.create();
+Header.prototype = {
+    initialize: function (options) {
+        this.transactionId = options.transactionId || gs.generateGUID();
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+    },
+
+    setNavigatorHistory: function (newUrl) {
+        if (!newUrl) {
+            this.logger.error("setNavigatorHistory called with no newUrl");
+            return;
+        }
+
+        const relativeUrl = this._getRelativeUrlWithParams(newUrl);
+
+        const description = this._getDescriptionFromUrl(newUrl);
+        const title = this._getTitleFromUrl(newUrl);
+        const transformedTitle = this._transformTitle(title);
+
+        global.HeaderGlobal.setNavigatorHistory({
+            description: description,
+            transformedTitle: transformedTitle,
+            newUrl: relativeUrl,
+        });
+    },
+
+    _getRelativeUrlWithParams: function (url) {
+        if (!url) return null;
+
+        const normalizedUrl = String(url).trim();
+        const withoutDomain = normalizedUrl.replace(
+            /^[a-zA-Z]+:\/\/[^/]+\/?/,
+            "",
+        );
+
+        return withoutDomain.replace(/^\/+/, "");
+    },
+
+    _getDescriptionFromUrl: function (url) {
+        const descriptionRegex = /[?&amp;]scm_record_id=([^&amp;#]*)/;
+        const descriptionMatch = url.match(descriptionRegex);
+        return descriptionMatch ? descriptionMatch[1] : null;
+    },
+
+    _getTitleFromUrl: function (url) {
+        const titleRegex = /[?&amp;]id=([^&amp;#]*)/;
+        const titleMatch = url.match(titleRegex);
+        return titleMatch ? titleMatch[1] : null;
+    },
+
+    _transformTitle: function (title) {
+        if (!title) return null;
+        return title
+            .split("_")
+            .map((word) =&gt; word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    },
+
+    type: "Header",
+};
+]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sys_script_include&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2026-06-20 10:03:38&lt;/sys_created_on&gt;&lt;sys_id&gt;4d276992932dc31040fcb6597bba1043&lt;/sys_id&gt;&lt;sys_mod_count&gt;7&lt;/sys_mod_count&gt;&lt;sys_name&gt;Header&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy&gt;read&lt;/sys_policy&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_script_include_4d276992932dc31040fcb6597bba1043&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 12:10:20&lt;/sys_updated_on&gt;&lt;/sys_script_include&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-487435816</payload_hash>
+        <record_name>Header</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 12:10:20</sys_created_on>
+        <sys_id>4834865e93edc31040fcb6597bba10ff</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee4f065950000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 12:10:20</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>8434865e0fedc310f262ff07f45006fe</update_guid>
+        <update_guid_history>8434865e0fedc310f262ff07f45006fe:-487435816,720102d68dedc310d0b53db513b2b987:1207361482,bd7e71524bedc310cd89ef126c6bd146:-1265184701,35adedde722dc310a99f9f8da66dc6f0:1571992857,b9ec299e522dc3106038f02a2e7671dd:1829076923,aaf82596f12dc310739ad109930fa4c4:-328223303,f3c7add2eb2dc3101fd56944b2210c54:-891846711,0c37a9921f2dc310742872500bd31a7e:-731571176</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 12:15:28</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>2b2f83e0c6f248d288d3d6df77ddc6c9</sys_id>
+        <sys_metadata>4d276992932dc31040fcb6597bba1043</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>Header</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_script_include_4d276992932dc31040fcb6597bba1043</sys_update_name>
+        <sys_update_version display_value="sys_script_include_4d276992932dc31040fcb6597bba1043">4834865e93edc31040fcb6597bba10ff</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 12:15:28</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

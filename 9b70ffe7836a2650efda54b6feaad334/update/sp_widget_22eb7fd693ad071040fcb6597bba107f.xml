@@ -1,0 +1,1109 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function ($sce, spUtil, scmBreadcrumbsManager, $rootScope) {
+    const c = this;
+
+    if (c.data.redirectTo404) {
+        return;
+    }
+
+    init();
+
+    c.setLimit = function () {
+        if (!c.data.canSavePreferences) return;
+        savePreference("limit", c.data.limit).then(() => {});
+    };
+
+    c.goToFirstPage = function () {
+        c.page = 1;
+        getTableData();
+    };
+
+    c.goToPreviousPage = function () {
+        if (c.page > 1) {
+            c.page -= 1;
+            getTableData();
+        }
+    };
+
+    c.goToNextPage = function () {
+        if (c.page < c.totalPages) {
+            c.page += 1;
+            getTableData();
+        }
+    };
+
+    c.goToLastPage = function () {
+        c.page = c.totalPages;
+        getTableData();
+    };
+
+    c.sort = function (fieldName) {
+        c.page = 1;
+        let savePromise;
+
+        if (c.data.orderBy === fieldName) {
+            const orderDirection =
+                c.data.orderDirection === "ASC" ? "DESC" : "ASC";
+
+            savePromise = c.data.canSavePreferences
+                ? savePreference("orderDirection", orderDirection)
+                : Promise.resolve();
+        } else {
+            savePromise = c.data.canSavePreferences
+                ? savePreference("orderBy", fieldName).then(() => {
+                      savePreference("orderDirection", "ASC");
+                  })
+                : Promise.resolve();
+        }
+
+        savePromise.then(() => {
+            getTableData();
+        });
+    };
+
+    c.addField = function () {
+        c.selectedFieldsList.push(c.fieldToAdd);
+        const index = c.unselectedFieldsList.findIndex(
+            (field) => field.name === c.fieldToAdd.name,
+        );
+        c.unselectedFieldsList.splice(index, 1);
+        c.fieldToAdd = null;
+    };
+
+    c.removeField = function () {
+        c.unselectedFieldsList.push(c.fieldToRemove);
+        const index = c.selectedFieldsList.findIndex(
+            (field) => field.name === c.fieldToRemove.name,
+        );
+        c.selectedFieldsList.splice(index, 1);
+        c.fieldToRemove = null;
+    };
+
+    c.moveFieldUp = function () {
+        const index = c.selectedFieldsList.findIndex(
+            (field) => field.name === c.fieldToRemove.name,
+        );
+        if (index > 0) {
+            const temp = c.selectedFieldsList[index - 1];
+            c.selectedFieldsList[index - 1] = c.selectedFieldsList[index];
+            c.selectedFieldsList[index] = temp;
+        }
+    };
+
+    c.moveFieldDown = function () {
+        const index = c.selectedFieldsList.findIndex(
+            (field) => field.name === c.fieldToRemove.name,
+        );
+        if (index < c.selectedFieldsList.length - 1) {
+            const temp = c.selectedFieldsList[index + 1];
+            c.selectedFieldsList[index + 1] = c.selectedFieldsList[index];
+            c.selectedFieldsList[index] = temp;
+        }
+    };
+
+    c.saveListView = function () {
+        c.savingListView = true;
+
+        const savePromise = c.data.canSavePreferences
+            ? savePreference("columns", JSON.stringify(c.selectedFieldsList))
+            : Promise.resolve();
+
+        savePromise.then(() => {
+            getTableColumns().then(() => {
+                c.savingListView = false;
+                document.getElementById(c.settingsDialogId).close();
+            });
+            getTableData();
+        });
+    };
+
+    c.cancelListView = function () {
+        c.cancelingListView = true;
+        c.selectedFieldsList = angular.copy(c.data.columns);
+        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable);
+        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
+            return !c.selectedFieldsList.some(
+                (selectedField) => selectedField.name === field.name,
+            );
+        });
+        c.fieldToAdd = null;
+        c.fieldToRemove = null;
+        c.cancelingListView = false;
+        document.getElementById(c.settingsDialogId).close();
+    };
+
+    c.revertListViewToDefault = function () {
+        c.revertingListView = true;
+        c.server
+            .get({
+                action: "revertListViewToDefault",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            })
+            .then((response) => {
+                c.data.columns = response.data.columns;
+                c.revertingListView = false;
+                document.getElementById(c.settingsDialogId).close();
+                getTableData();
+            });
+    };
+
+    c.getFirstRecordIndex = function () {
+        return (c.page - 1) * parseInt(c.data.limit, 10) + 1;
+    };
+
+    c.getLastRecordIndex = function () {
+        const last = c.page * parseInt(c.data.limit, 10);
+        return last > c.totalRecords ? c.totalRecords : last;
+    };
+
+    c.applyFilters = function () {
+        c.appliedFilters = c.filters
+            .filter((filter) => {
+                return filter.value && filter.value !== "";
+            })
+            .map((filter) => {
+                return {
+                    field: filter.field,
+                    label: filter.label,
+                    type: filter.type,
+                    value: filter.value,
+                    choiceValues: filter.choiceValues,
+                    referenceTable: filter.referenceTable,
+                    displayFields: filter.displayFields,
+                    referenceQualifier: filter.referenceQualifier,
+                    id: filter.id,
+                };
+            });
+
+        c.page = 1;
+        getTotalRecords();
+        getTableData();
+        getAppliedFiltersInfoMessage();
+        document.getElementById(c.filtersDialogId).close();
+    };
+
+    c.cancelFilters = function () {
+        c.filters.forEach((filter) => {
+            const appliedFilter = c.appliedFilters.find(
+                (af) => af.field === filter.field,
+            );
+            filter.value = appliedFilter ? appliedFilter.value : "";
+        });
+        document.getElementById(c.filtersDialogId).close();
+    };
+
+    c.getPrimaryCellHref = function (record) {
+        const action = c.data.primaryCellClickAction || {};
+
+        if (action.type !== "link") {
+            return undefined;
+        }
+
+        if (!action.urlField) {
+            return undefined;
+        }
+
+        return record?.[action.urlField];
+    };
+
+    c.getCellContent = function (record, field) {
+        return record.__cellContent[field.name] || { layout: "stack", blocks: [] };
+    };
+
+    c.getCellBlocks = function (record, field) {
+        return c.getCellContent(record, field).blocks || [];
+    };
+
+    c.getCellLayout = function (record, field) {
+        return c.getCellContent(record, field).layout || "stack";
+    };
+
+    c.onPrimaryCellClick = function ($event, record, field) {
+        const action = c.data.primaryCellClickAction || {};
+
+        if (action.type === "event" && action.eventName) {
+            $event.preventDefault();
+            dispatchActionEvent(action, record, field, $event);
+            return;
+        }
+
+        if (action.type === "link") {
+            const href = c.getPrimaryCellHref(record);
+            if (!href) {
+                $event.preventDefault();
+            }
+        }
+    };
+
+    function getBreadcrumbs() {
+        return c.server
+            .get({
+                action: "getBreadcrumbs",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            })
+            .then((response) => {
+                const breadcrumbs = response.data.breadcrumbs || [];
+                scmBreadcrumbsManager.set(breadcrumbs);
+            });
+    }
+
+    function getTableColumns() {
+        return c.server
+            .get({
+                action: "getTableColumns",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            })
+            .then((response) => {
+                c.data.columns = response.data.columns;
+            });
+    }
+
+    function getTableData() {
+        c.showSpinner = true;
+        c.server
+            .get({
+                action: "getTableData",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                page: c.page,
+                filters: c.appliedFilters || [],
+            })
+            .then((response) => {
+                c.records = response.data.records;
+                c.data.orderBy = response.data.orderBy;
+                c.data.orderDirection = response.data.orderDirection;
+                c.showSpinner = false;
+            });
+    }
+
+    function dispatchActionEvent(action, record, field, event) {
+        const payload = action.payloadField
+            ? record?.[action.payloadField]
+            : action.payload || {};
+
+        $rootScope.$broadcast(action.eventName, {
+            record: record,
+            field: field,
+            data: c.data,
+            event: event,
+            payload: payload || {},
+        });
+    }
+
+    function getTotalRecords() {
+        c.server
+            .get({
+                action: "getTotalRecords",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                filters: c.appliedFilters || [],
+            })
+            .then((response) => {
+                c.totalRecords = response.data.totalRecords;
+                c.totalPages = Math.ceil(c.totalRecords / c.data.limit);
+            });
+    }
+
+    function initializeFilters() {
+        c.filters = [];
+
+        if (c.data.filterFields.length > 0) {
+            c.data.filterFields.forEach((fieldConfig) => {
+                const filter = {
+                    field: fieldConfig.field,
+                    label: fieldConfig.label,
+                    type: fieldConfig.type,
+                    value: "",
+                    choiceValues: [],
+                    loading: false,
+                    id: spUtil.createUid("xxxx-xxxx"),
+                };
+
+                if (fieldConfig.type === "reference") {
+                    filter.referenceTable = fieldConfig.referenceTable;
+                    filter.displayField = fieldConfig.displayField;
+                    filter.searchFields = fieldConfig.searchFields;
+                    filter.placeholder =
+                        fieldConfig.placeholder ||
+                        "Search " + fieldConfig.label;
+                    filter.referenceQualifier = fieldConfig.referenceQualifier;
+                    filter.pageSize = fieldConfig.pageSize;
+                    filter.minimumInputLength =
+                        fieldConfig.minimumInputLength || 3;
+                    filter.displayFields = fieldConfig.displayFields;
+                    filter.orderBy = fieldConfig.orderBy;
+                    filter.orderDirection = fieldConfig.orderDirection;
+                }
+
+                if (filter.type === "choice") {
+                    loadChoiceValues(filter);
+                }
+
+                c.filters.push(filter);
+            });
+        }
+    }
+
+    function loadChoiceValues(filter) {
+        filter.loading = true;
+        c.server
+            .get({
+                action: "getChoiceValues",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                fieldName: filter.field,
+            })
+            .then((response) => {
+                filter.choiceValues = response.data.choiceValues || [];
+                filter.loading = false;
+            })
+            .catch(() => {
+                filter.loading = false;
+            });
+    }
+
+    function savePreference(preferenceName, preferenceValue) {
+        if (!c.data.canSavePreferences) return Promise.resolve();
+
+        return c.server.get({
+            action: "savePreference",
+            transactionId: c.data.transactionId,
+            tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            preferenceName: preferenceName,
+            preferenceValue: preferenceValue,
+        });
+    }
+
+    function getAppliedFiltersInfoMessage() {
+        c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
+        c.server
+            .get({
+                action: "getAppliedFiltersInfoMessage",
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                appliedFilters: c.appliedFilters || [],
+            })
+            .then((response) => {
+                c.appliedFiltersHtml = $sce.trustAsHtml(
+                    response.data.appliedFiltersHtml,
+                );
+            });
+    }
+
+    function init() {
+        c.totalRecords = 0;
+        c.totalPages = 0;
+        c.page = 1;
+        c.records = [];
+
+        c.fieldToAdd = null;
+        c.fieldToRemove = null;
+
+        c.settingsDialogId = spUtil.createUid("xxxx-xxxx");
+        c.filtersDialogId = spUtil.createUid("xxxx-xxxx");
+        c.limitSelectId = spUtil.createUid("xxxx-xxxx");
+
+        getTotalRecords();
+        getTableData();
+        getBreadcrumbs();
+
+        c.selectedFieldsList = angular.copy(c.data.columns);
+        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable);
+        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
+            return !c.selectedFieldsList.some(
+                (selectedField) => selectedField.name === field.name,
+            );
+        });
+
+        if (c.data.canFilter) {
+            c.filters = [];
+            c.appliedFilters = [];
+            c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
+            initializeFilters();
+        }
+
+        c.showTableHeader =
+            (c.data.columns || []).filter((field) => field.label).length > 0;
+    }
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css>#table-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+#table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+
+    table {
+        width: 100%;
+        min-width: max-content;
+        border-collapse: separate;
+        border-spacing: 0 var(--scm-spacing-2);
+        table-layout: fixed;
+
+        thead {
+            tr {
+                background-color: var(--scm-color-horizon);
+                height: var(--scm-spacing-5);
+                border-radius: var(--scm-border-radius-small);
+
+                th {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-semibold);
+                    font-size: var(--scm-icon-size-xsmall);
+                    color: var(--scm-color-gray);
+                    background-color: var(--scm-color-horizon);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-small);
+                        border-bottom-left-radius: var(
+                            --scm-border-radius-small
+                        );
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(--scm-border-radius-small);
+                        border-bottom-right-radius: var(
+                            --scm-border-radius-small
+                        );
+                    }
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                &amp;:hover {
+                    td {
+                        background-color: var(--scm-color-blue-tint-3);
+
+                        &amp;:hover {
+                            background-color: var(--scm-color-blue-tint-2);
+                        }
+                    }
+                }
+
+                td {
+                    margin: 0;
+                    text-align: left;
+                    vertical-align: middle;
+                    font-weight: var(--scm-font-weight-regular);
+                    font-size: var(--scm-icon-size-xsmall);
+                    background-color: var(--scm-color-sc-white);
+                    height: var(--scm-spacing-5);
+                    width: 200px;
+                    min-width: 200px;
+                    padding-left: var(--scm-padding-2);
+                    padding-right: var(--scm-padding-2);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+
+                    &amp;:first-child {
+                        border-top-left-radius: var(--scm-border-radius-medium);
+                        border-bottom-left-radius: var(
+                            --scm-border-radius-medium
+                        );
+                    }
+
+                    &amp;:last-child {
+                        border-top-right-radius: var(
+                            --scm-border-radius-medium
+                        );
+                        border-bottom-right-radius: var(
+                            --scm-border-radius-medium
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+.scm-table-cell {
+    vertical-align: top;
+}
+
+.scm-table-cell--stack .scm-table-cell-block-group,
+.scm-table-cell--stack .scm-table-cell-block-link {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    text-decoration: none;
+    color: inherit;
+    white-space: normal;
+}
+
+.scm-table-cell--inline .scm-table-cell-block-group,
+.scm-table-cell--inline .scm-table-cell-block-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--scm-spacing-1);
+}
+
+.scm-table-cell-block,
+.scm-table-cell-block-group {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.scm-table-cell-block-group .scm-table-cell-block {
+    width: auto;
+}
+
+.scm-table-cell-block-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.scm-table-cell-muted {
+    color: var(--scm-color-gray);
+    font-size: var(--scm-font-size-xsmall);
+}
+
+#controller-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: var(--scm-padding-2);
+    padding-right: var(--scm-padding-2);
+
+    div {
+        display: flex;
+        align-items: center;
+        gap: var(--scm-spacing-2);
+    }
+
+    #metadata-wrapper {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+
+        div {
+            color: var(--scm-color-gray);
+            font-weight: var(--scm-font-weight-light);
+            font-size: var(--scm-font-size-xsmall);
+            margin-right: var(--scm-spacing-4);
+        }
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon {
+        color: var(--scm-color-int-blue);
+        cursor: pointer;
+    }
+
+    sdx-dialog sdx-dialog-toggle sdx-icon:hover {
+        color: var(--scm-color-int-blue-active);
+    }
+}
+
+#filters-wrapper {
+    margin-top: var(--scm-spacing-6);
+    margin-bottom: var(--scm-spacing-6);
+
+    #filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-3);
+        gap: var(--scm-spacing-4);
+    }
+
+    #filters-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--scm-spacing-3);
+    }
+}
+
+#applied-filters-wrapper {
+    margin-top: var(--scm-spacing-3);
+    margin-bottom: var(--scm-spacing-3);
+
+    #applied-filters-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--scm-spacing-1);
+        font-weight: var(--scm-font-weight-semibold);
+        font-size: var(--scm-icon-size-xsmall);
+        color: var(--scm-color-gray);
+    }
+
+    #applied-filters-list {
+        color: var(--scm-color-gray);
+        font-weight: var(--scm-font-weight-light);
+        font-size: var(--scm-font-size-xsmall);
+
+        .filter-separator {
+            margin: 0 var(--scm-spacing-2);
+            font-weight: var(--scm-font-weight-semibold);
+            color: var(--scm-color-int-blue);
+        }
+    }
+}
+</css>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>scm-table</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>scm-table</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[/**
+ * scm-table-v2 widget server script.
+ *
+ * This widget is initialized with the name of a Script Include that acts as a
+ * data provider. The Script Include is resolved at runtime via JSUtil.getGlobal()
+ * and must be accessible within the current scope.
+ *
+ * Widget option:
+ *   tableProviderScriptInclude {string} - Name of the Script Include class to use as provider.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * PROVIDER CONTRACT
+ * The provider Script Include must implement the following methods:
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * initialize(params)
+ *   Called on instantiation.
+ *   @param {Object} params
+ *   @param {string} params.transactionId    - Unique ID for log tracing.
+ *   @param {Object} [params.providerParams] - Optional custom params passed from widget options.
+ *
+ * canCreate()
+ *   @return {boolean} Whether to show the "Create new record" button.
+ *
+ * canFilter()
+ *   @return {boolean} Whether the filter panel is available.
+ *
+ * canSavePreferences()
+ *   @return {boolean} Whether user preferences (columns, order, limit) can be persisted.
+ *
+ * canConfigureColumns()
+ *   @return {boolean} Whether the column configurator is available.
+ *
+ * getAllAvailableColumns()
+ *   @return {Array<{name: string, label: string, default: boolean}>}
+ *     Full list of columns the user can choose from in the configurator.
+ *
+ * getAppliedFiltersInfoMessage(appliedFilters)
+ *   @param  {Array}  appliedFilters - Active filter objects from the client.
+ *   @return {string} HTML string describing the active filters (rendered below the toolbar).
+ *
+ * getBreadcrumbs()
+ *   @return {Array<{title: string, link: string}>} Breadcrumb items for the page.
+ *
+ * getChoiceValues(fieldName)
+ *   @param  {string} fieldName - Field whose choice list is needed.
+ *   @return {Array<{value: string, label: string}>}
+ *
+ * getDefaultColumns()
+ *   @return {Array<{name: string, label: string, default: boolean}>}
+ *     Columns shown when no user preference exists.
+ *
+ * getDetailViewPage()
+ *   @return {string} Portal page ID for the record detail view.
+ *
+ * getFilterFields()
+ *   @return {Array<Object>} Filter field configurations. Each object must include:
+ *     - field      {string}            Field name to filter on.
+ *     - label      {string}            Display label.
+ *     - type       {string}            "choice" | "reference" | "string".
+ *     For type "reference", also include:
+ *     - referenceTable     {string}
+ *     - displayField       {string}
+ *     - displayFields      {string}    Semicolon-separated fields to display.
+ *     - searchFields       {string}    Semicolon-separated fields to search.
+ *     - referenceQualifier {string}
+ *     - placeholder        {string}
+ *     - pageSize           {string}
+ *     - minimumInputLength {string}
+ *     - orderBy            {string}
+ *     - orderDirection     {string}
+ *
+ * getIdField()
+ *   @return {string} Field name used as the record identifier in the detail view URL.
+
+ * getCellContent(field, record)
+ *   @param  {Object} field  - Column definition for the current cell.
+ *   @param  {Object} record - Row data returned by getTableData().
+ *   @return {Object} Cell content object. Required keys:
+ *     - layout {string}  "stack" | "inline"
+ *     - blocks {Array<{ value: string, className?: string, href?: string }>}
+ *
+ * getPrimaryCellClickAction()
+ *   @return {Object} Action for first-cell click.
+ *     Supported shapes:
+ *     - { type: "link", urlField: "_primaryLink" }
+ *     - { type: "event", eventName: "my:event", payloadField: "_primaryPayload" }
+ *   The provider must populate those fields in each record returned by getTableData().
+ *
+ * getOrderBy()
+ *   @return {string} Field name to sort by.
+ *
+ * getOrderDirection()
+ *   @return {string} "ASC" | "DESC"
+ *
+ * getPageTitle()
+ *   @return {string} Page heading displayed above the table.
+ *
+ * getTableColumns()
+ *   @return {Array<{name: string, label: string}>}
+ *     Active columns to render (respects user preferences if applicable).
+ *
+ * getTableData({ filters, page })
+ *   @param  {Array}  filters - Applied filter objects from the client.
+ *   @param  {number} page    - Current page number (1-based).
+ *   @return {Array<Object>}  Array of plain objects. Each object must contain a key
+ *                            per active column name plus the id field.
+ *                            Values can be computed freely — not limited to GlideRecord fields.
+ *
+ * getTableLimit()
+ *   @return {number} Number of records per page.
+ *
+ * getTotalRecords(filters)
+ *   @param  {Array}  filters - Applied filter objects from the client.
+ *   @return {number} Total matching record count (used for pagination).
+ *
+ * saveUserPreference(preferenceName, preferenceValue)
+ *   @param {string} preferenceName  - "columns" | "orderBy" | "orderDirection" | "limit".
+ *   @param {string} preferenceValue - Serialized value to persist.
+ *   @return {void}
+ *
+ * showAppliedFilters()
+ *   @return {boolean} Whether the applied filters summary bar is visible.
+ *
+ * showTableMetadata()
+ *   @return {boolean} Whether the metadata bar (record count, pagination info) is visible.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+(function () {
+    const transactionId = input?.transactionId || gs.generateGUID();
+    const tableProviderScriptInclude =
+        input?.tableProviderScriptInclude ||
+        options?.tableProviderScriptInclude;
+
+    const logger = new Logger({
+        transactionId: transactionId,
+        source: "scm-table-v2.server.js",
+        includeTimeStamp: true,
+        includeUserInfo: true,
+        includeSessionId: true,
+    });
+
+    if (!tableProviderScriptInclude) {
+        data.redirectTo404 = true;
+        logger.error("Table provider Script Include is missing");
+        return;
+    }
+
+    data.transactionId = transactionId;
+    data.tableProviderScriptInclude = tableProviderScriptInclude;
+
+    let widgetHelper;
+    try {
+        const ProviderClass = x_680259_scm[tableProviderScriptInclude];
+
+        widgetHelper = new ProviderClass({
+            transactionId: transactionId,
+            providerParams: input?.providerParams || options?.providerParams,
+        });
+    } catch (error) {
+        data.redirectTo404 = true;
+        logger.error({
+            message: "Error initializing provider",
+            error: error.message,
+            tableProviderScriptInclude: tableProviderScriptInclude,
+        });
+        return;
+    }
+
+    if (input && input.action === "savePreference") {
+        if (!widgetHelper.canSavePreferences()) return;
+
+        widgetHelper.saveUserPreference(
+            input.preferenceName,
+            input.preferenceValue,
+        );
+        return;
+    }
+
+    if (input && input.action === "getAppliedFiltersInfoMessage") {
+        data.appliedFiltersHtml = widgetHelper.getAppliedFiltersInfoMessage(
+            input.appliedFilters,
+        );
+        return;
+    }
+
+    if (input && input.action === "getTotalRecords") {
+        data.totalRecords = widgetHelper.getTotalRecords(input.filters);
+        return;
+    }
+
+    if (input && input.action === "getChoiceValues") {
+        data.choiceValues = widgetHelper.getChoiceValues(input.fieldName);
+        return;
+    }
+
+    if (input && input.action === "getBreadcrumbs") {
+        data.breadcrumbs = widgetHelper.getBreadcrumbs();
+        return;
+    }
+
+    if (input && input.action === "getTableColumns") {
+        data.columns = widgetHelper.getTableColumns();
+        return;
+    }
+
+    if (input && input.action === "revertListViewToDefault") {
+        widgetHelper.saveUserPreference(
+            "columns",
+            JSON.stringify(widgetHelper.getDefaultColumns()),
+        );
+        data.columns = widgetHelper.getDefaultColumns();
+        return;
+    }
+
+    if (input && input.action === "getTableData") {
+        const columns = widgetHelper.getTableColumns();
+        if (typeof widgetHelper.getCellContent !== "function") {
+            throw new Error("Provider must implement getCellContent");
+        }
+
+        data.records = widgetHelper.getTableData({
+            filters: input.filters,
+            page: input.page,
+        });
+        data.records = decorateCellContent(widgetHelper, data.records, columns);
+        data.orderDirection = widgetHelper.getOrderDirection();
+        data.orderBy = widgetHelper.getOrderBy();
+        return;
+    }
+
+    data.title = widgetHelper.getPageTitle();
+
+    data.showNewRecordButton = widgetHelper.canCreate();
+
+    data.detailViewPage = widgetHelper.getDetailViewPage();
+    data.idField = widgetHelper.getIdField();
+
+    data.canFilter = widgetHelper.canFilter();
+    data.filterFields = widgetHelper.getFilterFields();
+    data.limit = widgetHelper.getTableLimit();
+
+    data.canSavePreferences = widgetHelper.canSavePreferences();
+
+    data.allColumnsAvailable = widgetHelper.getAllAvailableColumns();
+    data.columns = widgetHelper.getTableColumns();
+
+    data.canConfigureColumns = widgetHelper.canConfigureColumns();
+    data.showMetadata = widgetHelper.showTableMetadata();
+    data.showAppliedFilters = widgetHelper.showAppliedFilters();
+    data.primaryCellClickAction = widgetHelper.getPrimaryCellClickAction();
+})();
+
+function decorateCellContent(widgetHelper, records, columns) {
+    return (records || []).map(function (record) {
+        var decoratedRecord = Object.assign({}, record);
+        decoratedRecord.__cellContent = {};
+
+        for (var i = 0; i < columns.length; i++) {
+            var field = columns[i];
+            decoratedRecord.__cellContent[field.name] = normalizeCellContent(
+                widgetHelper.getCellContent(field, record),
+            );
+        }
+
+        return decoratedRecord;
+    });
+}
+
+function normalizeCellContent(cellContent) {
+    if (!cellContent) {
+        return {
+            layout: "stack",
+            blocks: [],
+        };
+    }
+
+    if (Array.isArray(cellContent)) {
+        return {
+            layout: "stack",
+            blocks: cellContent,
+        };
+    }
+
+    if (cellContent.blocks && Array.isArray(cellContent.blocks)) {
+        return {
+            layout: cellContent.layout || "stack",
+            blocks: cellContent.blocks,
+        };
+    }
+
+    return {
+        layout: "stack",
+        blocks: [cellContent],
+    };
+}
+]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 20:53:34</sys_created_on>
+        <sys_id>22eb7fd693ad071040fcb6597bba107f</sys_id>
+        <sys_mod_count>21</sys_mod_count>
+        <sys_name>scm-table</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_22eb7fd693ad071040fcb6597bba107f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 23:14:47</sys_updated_on>
+        <template><![CDATA[<div ng-if="!data.redirectTo404">
+    <div id="table-header" ng-if="data.title || data.showNewRecordButton">
+        <h1 class="h1" ng-bind="::data.title" ng-if="::data.title"></h1>
+        <sdx-button
+            theme="primary"
+            ng-href="?id={{data.detailViewPage}}&sys_id=-1"
+            label="Create new record"
+            ng-if="data.showNewRecordButton"
+        ></sdx-button>
+    </div>
+    <div
+        id="controller-wrapper"
+        ng-if="data.canConfigureColumns || data.canFilter || data.showMetadata"
+    >
+        <div>
+            <ng-include
+                ng-if="::data.canConfigureColumns"
+                src="'scm-table-settings'"
+            ></ng-include>
+            <ng-include
+                ng-if="::data.canFilter"
+                src="'scm-table-filters'"
+            ></ng-include>
+        </div>
+        <ng-include
+            ng-if="::data.showMetadata"
+            src="'scm-table-metadata'"
+        ></ng-include>
+        <ng-include src="'scm-table-pagination'"></ng-include>
+    </div>
+    <div
+        id="applied-filters-wrapper"
+        ng-if="c.appliedFilters && c.appliedFilters.length > 0 && data.showAppliedFilters"
+    >
+        <div id="applied-filters-header">
+            <span ng-bind="::'Applied filters:'"></span>
+        </div>
+        <div id="applied-filters-list">
+            <span ng-bind-html="c.appliedFiltersHtml"></span>
+        </div>
+    </div>
+    <div id="table-wrapper">
+        <table>
+            <thead ng-if="c.showTableHeader">
+                <tr>
+                    <th ng-repeat="field in c.data.columns">
+                        <span
+                            ng-click="c.sort(field.name)"
+                            ng-bind="::field.label"
+                            ng-if="::field.label"
+                        ></span>
+                        <sdx-icon
+                            ng-if="::field.label"
+                            ng-show="c.data.orderBy === field.name && c.data.orderDirection === 'ASC'"
+                            icon-name="icon-chevron-small-up"
+                            size="1"
+                        ></sdx-icon>
+                        <sdx-icon
+                            ng-if="::field.label"
+                            ng-show="c.data.orderBy === field.name && c.data.orderDirection === 'DESC'"
+                            icon-name="icon-chevron-small-down"
+                            size="1"
+                        ></sdx-icon>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr
+                    ng-repeat="record in c.records track by $index"
+                    ng-if="!c.showSpinner"
+                >
+                    <td
+                        ng-repeat="field in c.data.columns"
+                        class="scm-table-cell"
+                        ng-class="'scm-table-cell--' + c.getCellLayout(record, field)"
+                    >
+                        <a
+                            class="scm-table-cell-block-link"
+                            ng-if="c.getPrimaryCellHref(record) && $first"
+                            ng-attr-href="{{ c.getPrimaryCellHref(record) }}"
+                            ng-click="c.onPrimaryCellClick($event, record, field)"
+                        >
+                            <span
+                                ng-repeat="block in c.getCellBlocks(record, field) track by $index"
+                                class="scm-table-cell-block"
+                                ng-class="block.className"
+                                ng-attr-title="{{ block.value }}"
+                                ng-bind="block.value"
+                            ></span>
+                        </a>
+                        <span
+                            ng-if="!c.getPrimaryCellHref(record) || !$first"
+                            class="scm-table-cell-block-group"
+                        >
+                            <span
+                                ng-repeat="block in c.getCellBlocks(record, field) track by $index"
+                                class="scm-table-cell-block"
+                                ng-class="block.className"
+                                ng-attr-title="{{ block.value }}"
+                                ng-bind="block.value"
+                            ></span>
+                        </span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+</div>
+]]></template>
+    </sp_widget>
+</record_update>

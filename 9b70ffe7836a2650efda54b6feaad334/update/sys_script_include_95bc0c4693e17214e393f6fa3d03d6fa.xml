@@ -9,13 +9,11 @@
         <mobile_callable>false</mobile_callable>
         <name>NavigationManager</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[// TODO: Logger
-const NavigationManager = Class.create();
+        <script><![CDATA[const NavigationManager = Class.create();
 NavigationManager.prototype = {
     initialize: function (page, params) {
         const that = this;
 
-        // This value should be the same as in "scmNavFlyoverManager" factory
         const NAV_PREFIX = "scm_nav";
 
         this.page = page;
@@ -24,12 +22,12 @@ NavigationManager.prototype = {
 
         Object.keys(params)
             .filter(
-                (param) => param.startsWith(NAV_PREFIX) && param != NAV_PREFIX
+                (param) => param.startsWith(NAV_PREFIX) && param != NAV_PREFIX,
             )
             .forEach(
                 (param) =>
                     (that.navParams[param.slice(NAV_PREFIX.length + 1)] =
-                        params[param])
+                        params[param]),
             );
     },
 
@@ -50,7 +48,7 @@ NavigationManager.prototype = {
     _getConfigsForPage: function () {
         const configs = [];
         const grConfig = new GlideRecord(
-            Constants.NAVIGATION_MANAGER_CONFIG_TABLE
+            Constants.NAVIGATION_MANAGER_CONFIG_TABLE,
         );
         grConfig.addQuery("page.id", this.page);
         grConfig.addQuery("active", true);
@@ -60,11 +58,11 @@ NavigationManager.prototype = {
 
             if (grConfig.getValue("table")) {
                 grCurrentRecord = new GlideRecord(
-                    grConfig.getDisplayValue("table.name")
+                    grConfig.getDisplayValue("table.name"),
                 );
                 grCurrentRecord.get(
                     grConfig.getValue("field_id"),
-                    this.params[grConfig.getValue("param_id")]
+                    this.params[grConfig.getValue("param_id")],
                 );
             }
 
@@ -74,7 +72,7 @@ NavigationManager.prototype = {
             let render = this._evaluateScript(
                 grConfig,
                 grCurrentRecord,
-                "render_conditions"
+                "render_conditions",
             );
             render = render || {
                 result: false,
@@ -101,13 +99,13 @@ NavigationManager.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-02 12:39:02</sys_created_on>
         <sys_id>95bc0c4693e17214e393f6fa3d03d6fa</sys_id>
-        <sys_mod_count>7</sys_mod_count>
+        <sys_mod_count>9</sys_mod_count>
         <sys_name>NavigationManager</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_95bc0c4693e17214e393f6fa3d03d6fa</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:33:40</sys_updated_on>
+        <sys_updated_on>2026-06-20 11:45:23</sys_updated_on>
     </sys_script_include>
 </record_update>

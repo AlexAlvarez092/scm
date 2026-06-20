@@ -4,7 +4,7 @@
         <client_script><![CDATA[api.controller = function (spUtil, $scope, $rootScope) {
     const c = this;
 
-    c.data.isActive = 'deactivated';
+    c.data.isActive = "deactivated";
     const widgetId = c.data.widgetId;
     const widgetUid = c.data.widgetUid;
     const widgetOptions = c.data.widgetOptions;
@@ -15,45 +15,53 @@
     loadFlyOverContent(widgetId, widgetOptions);
 
     $scope.overrideSize = function () {
-        return c.data.width != '75' ? 'width:' + c.data.width + '% !important' : 'width:75%';
+        return c.data.width != "75"
+            ? "width:" + c.data.width + "% !important"
+            : "width:75%";
     };
 
     function loadFlyOverContent(widgetId, widgetOptions) {
         spUtil.get(widgetId, widgetOptions).then(function (response) {
             c.data.widget = response;
             c.loadingActive = false;
-            c.data.isActive = 'active';
-            changeParentWidth('open');
-            document.body.classList.add('overflowFlyOverOpen');
+            c.data.isActive = "active";
+            changeParentWidth("open");
+            document.body.classList.add("overflowFlyOverOpen");
         });
     }
 
     c.closeFlyover = function () {
-        $rootScope.$broadcast('scmFlyover-close-triggered-' + widgetUid);
-        c.data.isActive = 'deactivated';
-        changeParentWidth('close');
-        document.body.classList.remove('overflowFlyOverOpen');
+        $rootScope.$broadcast("scmFlyover-close-triggered-" + widgetUid);
+        c.data.isActive = "deactivated";
+        changeParentWidth("close");
+        document.body.classList.remove("overflowFlyOverOpen");
     };
 
-    const unregisterEvent = $scope.$on('scmFlyover-close-' + widgetUid, function (e, data) {
-        c.closeFlyover();
-        unregisterEvent();
-    });
+    const unregisterEvent = $scope.$on(
+        "scmFlyover-close-" + widgetUid,
+        function (e, data) {
+            c.closeFlyover();
+            unregisterEvent();
+        },
+    );
 
     function changeParentWidth(action) {
-        const flyOversContainers = document.querySelectorAll('.scm-flyover-panel-content');
+        const flyOversContainers = document.querySelectorAll(
+            ".scm-flyover-panel-content",
+        );
 
         if (flyOversContainers.length > 1) {
             for (let i = 0; i < flyOversContainers.length; i++) {
                 if (i < flyOversContainers.length - 1) {
-                    flyOversContainers[i].classList.add('full');
+                    flyOversContainers[i].classList.add("full");
                 } else {
-                    if (action == 'close') {
-                        flyOversContainers[i - 1].classList.remove('full');
+                    if (action == "close") {
+                        flyOversContainers[i - 1].classList.remove("full");
                     }
                 }
             }
-        } else if (flyOversContainers.length == 1) flyOversContainers[0].classList.remove('full');
+        } else if (flyOversContainers.length == 1)
+            flyOversContainers[0].classList.remove("full");
     }
 };
 ]]></client_script>
@@ -67,7 +75,8 @@
         top: 0;
         left: 0;
         opacity: 0.5;
-        transition: opacity var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
+        transition: opacity var(--scm-transition-duration-medium)
+            cubic-bezier(0.645, 0.045, 0.355, 1);
     }
 
     .scm-flyover-panel-content {
@@ -78,7 +87,8 @@
         top: 0;
         right: 0;
         transform: translateX(100%);
-        transition: all var(--scm-transition-duration-medium) cubic-bezier(0.645, 0.045, 0.355, 1);
+        transition: all var(--scm-transition-duration-medium)
+            cubic-bezier(0.645, 0.045, 0.355, 1);
         box-shadow: var(--scm-box-shadow-large);
         display: flex;
         flex-direction: column;
@@ -142,10 +152,10 @@
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: 'scm-flyover.server.js',
+        source: "scm-flyover.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
-        includeSessionId: true
+        includeSessionId: true,
     });
 
     data.widgetId = inputOrOptions.widgetId;
@@ -159,7 +169,7 @@
         input: input,
         data: data,
         options: options,
-        inputOrOptions: inputOrOptions
+        inputOrOptions: inputOrOptions,
     });
 })();
 ]]></script>
@@ -168,14 +178,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 17:01:41</sys_created_on>
         <sys_id>08ec6d5793732a10e393f6fa3d03d629</sys_id>
-        <sys_mod_count>168</sys_mod_count>
+        <sys_mod_count>170</sys_mod_count>
         <sys_name>scm-flyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_08ec6d5793732a10e393f6fa3d03d629</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-12 20:58:55</sys_updated_on>
+        <sys_updated_on>2026-06-20 11:45:10</sys_updated_on>
         <template><![CDATA[<div id="flyover-{{::data.widgetUid}}" class="scm-flyover">
     <div class="scm-flyover-panel-overlay"></div>
     <div
@@ -208,7 +218,6 @@
                 size="large"
                 sr-hint="Loading. Please wait."
             ></sdx-loading-spinner>
-            <!-- Main Widget -->
             <div ng-if="data.widget">
                 <sp-widget widget="data.widget"></sp-widget>
             </div>

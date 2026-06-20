@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_ui_form_sections action="DELETE" form_id="486ab527c361321057b3d4fc0501319a" sys_domain="global" table="x_680259_scm_widget_configuration" version="3">
+        <sys_ui_form_section action="INSERT_OR_UPDATE">
+            <position>0</position>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-07 12:28:44</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>c06ab527c361321057b3d4fc050131a1</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_overrides/>
+            <sys_ui_form display_value="x_680259_scm_widget_configuration" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">486ab527c361321057b3d4fc0501319a</sys_ui_form>
+            <sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-07 12:28:44</sys_updated_on>
+        </sys_ui_form_section>
+        <sys_ui_form action="INSERT_OR_UPDATE">
+            <name>x_680259_scm_widget_configuration</name>
+            <roles/>
+            <sys_class_name>sys_ui_form</sys_class_name>
+            <sys_created_by>admin</sys_created_by>
+            <sys_created_on>2025-12-07 12:28:44</sys_created_on>
+            <sys_domain>global</sys_domain>
+            <sys_domain_path>/</sys_domain_path>
+            <sys_id>486ab527c361321057b3d4fc0501319a</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>x_680259_scm_widget_configuration</sys_name>
+            <sys_overrides/>
+            <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+            <sys_update_name>sys_ui_form_sections_486ab527c361321057b3d4fc0501319a</sys_update_name>
+            <sys_updated_by>admin</sys_updated_by>
+            <sys_updated_on>2025-12-07 12:28:44</sys_updated_on>
+            <sys_user/>
+            <view display_value="Default view" name="NULL">Default view</view>
+            <view_name/>
+        </sys_ui_form>
+    </sys_ui_form_sections>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_ui_form_sections_486ab527c361321057b3d4fc0501319a</name>
+        <payload><![CDATA[<?xml version="1.0" encoding="UTF-8"?><record_update><sys_ui_form_sections form_id="486ab527c361321057b3d4fc0501319a" sys_domain="global" table="x_680259_scm_widget_configuration" version="3"><sys_ui_form_section action="INSERT_OR_UPDATE"><position>0</position><sys_created_by>admin</sys_created_by><sys_created_on>2025-12-07 12:28:44</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>c06ab527c361321057b3d4fc050131a1</sys_id><sys_mod_count>0</sys_mod_count><sys_overrides/><sys_ui_form display_value="x_680259_scm_widget_configuration" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">486ab527c361321057b3d4fc0501319a</sys_ui_form><sys_ui_section caption="NULL" display_value="" name="x_680259_scm_widget_configuration" sys_domain="global" view="Default view">e31a7de3c361321057b3d4fc0501312c</sys_ui_section><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-12-07 12:28:44</sys_updated_on></sys_ui_form_section><sys_ui_form action="INSERT_OR_UPDATE"><name>x_680259_scm_widget_configuration</name><roles/><sys_class_name>sys_ui_form</sys_class_name><sys_created_by>admin</sys_created_by><sys_created_on>2025-12-07 12:28:44</sys_created_on><sys_domain>global</sys_domain><sys_domain_path>/</sys_domain_path><sys_id>486ab527c361321057b3d4fc0501319a</sys_id><sys_mod_count>0</sys_mod_count><sys_name>x_680259_scm_widget_configuration</sys_name><sys_overrides/><sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package><sys_policy/><sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope><sys_update_name>sys_ui_form_sections_486ab527c361321057b3d4fc0501319a</sys_update_name><sys_updated_by>admin</sys_updated_by><sys_updated_on>2025-12-07 12:28:44</sys_updated_on><sys_user/><view display_value="Default view" name="NULL">Default view</view><view_name/></sys_ui_form></sys_ui_form_sections></record_update>]]></payload>
+        <payload_hash>1201345917</payload_hash>
+        <record_name>Widget Configuration</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 19:24:03</sys_created_on>
+        <sys_id>5d77efde93e9071040fcb6597bba1059</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee67d7b640000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:24:03</sys_updated_on>
+        <type>Form Sections</type>
+        <update_guid>5d77efde53e907101beee1aa20efb458</update_guid>
+        <update_guid_history>5d77efde53e907101beee1aa20efb458:1201345917,dd77efde43e90710173fccdf8ae34b45:1277676308,a42748cea021431025280b1b93d46f8f:-1450038743</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:27:45</sys_created_on>
+        <sys_db_object display_value="" name="sys_ui_form">sys_ui_form</sys_db_object>
+        <sys_id>c44c96be6f2e44a6a60b5363d33a9ac9</sys_id>
+        <sys_metadata>486ab527c361321057b3d4fc0501319a</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_680259_scm_widget_configuration</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent display_value="">f189b5a3c361321057b3d4fc05013156</sys_parent>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_ui_form_sections_486ab527c361321057b3d4fc0501319a</sys_update_name>
+        <sys_update_version display_value="sys_ui_form_sections_486ab527c361321057b3d4fc0501319a">5d77efde93e9071040fcb6597bba1059</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:27:45</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

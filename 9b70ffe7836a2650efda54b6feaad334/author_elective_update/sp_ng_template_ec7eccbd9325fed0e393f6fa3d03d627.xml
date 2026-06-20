@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="DELETE">
+        <id>scm-table-filters</id>
+        <sp_widget/>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-01 18:07:48</sys_created_on>
+        <sys_id>ec7eccbd9325fed0e393f6fa3d03d627</sys_id>
+        <sys_mod_count>15</sys_mod_count>
+        <sys_name>scm-table-filters</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 11:45:05</sys_updated_on>
+        <template><![CDATA[<sdx-dialog
+    label="Filter records"
+    id="{{c.filtersDialogId}}"
+    class="align-header-center"
+>
+    <sdx-dialog-toggle>
+        <sdx-icon
+            icon-name="icon-filter"
+            size="1"
+            id="scm-table-filters-icon"
+            title="Apply filters to the table"
+            ng-disabled="!data.canApplyFilters"
+        ></sdx-icon>
+    </sdx-dialog-toggle>
+    <sdx-dialog-content>
+        <div class="scm-filters-dialog-form">
+            <div
+                class="scm-filters-field-dialog margin-bottom-1"
+                ng-repeat="filter in c.filters"
+            >
+                <div ng-if="filter.type === 'choice'">
+                    <label
+                        for="{{filter.id}}"
+                        class="scm-filter-dialog-choice-field-label"
+                        ng-bind="filter.label"
+                    ></label>
+                    <select
+                        id="{{filter.id}}"
+                        ng-model="filter.value"
+                        class="scm-filter-dialog-choice-field-input"
+                        ng-disabled="filter.loading"
+                    >
+                        <option
+                            value=""
+                            ng-if="!filter.loading"
+                            ng-bind="'-- Select ' + filter.label + ' --'"
+                        ></option>
+                        <option
+                            value=""
+                            ng-if="filter.loading"
+                            ng-bind="'-- Loading options... --'"
+                        ></option>
+                        <option
+                            ng-repeat="choice in filter.choiceValues"
+                            value="{{choice.value}}"
+                            ng-bind="choice.label"
+                        ></option>
+                    </select>
+                    <sdx-loading-spinner
+                        ng-if="filter.loading"
+                        class="scm-filter-dialog-choice-field-loading-spinner"
+                    ></sdx-loading-spinner>
+                </div>
+                <div
+                    ng-if="filter.type === 'reference'"
+                    class="scm-filter-dialog-reference-field-container"
+                >
+                    <scm-ref-picker
+                        label="{{filter.label}}"
+                        table="{{filter.referenceTable}}"
+                        display-field="{{filter.displayField}}"
+                        search-fields="{{filter.searchFields}}"
+                        placeholder="{{filter.placeholder}}"
+                        reference-qualifier="{{filter.referenceQualifier}}"
+                        page-size="{{filter.pageSize}}"
+                        minimum-input-length="{{filter.minimumInputLength}}"
+                        display-fields="{{filter.displayFields}}"
+                        order-by="{{filter.orderBy}}"
+                        order-direction="{{filter.orderDirection}}"
+                        ng-model="filter.value"
+                    ></scm-ref-picker>
+                </div>
+            </div>
+        </div>
+        <div class="scm-filter-dialog-actions-container">
+            <sdx-button
+                id="scm-table-filters-cancel"
+                theme="transparent"
+                icon-name="icon-close"
+                icon-size="2"
+                ng-click="c.cancelFilters()"
+                label="Cancel"
+            ></sdx-button>
+            <sdx-button
+                theme="transparent"
+                icon-name="icon-save"
+                icon-size="2"
+                ng-click="c.applyFilters()"
+                label="Save"
+            ></sdx-button>
+        </div>
+    </sdx-dialog-content>
+</sdx-dialog>
+
+<style>
+    .scm-filters-dialog-form {
+        margin-bottom: var(--scm-spacing-3);
+    }
+
+    .scm-filter-dialog-field {
+        margin-bottom: var(--scm-spacing-2);
+    }
+
+    .scm-filter-dialog-choice-field-label {
+        font-weight: var(--scm-font-weight-regular);
+        font-size: var(--scm-font-size-medium);
+        color: var(--scm-color-gray-tint-4);
+        margin-bottom: var(--scm-spacing-1);
+        display: block;
+    }
+
+    .scm-filter-dialog-choice-field-input {
+        width: 100%;
+        padding: var(--scm-padding-2);
+        border: var(--scm-border-width-thin) var(--scm-border-style-default)
+            var(--scm-color-gray-tint-4);
+        border-radius: 5px;
+        font-size: var(--scm-font-size-medium);
+    }
+
+    .scm-filter-dialog-choice-field-loading-spinner {
+        display: inline-block;
+        margin-left: 8px;
+        margin-top: 8px;
+    }
+
+    .scm-filter-dialog-reference-field-container {
+        margin-bottom: var(--scm-spacing-2);
+    }
+
+    .scm-filter-dialog-actions-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--scm-spacing-2);
+        justify-content: flex-end;
+        margin-top: var(--scm-spacing-3);
+    }
+</style>
+]]></template>
+    </sp_ng_template>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_ng_template"&gt;&lt;sp_ng_template action="INSERT_OR_UPDATE"&gt;&lt;id&gt;scm-table-filters&lt;/id&gt;&lt;sp_widget/&gt;&lt;sys_class_name&gt;sp_ng_template&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-01 18:07:48&lt;/sys_created_on&gt;&lt;sys_id&gt;ec7eccbd9325fed0e393f6fa3d03d627&lt;/sys_id&gt;&lt;sys_mod_count&gt;15&lt;/sys_mod_count&gt;&lt;sys_name&gt;scm-table-filters&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 11:45:05&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;sdx-dialog
+    label="Filter records"
+    id="{{c.filtersDialogId}}"
+    class="align-header-center"
+&gt;
+    &lt;sdx-dialog-toggle&gt;
+        &lt;sdx-icon
+            icon-name="icon-filter"
+            size="1"
+            id="scm-table-filters-icon"
+            title="Apply filters to the table"
+            ng-disabled="!data.canApplyFilters"
+        &gt;&lt;/sdx-icon&gt;
+    &lt;/sdx-dialog-toggle&gt;
+    &lt;sdx-dialog-content&gt;
+        &lt;div class="scm-filters-dialog-form"&gt;
+            &lt;div
+                class="scm-filters-field-dialog margin-bottom-1"
+                ng-repeat="filter in c.filters"
+            &gt;
+                &lt;div ng-if="filter.type === 'choice'"&gt;
+                    &lt;label
+                        for="{{filter.id}}"
+                        class="scm-filter-dialog-choice-field-label"
+                        ng-bind="filter.label"
+                    &gt;&lt;/label&gt;
+                    &lt;select
+                        id="{{filter.id}}"
+                        ng-model="filter.value"
+                        class="scm-filter-dialog-choice-field-input"
+                        ng-disabled="filter.loading"
+                    &gt;
+                        &lt;option
+                            value=""
+                            ng-if="!filter.loading"
+                            ng-bind="'-- Select ' + filter.label + ' --'"
+                        &gt;&lt;/option&gt;
+                        &lt;option
+                            value=""
+                            ng-if="filter.loading"
+                            ng-bind="'-- Loading options... --'"
+                        &gt;&lt;/option&gt;
+                        &lt;option
+                            ng-repeat="choice in filter.choiceValues"
+                            value="{{choice.value}}"
+                            ng-bind="choice.label"
+                        &gt;&lt;/option&gt;
+                    &lt;/select&gt;
+                    &lt;sdx-loading-spinner
+                        ng-if="filter.loading"
+                        class="scm-filter-dialog-choice-field-loading-spinner"
+                    &gt;&lt;/sdx-loading-spinner&gt;
+                &lt;/div&gt;
+                &lt;div
+                    ng-if="filter.type === 'reference'"
+                    class="scm-filter-dialog-reference-field-container"
+                &gt;
+                    &lt;scm-ref-picker
+                        label="{{filter.label}}"
+                        table="{{filter.referenceTable}}"
+                        display-field="{{filter.displayField}}"
+                        search-fields="{{filter.searchFields}}"
+                        placeholder="{{filter.placeholder}}"
+                        reference-qualifier="{{filter.referenceQualifier}}"
+                        page-size="{{filter.pageSize}}"
+                        minimum-input-length="{{filter.minimumInputLength}}"
+                        display-fields="{{filter.displayFields}}"
+                        order-by="{{filter.orderBy}}"
+                        order-direction="{{filter.orderDirection}}"
+                        ng-model="filter.value"
+                    &gt;&lt;/scm-ref-picker&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class="scm-filter-dialog-actions-container"&gt;
+            &lt;sdx-button
+                id="scm-table-filters-cancel"
+                theme="transparent"
+                icon-name="icon-close"
+                icon-size="2"
+                ng-click="c.cancelFilters()"
+                label="Cancel"
+            &gt;&lt;/sdx-button&gt;
+            &lt;sdx-button
+                theme="transparent"
+                icon-name="icon-save"
+                icon-size="2"
+                ng-click="c.applyFilters()"
+                label="Save"
+            &gt;&lt;/sdx-button&gt;
+        &lt;/div&gt;
+    &lt;/sdx-dialog-content&gt;
+&lt;/sdx-dialog&gt;
+
+&lt;style&gt;
+    .scm-filters-dialog-form {
+        margin-bottom: var(--scm-spacing-3);
+    }
+
+    .scm-filter-dialog-field {
+        margin-bottom: var(--scm-spacing-2);
+    }
+
+    .scm-filter-dialog-choice-field-label {
+        font-weight: var(--scm-font-weight-regular);
+        font-size: var(--scm-font-size-medium);
+        color: var(--scm-color-gray-tint-4);
+        margin-bottom: var(--scm-spacing-1);
+        display: block;
+    }
+
+    .scm-filter-dialog-choice-field-input {
+        width: 100%;
+        padding: var(--scm-padding-2);
+        border: var(--scm-border-width-thin) var(--scm-border-style-default)
+            var(--scm-color-gray-tint-4);
+        border-radius: 5px;
+        font-size: var(--scm-font-size-medium);
+    }
+
+    .scm-filter-dialog-choice-field-loading-spinner {
+        display: inline-block;
+        margin-left: 8px;
+        margin-top: 8px;
+    }
+
+    .scm-filter-dialog-reference-field-container {
+        margin-bottom: var(--scm-spacing-2);
+    }
+
+    .scm-filter-dialog-actions-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--scm-spacing-2);
+        justify-content: flex-end;
+        margin-top: var(--scm-spacing-3);
+    }
+&lt;/style&gt;
+]]&gt;&lt;/template&gt;&lt;/sp_ng_template&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>-628569071</payload_hash>
+        <record_name>scm-table-filters</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:22:11</sys_created_on>
+        <sys_id>663058629361471040fcb6597bba10b1</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee72090160000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:22:11</sys_updated_on>
+        <type>Angular ng-template</type>
+        <update_guid>be265d9e0a69c310c5fbf22a170d2850</update_guid>
+        <update_guid_history>be265d9e0a69c310c5fbf22a170d2850:-916786041,0e6ebd120eedc310d21fa20bb66444ad:842683993,be265d9e0a69c310c5fbf22a170d2850:-916786041,5317c4cec62143107f21f3df4108f74e:-943306665</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm-table-filters">a5a058a29361471040fcb6597bba10ec</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:24:01</sys_created_on>
+        <sys_db_object display_value="" name="sp_ng_template">sp_ng_template</sys_db_object>
+        <sys_id>05b14de8775343c6952bda2c1579b6a4</sys_id>
+        <sys_metadata>ec7eccbd9325fed0e393f6fa3d03d627</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm-table-filters</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627</sys_update_name>
+        <sys_update_version display_value="sp_ng_template_ec7eccbd9325fed0e393f6fa3d03d627">663058629361471040fcb6597bba10b1</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:24:01</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

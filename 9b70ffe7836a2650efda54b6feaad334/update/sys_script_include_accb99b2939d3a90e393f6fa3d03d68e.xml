@@ -9,7 +9,7 @@
         <mobile_callable>false</mobile_callable>
         <name>Logger</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[var Logger = Class.create();
+        <script><![CDATA[const Logger = Class.create();
 Logger.prototype = {
     initialize: function (options) {
         this.transactionId = options.transactionId || gs.generateGUID();
@@ -91,7 +91,7 @@ Logger.prototype = {
             transactionId: this.transactionId,
             level:
                 Object.keys(this.LEVELS).find(
-                    (key) => this.LEVELS[key] === level
+                    (key) => this.LEVELS[key] === level,
                 ) || level,
             source: this.source,
             message: msg,
@@ -116,16 +116,14 @@ Logger.prototype = {
     },
 
     _formatMessage(value, indentLevel) {
-        const indentChar = "\t"; // alternative '  '
+        const indentChar = "\t";
         const indent = indentChar.repeat(indentLevel);
         const nextIndent = indentChar.repeat(indentLevel + 1);
 
-        // null (typeof null === "object")
         if (value === null) {
             return "null";
         }
 
-        // Arrays
         if (Array.isArray(value)) {
             if (value.length === 0) return "[]";
 
@@ -138,7 +136,6 @@ Logger.prototype = {
             return `[\n${parts.join("\n")}\n${indent}]`;
         }
 
-        // Objects
         if (typeof value === "object") {
             const keys = Object.keys(value);
             if (keys.length === 0) return "{}";
@@ -148,10 +145,8 @@ Logger.prototype = {
                 const formatted = this._formatMessage(val, indentLevel + 1);
                 const comma = index < keys.length - 1 ? "," : "";
 
-                // if the key is a valid identifier, we leave it as is
-                // if not, we put it in single quotes: {'weird key': 1}
                 const isValidIdentifier = /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(
-                    key
+                    key,
                 );
                 const printedKey = isValidIdentifier
                     ? key
@@ -163,14 +158,11 @@ Logger.prototype = {
             return `{\n${parts.join("\n")}\n${indent}}`;
         }
 
-        // Strings
         if (typeof value === "string") {
-            // Escape single quotes and backslashes
             const escaped = value.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
             return `'${escaped}'`;
         }
 
-        // Numbers and Booleans
         if (typeof value === "number" || typeof value === "boolean") {
             return String(value);
         }
@@ -179,7 +171,6 @@ Logger.prototype = {
             return "undefined";
         }
 
-        // Fallback for other types (functions, symbols, etc.)
         return String(value);
     },
 
@@ -190,13 +181,13 @@ Logger.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-11-22 16:03:56</sys_created_on>
         <sys_id>accb99b2939d3a90e393f6fa3d03d68e</sys_id>
-        <sys_mod_count>23</sys_mod_count>
+        <sys_mod_count>25</sys_mod_count>
         <sys_name>Logger</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_accb99b2939d3a90e393f6fa3d03d68e</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:33:33</sys_updated_on>
+        <sys_updated_on>2026-06-20 11:45:24</sys_updated_on>
     </sys_script_include>
 </record_update>

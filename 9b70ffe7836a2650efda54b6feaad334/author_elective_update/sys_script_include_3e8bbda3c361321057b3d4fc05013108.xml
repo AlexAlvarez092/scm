@@ -1,0 +1,1005 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="DELETE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableWidget</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableWidget</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[const TableWidget = Class.create();
+TableWidget.prototype = {
+    initialize: function (params) {
+        this.transactionId = params.transactionId || gs.generateGUID();
+        this.configurationRecordSysId = params.configurationRecordSysId;
+
+        this.params = params;
+
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+
+        this.configRecord = this._initializeConfigRecord();
+        this.configObject = this._initializeConfigObject();
+        this.preferenceNames = {
+            columns: this.configObject.fields_preference_name,
+            orderBy: this.configObject.order_by_preference_name,
+            orderDirection: this.configObject.order_direction_preference_name,
+            limit: this.configObject.limit_preference_name,
+        };
+    },
+
+    canCreate: function () {
+        try {
+            if (this.configObject.show_new_record_button !== "true") {
+                return false;
+            }
+
+            const gr = new GlideRecordSecure(this.configObject.table);
+            return gr.isValid() && gr.canCreate();
+        } catch (error) {
+            this.logger.error({
+                method: "canCreate",
+                message: "Error checking create permissions",
+                error: error.message,
+                table: this.configObject.table,
+            });
+            return false;
+        }
+    },
+
+    canFilter: function () {
+        return (
+            this.configObject.can_filter === "true" &&
+            (this.configObject.filter_fields || []).length > 0
+        );
+    },
+
+    canSavePreferences: function () {
+        return this.configObject.can_save_preferences === "true";
+    },
+
+    canConfigureColumns: function () {
+        return (
+            this.configObject.can_configure_columns === "true" ||
+            !this.configObject.hasOwnProperty("can_configure_columns")
+        );
+    },
+
+    getAllAvailableColumns: function () {
+        return this.configObject.columns;
+    },
+
+    getAppliedFiltersInfoMessage: function (appliedFilters = []) {
+        let htmlString = "";
+
+        try {
+            for (const filter of appliedFilters) {
+                const isLastFilter =
+                    filter === appliedFilters[appliedFilters.length - 1];
+
+                if (filter.type === "reference") {
+                    const grRef = new GlideRecord(filter.referenceTable);
+                    if (grRef.get(filter.value)) {
+                        /* prettier-ignore */
+                        htmlString += "<span>" + filter.label + " = " + grRef.getDisplayValue() + "</span>";
+                    } else {
+                        /* prettier-ignore */
+                        htmlString += "<span>" + filter.label + " = " + filter.value + "</span>";
+                    }
+                }
+
+                if (filter.type === "choice") {
+                    const displayValue =
+                        filter.choiceValues.find(
+                            (choice) => choice.value === filter.value,
+                        )?.label || filter.value;
+
+                    /* prettier-ignore */
+                    htmlString += "<span>" + filter.label + " = " + displayValue + "</span>";
+                }
+
+                if (filter.type === "string") {
+                    /* prettier-ignore */
+                    htmlString += "<span>" + filter.label + " = " + filter.value + "</span>";
+                }
+
+                if (!isLastFilter) {
+                    htmlString += '<span class="filter-separator">></span>';
+                }
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getAppliedFiltersInfoMessage",
+                message: "Error generating applied filters info message",
+                error: error.message,
+                appliedFilters: appliedFilters,
+            });
+        }
+
+        return htmlString;
+    },
+
+    getBreadcrumbs: function () {
+        return this.configObject.breadcrumbs || [];
+    },
+
+    getChoiceValues: function (fieldName) {
+        const choices = [];
+
+        if (!fieldName) return choices;
+
+        const glideTableHierarchy = new GlideTableHierarchy(
+            this.configObject.table,
+        );
+        hierarchy = glideTableHierarchy.getTables();
+
+        let iterator = 0;
+
+        do {
+            const grTable = new GlideRecord("sys_choice");
+            grTable.addQuery("name", hierarchy[iterator]);
+            grTable.addQuery("element", fieldName);
+            grTable.addQuery("inactive", false);
+            grTable.query();
+
+            while (grTable.next()) {
+                choices.push({
+                    value: grTable.getValue("value"),
+                    label:
+                        grTable.getValue("label") || grTable.getValue("value"),
+                });
+            }
+
+            iterator++;
+        } while (choices.length === 0 && iterator < hierarchy.length);
+
+        return choices;
+    },
+
+    getDefaultColumns: function () {
+        const columns = this.configObject.columns.filter(function (column) {
+            return column.default === true;
+        });
+        return columns;
+    },
+
+    getDetailViewPage: function () {
+        return this.configObject.detail_view_page || "error-404";
+    },
+
+    getFilterFields: function () {
+        return this.configObject.filter_fields || [];
+    },
+
+    getIdField: function () {
+        return this.configObject.id_field || "sys_id";
+    },
+
+    getOrderBy: function () {
+        if (!this.canSavePreferences()) {
+            return this.configObject.order_by;
+        }
+
+        try {
+            const orderByPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.orderBy);
+
+            if (orderByPreference) {
+                return orderByPreference;
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getOrderBy",
+                message: "Error getting order by",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.orderBy,
+            });
+        }
+
+        return this.configObject.order_by;
+    },
+
+    getOrderDirection: function () {
+        if (!this.canSavePreferences()) {
+            return this.configObject.order_direction;
+        }
+
+        try {
+            const orderDirectionPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.orderDirection);
+
+            if (orderDirectionPreference) {
+                return orderDirectionPreference;
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getOrderDirection",
+                message: "Error getting order direction",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.orderDirection,
+            });
+        }
+
+        return this.configObject.order_direction;
+    },
+
+    getPageTitle: function () {
+        return this.configObject.page_title;
+    },
+
+    getTableColumns: function () {
+        if (!this.canSavePreferences()) {
+            return this.getDefaultColumns();
+        }
+
+        try {
+            const fieldsPreferencedByUser = gs
+                .getUser()
+                .getPreference(this.preferenceNames.columns);
+
+            if (fieldsPreferencedByUser) {
+                return JSON.parse(fieldsPreferencedByUser);
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getTableColumns",
+                message: "Error getting table columns from preference",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.columns,
+            });
+        }
+
+        return this.getDefaultColumns();
+    },
+
+    getTableData: function ({ filters = [], page = 1 }) {
+        try {
+            const records = [];
+
+            const tableName = this.configObject.table;
+            const limit = this.getTableLimit();
+            const firstRow = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+            const lastRow = firstRow + parseInt(limit, 10);
+            const orderBy = this.getOrderBy();
+            const orderDirection = this.getOrderDirection();
+            const columns = this.getTableColumns();
+
+            if (columns.length === 0) return records;
+
+            const grRecord = new GlideRecord(tableName);
+            this._applyFilters(grRecord, filters);
+            grRecord.setLimit(parseInt(limit, 10));
+            grRecord.chooseWindow(firstRow, lastRow);
+
+            if (orderDirection === "ASC") {
+                grRecord.orderBy(orderBy);
+            } else {
+                grRecord.orderByDesc(orderBy);
+            }
+
+            grRecord.query();
+
+            while (grRecord.next()) {
+                const record = {};
+
+                for (const column of columns) {
+                    const columnName = column.name;
+                    record[columnName] =
+                        grRecord.getDisplayValue(columnName) || "";
+                }
+
+                record.sys_id = grRecord.getUniqueValue();
+
+                records.push(record);
+            }
+
+            return records;
+        } catch (error) {
+            this.logger.error({
+                method: "getTableData",
+                message: "Error getting table data",
+                error: error.message,
+                filters: filters,
+                page: page,
+            });
+            return [];
+        }
+    },
+
+    getTableLimit: function () {
+        if (!this.canSavePreferences()) {
+            return parseInt(this.configObject.limit || 10, 10);
+        }
+
+        try {
+            const limitPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.limit);
+
+            if (limitPreference) {
+                return parseInt(limitPreference, 10);
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getTableLimit",
+                message: "Error getting table limit",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.limit,
+            });
+        }
+
+        return parseInt(this.configObject.limit || 10, 10);
+    },
+
+    getTotalRecords: function (filters = []) {
+        try {
+            const gaRecord = new GlideAggregate(this.configObject.table);
+
+            this._applyFilters(gaRecord, filters);
+
+            gaRecord.addAggregate("COUNT");
+            gaRecord.query();
+
+            gaRecord.next();
+
+            return gaRecord.getAggregate("COUNT");
+        } catch (error) {
+            this.logger.error({
+                method: "getTotalRecords",
+                message: "Error getting total records",
+                error: error.message,
+                filters: filters,
+            });
+            return -1;
+        }
+    },
+
+    saveUserPreference: function (preferenceName, preferenceValue) {
+        if (!this.preferenceNames[preferenceName] || !preferenceValue) {
+            this.logger.warn({
+                preferenceName: preferenceName,
+                preferenceValue: preferenceValue,
+                message: "Invalid input",
+            });
+            return;
+        }
+
+        gs.getUser().savePreference(
+            this.preferenceNames[preferenceName],
+            String(preferenceValue),
+        );
+    },
+
+    showAppliedFilters: function () {
+        return (
+            this.configObject.show_applied_filters === "true" ||
+            !this.configObject.hasOwnProperty("show_applied_filters")
+        );
+    },
+
+    showTableMetadata: function () {
+        return (
+            this.configObject.show_table_metadata === "true" ||
+            !this.configObject.hasOwnProperty("show_table_metadata")
+        );
+    },
+
+    _applyFilters: function (glideRecord, filters = []) {
+        if (!glideRecord || !glideRecord.isValidRecord) {
+            this.logger.warn({
+                method: "_applyFilters",
+                message: "Invalid GlideRecord provided for filtering",
+                glideRecord: glideRecord,
+                typeof_glideRecord: typeof glideRecord,
+            });
+            return;
+        }
+
+        if (this.configObject.static_query) {
+            glideRecord.addEncodedQuery(this.configObject.static_query);
+        }
+
+        for (const filter of filters) {
+            switch (filter.type) {
+                case "choice":
+                    glideRecord.addQuery(filter.field, filter.value);
+                    break;
+                case "reference":
+                    glideRecord.addQuery(filter.field, filter.value);
+                    break;
+                default:
+                    this.logger.warn({
+                        method: "_applyFilters",
+                        message: "Unknown filter type",
+                        filter: filter,
+                    });
+                    break;
+            }
+        }
+    },
+
+    _initializeConfigObject: function () {
+        const evaluator = new GlideScopedEvaluator();
+
+        try {
+            return evaluator.evaluateScript(this.configRecord, "script");
+        } catch (error) {
+            this.logger.error({
+                method: "_initializeConfigObject",
+                message: "Error evaluating configuration record script",
+                error: error.message,
+                configRecordSysId: this.configRecord.getUniqueValue(),
+            });
+            throw error;
+        }
+    },
+
+    _initializeConfigRecord: function () {
+        if (
+            !this.configurationRecordSysId ||
+            typeof this.configurationRecordSysId !== "string"
+        ) {
+            this.logger.error({
+                method: "_initializeConfigRecord",
+                message: "Invalid configurationRecordSysId",
+                configurationRecordSysId: this.configurationRecordSysId,
+                type: typeof this.configurationRecordSysId,
+            });
+            throw new Error("Invalid configurationRecordSysId");
+        }
+
+        const grConfig = new GlideRecord(Constants.WIDGET_CONFIGURATION_TABLE);
+        if (grConfig.get(this.configurationRecordSysId)) {
+            return grConfig;
+        }
+
+        this.logger.error({
+            method: "_initializeConfigRecord",
+            message: "Configuration record not found",
+            configurationRecordSysId: this.configurationRecordSysId,
+        });
+        throw new Error("Configuration record not found");
+    },
+
+    type: "TableWidget",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2025-12-07 12:34:02</sys_created_on>
+        <sys_id>3e8bbda3c361321057b3d4fc05013108</sys_id>
+        <sys_mod_count>8</sys_mod_count>
+        <sys_name>TableWidget</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_3e8bbda3c361321057b3d4fc05013108</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:21:53</sys_updated_on>
+    </sys_script_include>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sys_script_include_3e8bbda3c361321057b3d4fc05013108</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sys_script_include"&gt;&lt;sys_script_include action="INSERT_OR_UPDATE"&gt;&lt;access&gt;package_private&lt;/access&gt;&lt;active&gt;true&lt;/active&gt;&lt;api_name&gt;x_680259_scm.TableWidget&lt;/api_name&gt;&lt;caller_access/&gt;&lt;client_callable&gt;false&lt;/client_callable&gt;&lt;description/&gt;&lt;mobile_callable&gt;false&lt;/mobile_callable&gt;&lt;name&gt;TableWidget&lt;/name&gt;&lt;sandbox_callable&gt;false&lt;/sandbox_callable&gt;&lt;script&gt;&lt;![CDATA[const TableWidget = Class.create();
+TableWidget.prototype = {
+    initialize: function (params) {
+        this.transactionId = params.transactionId || gs.generateGUID();
+        this.configurationRecordSysId = params.configurationRecordSysId;
+
+        this.params = params;
+
+        this.logger = new Logger({
+            transactionId: this.transactionId,
+            source: this.type,
+            includeTimeStamp: true,
+            includeUserInfo: true,
+            includeSessionId: true,
+        });
+
+        this.configRecord = this._initializeConfigRecord();
+        this.configObject = this._initializeConfigObject();
+        this.preferenceNames = {
+            columns: this.configObject.fields_preference_name,
+            orderBy: this.configObject.order_by_preference_name,
+            orderDirection: this.configObject.order_direction_preference_name,
+            limit: this.configObject.limit_preference_name,
+        };
+    },
+
+    canCreate: function () {
+        try {
+            if (this.configObject.show_new_record_button !== "true") {
+                return false;
+            }
+
+            const gr = new GlideRecordSecure(this.configObject.table);
+            return gr.isValid() &amp;&amp; gr.canCreate();
+        } catch (error) {
+            this.logger.error({
+                method: "canCreate",
+                message: "Error checking create permissions",
+                error: error.message,
+                table: this.configObject.table,
+            });
+            return false;
+        }
+    },
+
+    canFilter: function () {
+        return (
+            this.configObject.can_filter === "true" &amp;&amp;
+            (this.configObject.filter_fields || []).length &gt; 0
+        );
+    },
+
+    canSavePreferences: function () {
+        return this.configObject.can_save_preferences === "true";
+    },
+
+    canConfigureColumns: function () {
+        return (
+            this.configObject.can_configure_columns === "true" ||
+            !this.configObject.hasOwnProperty("can_configure_columns")
+        );
+    },
+
+    getAllAvailableColumns: function () {
+        return this.configObject.columns;
+    },
+
+    getAppliedFiltersInfoMessage: function (appliedFilters = []) {
+        let htmlString = "";
+
+        try {
+            for (const filter of appliedFilters) {
+                const isLastFilter =
+                    filter === appliedFilters[appliedFilters.length - 1];
+
+                if (filter.type === "reference") {
+                    const grRef = new GlideRecord(filter.referenceTable);
+                    if (grRef.get(filter.value)) {
+                        /* prettier-ignore */
+                        htmlString += "&lt;span&gt;" + filter.label + " = " + grRef.getDisplayValue() + "&lt;/span&gt;";
+                    } else {
+                        /* prettier-ignore */
+                        htmlString += "&lt;span&gt;" + filter.label + " = " + filter.value + "&lt;/span&gt;";
+                    }
+                }
+
+                if (filter.type === "choice") {
+                    const displayValue =
+                        filter.choiceValues.find(
+                            (choice) =&gt; choice.value === filter.value,
+                        )?.label || filter.value;
+
+                    /* prettier-ignore */
+                    htmlString += "&lt;span&gt;" + filter.label + " = " + displayValue + "&lt;/span&gt;";
+                }
+
+                if (filter.type === "string") {
+                    /* prettier-ignore */
+                    htmlString += "&lt;span&gt;" + filter.label + " = " + filter.value + "&lt;/span&gt;";
+                }
+
+                if (!isLastFilter) {
+                    htmlString += '&lt;span class="filter-separator"&gt;&gt;&lt;/span&gt;';
+                }
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getAppliedFiltersInfoMessage",
+                message: "Error generating applied filters info message",
+                error: error.message,
+                appliedFilters: appliedFilters,
+            });
+        }
+
+        return htmlString;
+    },
+
+    getBreadcrumbs: function () {
+        return this.configObject.breadcrumbs || [];
+    },
+
+    getChoiceValues: function (fieldName) {
+        const choices = [];
+
+        if (!fieldName) return choices;
+
+        const glideTableHierarchy = new GlideTableHierarchy(
+            this.configObject.table,
+        );
+        hierarchy = glideTableHierarchy.getTables();
+
+        let iterator = 0;
+
+        do {
+            const grTable = new GlideRecord("sys_choice");
+            grTable.addQuery("name", hierarchy[iterator]);
+            grTable.addQuery("element", fieldName);
+            grTable.addQuery("inactive", false);
+            grTable.query();
+
+            while (grTable.next()) {
+                choices.push({
+                    value: grTable.getValue("value"),
+                    label:
+                        grTable.getValue("label") || grTable.getValue("value"),
+                });
+            }
+
+            iterator++;
+        } while (choices.length === 0 &amp;&amp; iterator &lt; hierarchy.length);
+
+        return choices;
+    },
+
+    getDefaultColumns: function () {
+        const columns = this.configObject.columns.filter(function (column) {
+            return column.default === true;
+        });
+        return columns;
+    },
+
+    getDetailViewPage: function () {
+        return this.configObject.detail_view_page || "error-404";
+    },
+
+    getFilterFields: function () {
+        return this.configObject.filter_fields || [];
+    },
+
+    getIdField: function () {
+        return this.configObject.id_field || "sys_id";
+    },
+
+    getOrderBy: function () {
+        if (!this.canSavePreferences()) {
+            return this.configObject.order_by;
+        }
+
+        try {
+            const orderByPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.orderBy);
+
+            if (orderByPreference) {
+                return orderByPreference;
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getOrderBy",
+                message: "Error getting order by",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.orderBy,
+            });
+        }
+
+        return this.configObject.order_by;
+    },
+
+    getOrderDirection: function () {
+        if (!this.canSavePreferences()) {
+            return this.configObject.order_direction;
+        }
+
+        try {
+            const orderDirectionPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.orderDirection);
+
+            if (orderDirectionPreference) {
+                return orderDirectionPreference;
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getOrderDirection",
+                message: "Error getting order direction",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.orderDirection,
+            });
+        }
+
+        return this.configObject.order_direction;
+    },
+
+    getPageTitle: function () {
+        return this.configObject.page_title;
+    },
+
+    getTableColumns: function () {
+        if (!this.canSavePreferences()) {
+            return this.getDefaultColumns();
+        }
+
+        try {
+            const fieldsPreferencedByUser = gs
+                .getUser()
+                .getPreference(this.preferenceNames.columns);
+
+            if (fieldsPreferencedByUser) {
+                return JSON.parse(fieldsPreferencedByUser);
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getTableColumns",
+                message: "Error getting table columns from preference",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.columns,
+            });
+        }
+
+        return this.getDefaultColumns();
+    },
+
+    getTableData: function ({ filters = [], page = 1 }) {
+        try {
+            const records = [];
+
+            const tableName = this.configObject.table;
+            const limit = this.getTableLimit();
+            const firstRow = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+            const lastRow = firstRow + parseInt(limit, 10);
+            const orderBy = this.getOrderBy();
+            const orderDirection = this.getOrderDirection();
+            const columns = this.getTableColumns();
+
+            if (columns.length === 0) return records;
+
+            const grRecord = new GlideRecord(tableName);
+            this._applyFilters(grRecord, filters);
+            grRecord.setLimit(parseInt(limit, 10));
+            grRecord.chooseWindow(firstRow, lastRow);
+
+            if (orderDirection === "ASC") {
+                grRecord.orderBy(orderBy);
+            } else {
+                grRecord.orderByDesc(orderBy);
+            }
+
+            grRecord.query();
+
+            while (grRecord.next()) {
+                const record = {};
+
+                for (const column of columns) {
+                    const columnName = column.name;
+                    record[columnName] =
+                        grRecord.getDisplayValue(columnName) || "";
+                }
+
+                record.sys_id = grRecord.getUniqueValue();
+
+                records.push(record);
+            }
+
+            return records;
+        } catch (error) {
+            this.logger.error({
+                method: "getTableData",
+                message: "Error getting table data",
+                error: error.message,
+                filters: filters,
+                page: page,
+            });
+            return [];
+        }
+    },
+
+    getTableLimit: function () {
+        if (!this.canSavePreferences()) {
+            return parseInt(this.configObject.limit || 10, 10);
+        }
+
+        try {
+            const limitPreference = gs
+                .getUser()
+                .getPreference(this.preferenceNames.limit);
+
+            if (limitPreference) {
+                return parseInt(limitPreference, 10);
+            }
+        } catch (error) {
+            this.logger.error({
+                method: "getTableLimit",
+                message: "Error getting table limit",
+                error: error.message,
+                user: gs.getUserID(),
+                preferenceName: this.preferenceNames.limit,
+            });
+        }
+
+        return parseInt(this.configObject.limit || 10, 10);
+    },
+
+    getTotalRecords: function (filters = []) {
+        try {
+            const gaRecord = new GlideAggregate(this.configObject.table);
+
+            this._applyFilters(gaRecord, filters);
+
+            gaRecord.addAggregate("COUNT");
+            gaRecord.query();
+
+            gaRecord.next();
+
+            return gaRecord.getAggregate("COUNT");
+        } catch (error) {
+            this.logger.error({
+                method: "getTotalRecords",
+                message: "Error getting total records",
+                error: error.message,
+                filters: filters,
+            });
+            return -1;
+        }
+    },
+
+    saveUserPreference: function (preferenceName, preferenceValue) {
+        if (!this.preferenceNames[preferenceName] || !preferenceValue) {
+            this.logger.warn({
+                preferenceName: preferenceName,
+                preferenceValue: preferenceValue,
+                message: "Invalid input",
+            });
+            return;
+        }
+
+        gs.getUser().savePreference(
+            this.preferenceNames[preferenceName],
+            String(preferenceValue),
+        );
+    },
+
+    showAppliedFilters: function () {
+        return (
+            this.configObject.show_applied_filters === "true" ||
+            !this.configObject.hasOwnProperty("show_applied_filters")
+        );
+    },
+
+    showTableMetadata: function () {
+        return (
+            this.configObject.show_table_metadata === "true" ||
+            !this.configObject.hasOwnProperty("show_table_metadata")
+        );
+    },
+
+    _applyFilters: function (glideRecord, filters = []) {
+        if (!glideRecord || !glideRecord.isValidRecord) {
+            this.logger.warn({
+                method: "_applyFilters",
+                message: "Invalid GlideRecord provided for filtering",
+                glideRecord: glideRecord,
+                typeof_glideRecord: typeof glideRecord,
+            });
+            return;
+        }
+
+        if (this.configObject.static_query) {
+            glideRecord.addEncodedQuery(this.configObject.static_query);
+        }
+
+        for (const filter of filters) {
+            switch (filter.type) {
+                case "choice":
+                    glideRecord.addQuery(filter.field, filter.value);
+                    break;
+                case "reference":
+                    glideRecord.addQuery(filter.field, filter.value);
+                    break;
+                default:
+                    this.logger.warn({
+                        method: "_applyFilters",
+                        message: "Unknown filter type",
+                        filter: filter,
+                    });
+                    break;
+            }
+        }
+    },
+
+    _initializeConfigObject: function () {
+        const evaluator = new GlideScopedEvaluator();
+
+        try {
+            return evaluator.evaluateScript(this.configRecord, "script");
+        } catch (error) {
+            this.logger.error({
+                method: "_initializeConfigObject",
+                message: "Error evaluating configuration record script",
+                error: error.message,
+                configRecordSysId: this.configRecord.getUniqueValue(),
+            });
+            throw error;
+        }
+    },
+
+    _initializeConfigRecord: function () {
+        if (
+            !this.configurationRecordSysId ||
+            typeof this.configurationRecordSysId !== "string"
+        ) {
+            this.logger.error({
+                method: "_initializeConfigRecord",
+                message: "Invalid configurationRecordSysId",
+                configurationRecordSysId: this.configurationRecordSysId,
+                type: typeof this.configurationRecordSysId,
+            });
+            throw new Error("Invalid configurationRecordSysId");
+        }
+
+        const grConfig = new GlideRecord(Constants.WIDGET_CONFIGURATION_TABLE);
+        if (grConfig.get(this.configurationRecordSysId)) {
+            return grConfig;
+        }
+
+        this.logger.error({
+            method: "_initializeConfigRecord",
+            message: "Configuration record not found",
+            configurationRecordSysId: this.configurationRecordSysId,
+        });
+        throw new Error("Configuration record not found");
+    },
+
+    type: "TableWidget",
+};
+]]&gt;&lt;/script&gt;&lt;sys_class_name&gt;sys_script_include&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2025-12-07 12:34:02&lt;/sys_created_on&gt;&lt;sys_id&gt;3e8bbda3c361321057b3d4fc05013108&lt;/sys_id&gt;&lt;sys_mod_count&gt;8&lt;/sys_mod_count&gt;&lt;sys_name&gt;TableWidget&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy&gt;read&lt;/sys_policy&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sys_script_include_3e8bbda3c361321057b3d4fc05013108&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-20 19:21:53&lt;/sys_updated_on&gt;&lt;/sys_script_include&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>354406147</payload_hash>
+        <record_name>TableWidget</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 19:21:53</sys_created_on>
+        <sys_id>25f66f9e93e9071040fcb6597bba1057</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ee67b7de40000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 19:21:53</sys_updated_on>
+        <type>Script Include</type>
+        <update_guid>e1f66f9ee3e907109b6fe318bc1bb856</update_guid>
+        <update_guid_history>e1f66f9ee3e907109b6fe318bc1bb856:354406147,73242b5a23e90710f0f54e1b0673b461:-105789740,e0944adac5edc3100c244375864c93ea:-2070223780,8021c2d6eeedc310a5979b4435bb4d7f:-252365512,d57e3152b7edc310638981d0540093e5:1992192182,ebc7add2e02dc3100763d1cc81b2a71a:-204733878,ca16999e1469c310f25f6131dfd2de60:-897070291,142708cec121431039be1cfbba1134e1:1775441169</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete/>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-20 22:32:30</sys_created_on>
+        <sys_db_object display_value="" name="sys_script_include">sys_script_include</sys_db_object>
+        <sys_id>627173b77c69431ab8c5475cfd6e3ee4</sys_id>
+        <sys_metadata>3e8bbda3c361321057b3d4fc05013108</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>TableWidget</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sys_script_include_3e8bbda3c361321057b3d4fc05013108</sys_update_name>
+        <sys_update_version display_value="sys_script_include_3e8bbda3c361321057b3d4fc05013108">25f66f9e93e9071040fcb6597bba1057</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-20 22:32:30</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>
