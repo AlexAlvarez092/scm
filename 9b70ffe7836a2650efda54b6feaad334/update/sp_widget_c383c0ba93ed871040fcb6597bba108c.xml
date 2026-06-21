@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
+    <sp_widget action="INSERT_OR_UPDATE">
+        <category>custom</category>
+        <client_script><![CDATA[api.controller = function (scmBreadcrumbsManager) {
+    const c = this;
+
+    const breadcrumbs = [
+        { title: "Home", link: "?id=homepage", icon: "icon-home" },
+        { title: "Contacts", link: "?id=contacts" },
+    ];
+
+    scmBreadcrumbsManager.set(breadcrumbs);
+};
+]]></client_script>
+        <controller_as>c</controller_as>
+        <css/>
+        <data_table>sp_instance</data_table>
+        <demo_data/>
+        <description/>
+        <docs/>
+        <field_list/>
+        <has_preview>false</has_preview>
+        <id>contact-list</id>
+        <internal>false</internal>
+        <link><![CDATA[function link(scope, element, attrs, controller) {
+  
+}]]></link>
+        <name>contact-list</name>
+        <option_schema/>
+        <public>false</public>
+        <roles/>
+        <script><![CDATA[(function () {
+    const transactionId = input?.transactionId || gs.generateGUID();
+    data.transactionId = transactionId;
+
+    data.tableWidget = $sp.getWidget("scm-table", {
+        transactionId: transactionId,
+        tableProviderScriptInclude: "ContactList",
+    });
+})();]]></script>
+        <servicenow>false</servicenow>
+        <sys_class_name>sp_widget</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:05:29</sys_created_on>
+        <sys_id>c383c0ba93ed871040fcb6597bba108c</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>contact-list</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_widget_c383c0ba93ed871040fcb6597bba108c</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 18:00:09</sys_updated_on>
+        <template><![CDATA[<sp-widget
+    widget="c.data.tableWidget"
+></sp-widget>]]></template>
+    </sp_widget>
+</record_update>

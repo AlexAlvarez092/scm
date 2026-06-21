@@ -13,6 +13,7 @@
 
     c.loadingActive = true;
     c.skipDirtyFormCheck = false;
+    c.isClosing = false;
 
     loadFlyOverContent(widgetId, widgetOptions);
 
@@ -30,6 +31,7 @@
 
             c.data.widget = response;
             c.loadingActive = false;
+            c.isClosing = false;
             c.data.isActive = "active";
             changeParentWidth("open");
             document.body.classList.add("overflowFlyOverOpen");
@@ -37,6 +39,7 @@
     }
 
     c.closeFlyover = function () {
+        c.isClosing = true;
         closeRequested = true;
         $rootScope.$broadcast("scmFlyover-close-triggered-" + widgetUid);
         c.data.isActive = "deactivated";
@@ -142,6 +145,13 @@
             flex: 1;
         }
     }
+
+    &amp;.scm-flyover--closing {
+        .scm-flyover-panel-overlay,
+        .scm-flyover-panel-content {
+            pointer-events: none;
+        }
+    }
 }
 </css>
         <data_table>sp_instance</data_table>
@@ -191,15 +201,19 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 17:01:41</sys_created_on>
         <sys_id>08ec6d5793732a10e393f6fa3d03d629</sys_id>
-        <sys_mod_count>171</sys_mod_count>
+        <sys_mod_count>172</sys_mod_count>
         <sys_name>scm-flyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_08ec6d5793732a10e393f6fa3d03d629</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 10:23:39</sys_updated_on>
-        <template><![CDATA[<div id="flyover-{{::data.widgetUid}}" class="scm-flyover">
+        <sys_updated_on>2026-06-21 17:56:35</sys_updated_on>
+        <template><![CDATA[<div
+    id="flyover-{{::data.widgetUid}}"
+    class="scm-flyover"
+    ng-class="{'scm-flyover--closing': c.isClosing}"
+>
     <div class="scm-flyover-panel-overlay"></div>
     <div
         class="scm-flyover-panel-content"

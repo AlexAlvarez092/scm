@@ -1,15 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($scope) {
+        <client_script><![CDATA[api.controller = function ($scope, scmBreadcrumbsManager) {
     const c = this;
+    const defaultBreadcrumbs = [
+        { title: "Home", link: "?id=homepage", icon: "icon-home" },
+    ];
 
-    c.breadcrumbs = [];
+    function normalizeForView(items) {
+        if (!Array.isArray(items) || !items.length) {
+            return angular.copy(defaultBreadcrumbs);
+        }
 
-    c.breadcrumbs.push({ text: "Home", link: "/", icon: "icon-home" });
+        return items
+            .filter((item) => !!item)
+            .map((item) => {
+                const title = String(item.title || "");
+                return {
+                    title: title,
+                    link: String(item.link || "#"),
+                    icon:
+                        item.icon || title.toLowerCase() === "home"
+                            ? String(item.icon || "icon-home")
+                            : "",
+                };
+            });
+    }
 
-    $scope.$on("scm-navigation-breadcrumbs_set", function (event, breadcrumbs) {
-        c.breadcrumbs = breadcrumbs;
+    c.breadcrumbs = normalizeForView(scmBreadcrumbsManager.get());
+
+    const unsubscribe = $scope.$on(
+        "scm-navigation-breadcrumbs_set",
+        function (event, breadcrumbs) {
+            c.breadcrumbs = normalizeForView(breadcrumbs);
+        },
+    );
+
+    $scope.$on("$destroy", function () {
+        unsubscribe();
     });
 };
 ]]></client_script>
@@ -37,14 +65,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-10 22:38:10</sys_created_on>
         <sys_id>9b8227e0c371321057b3d4fc0501312d</sys_id>
-        <sys_mod_count>23</sys_mod_count>
+        <sys_mod_count>27</sys_mod_count>
         <sys_name>scm-navigation-breadcrumbs</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_9b8227e0c371321057b3d4fc0501312d</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-12 21:31:49</sys_updated_on>
+        <sys_updated_on>2026-06-21 18:00:08</sys_updated_on>
         <template><![CDATA[<div>
     <span ng-repeat="breadcrumb in c.breadcrumbs track by $index">
         <a href="{{breadcrumb.link}}">

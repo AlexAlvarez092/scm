@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableHTMLGenerator</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableHTMLGenerator</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * TableHTMLGenerator
+ *
+ * Responsible for generating HTML representations of filter information.
+ * Handles HTML escaping and filter display formatting.
+ *
+ * @class
+ */
+var TableHTMLGenerator = Class.create();
+TableHTMLGenerator.prototype = {
+    initialize: function (params) {
+        params = params || {};
+        this.logger = params.logger;
+        this.queryBuilder = params.queryBuilder;
+    },
+
+    /**
+     * Generate HTML string describing applied filters.
+     *
+     * @param {Array} appliedFilters
+     * @return {string} HTML string
+     */
+    getAppliedFiltersInfoMessage: function (appliedFilters) {
+        appliedFilters = appliedFilters || [];
+        var htmlString = "";
+
+        try {
+            for (var i = 0; i < appliedFilters.length; i++) {
+                var filter = appliedFilters[i];
+                var isLastFilter = i === appliedFilters.length - 1;
+
+                // currentLogicalOp: qué operador une a ESTE filtro con el SIGUIENTE
+                var currentLogicalOp =
+                    i < appliedFilters.length - 1
+                        ? String(appliedFilters[i].logicalOperator || "and")
+                              .toLowerCase()
+                              .trim()
+                        : null;
+
+                // prevLogicalOp: qué operador une al ANTERIOR con ESTE filtro
+                var prevLogicalOp =
+                    i > 0
+                        ? String(appliedFilters[i - 1].logicalOperator || "and")
+                              .toLowerCase()
+                              .trim()
+                        : null;
+
+                // Separador + abrir bracket al pasar de AND a OR
+                if (i > 0) {
+                    if (prevLogicalOp === "and" && currentLogicalOp === "or") {
+                        htmlString +=
+                            ' <span class="filter-separator filter-separator--and"><em>AND</em></span> <span class="filter-bracket-open">[</span> ';
+                    } else if (prevLogicalOp === "and") {
+                        htmlString +=
+                            ' <span class="filter-separator filter-separator--and"><em>AND</em></span> ';
+                    } else if (prevLogicalOp === "or") {
+                        htmlString +=
+                            ' <span class="filter-separator filter-separator--or"><em>OR</em></span> ';
+                    }
+                } else if (i === 0 && currentLogicalOp === "or") {
+                    htmlString += '<span class="filter-bracket-open">[</span> ';
+                }
+
+                htmlString += this.getFilterHtml(filter);
+
+                if (currentLogicalOp === "and" && prevLogicalOp === "or") {
+                    htmlString +=
+                        ' <span class="filter-bracket-close">]</span>';
+                }
+
+                if (isLastFilter && prevLogicalOp === "or") {
+                    htmlString +=
+                        ' <span class="filter-bracket-close">]</span>';
+                }
+            }
+        } catch (error) {
+            if (this.logger) {
+                this.logger.error({
+                    method: "getAppliedFiltersInfoMessage",
+                    message: "Error generating applied filters info message",
+                    error: error.message,
+                    appliedFilters: appliedFilters,
+                });
+            }
+        }
+
+        return htmlString;
+    },
+
+    /**
+     * Generate HTML for a single filter condition.
+     *
+     * @param {Object} filter
+     * @return {string} HTML string
+     */
+    getFilterHtml: function (filter) {
+        if (filter.type === "reference") {
+            var grRef = new GlideRecord(filter.referenceTable);
+            var operatorLabel = this.queryBuilder.getOperatorLabel(
+                filter.operator,
+            );
+            var referenceDisplayValue =
+                filter.displayValue || filter.value || "";
+
+            if (grRef.get(filter.value)) {
+                referenceDisplayValue = grRef.getDisplayValue();
+            }
+
+            if (this.queryBuilder.operatorNeedsValue(filter.operator)) {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(operatorLabel) + "</em> " + this.escapeHtml(referenceDisplayValue) + "</span>";
+            } else {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(operatorLabel) + "</em></span>";
+            }
+        }
+
+        if (filter.type === "choice") {
+            var choiceValues = filter.choiceValues || [];
+            var displayValue = filter.value;
+            var choiceOperatorLabel = this.queryBuilder.getOperatorLabel(
+                filter.operator,
+            );
+
+            for (var j = 0; j < choiceValues.length; j++) {
+                if (choiceValues[j].value === filter.value) {
+                    displayValue = choiceValues[j].label;
+                    break;
+                }
+            }
+
+            if (this.queryBuilder.operatorNeedsValue(filter.operator)) {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(choiceOperatorLabel) + "</em> " + this.escapeHtml(displayValue) + "</span>";
+            } else {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(choiceOperatorLabel) + "</em></span>";
+            }
+        }
+
+        if (filter.type === "string") {
+            var stringOperatorLabel = this.queryBuilder.getOperatorLabel(
+                filter.operator,
+            );
+
+            if (this.queryBuilder.operatorNeedsValue(filter.operator)) {
+                var valueLabel = filter.value;
+
+                if (
+                    filter.operator === "between" &&
+                    filter.valueTo != null &&
+                    filter.valueTo !== ""
+                ) {
+                    valueLabel += " and " + filter.valueTo;
+                }
+
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(stringOperatorLabel) + "</em> " + this.escapeHtml(valueLabel) + "</span>";
+            } else {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(stringOperatorLabel) + "</em></span>";
+            }
+        }
+
+        if (filter.type === "date") {
+            var dateOperatorLabel = this.queryBuilder.getOperatorLabel(
+                filter.operator,
+            );
+
+            if (this.queryBuilder.operatorNeedsValue(filter.operator)) {
+                var dateValueLabel = filter.value;
+
+                if (
+                    filter.operator === "between" &&
+                    filter.valueTo != null &&
+                    filter.valueTo !== ""
+                ) {
+                    dateValueLabel += " and " + filter.valueTo;
+                }
+
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(dateOperatorLabel) + "</em> " + this.escapeHtml(dateValueLabel) + "</span>";
+            } else {
+                /* prettier-ignore */
+                return "<span>" + this.escapeHtml(filter.label) + " <em>" + this.escapeHtml(dateOperatorLabel) + "</em></span>";
+            }
+        }
+
+        if (filter.type === "column_contains") {
+            /* prettier-ignore */
+            return "<span>" + this.escapeHtml(filter.label) + " <em>contains</em> " + this.escapeHtml(filter.value) + "</span>";
+        }
+
+        return "";
+    },
+
+    /**
+     * Escape HTML special characters in a value.
+     *
+     * @param {*} value
+     * @return {string}
+     */
+    escapeHtml: function (value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/\"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    },
+
+    type: "TableHTMLGenerator",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:18:14</sys_created_on>
+        <sys_id>bf7604329321c71040fcb6597bba1053</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>TableHTMLGenerator</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_bf7604329321c71040fcb6597bba1053</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 19:19:48</sys_updated_on>
+    </sys_script_include>
+</record_update>

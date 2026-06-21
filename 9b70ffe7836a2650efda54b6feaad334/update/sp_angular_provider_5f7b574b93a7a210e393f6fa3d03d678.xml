@@ -8,7 +8,7 @@
         replace: true,
         require: "ngModel",
         scope: {
-            label: "@",
+            label: "@?",
             table: "@",
             displayField: "@",
             searchFields: "@?",
@@ -19,13 +19,15 @@
             displayFields: "@?",
             orderBy: "@?",
             orderDirection: "@?",
+            enableFlyover: "@?",
             advancedSearchListProvider: "@?",
         },
 
         template: `
             <div class="scm-reference-wrapper">
                 <label
-                    for="{{uid}}">
+                    ng-if="label"
+                    for="{{displayUid}}">
                     {{ label }}
                 </label>
                 <div class="scm-reference-input-wrapper">
@@ -35,7 +37,7 @@
                         id="{{displayUid}}"
                         type="text"
                         ng-model="displayValue"
-                        ng-click="openList()"
+                        ng-click="onInputClick($event)"
                         placeholder="{{ placeholder || 'Select an option' }}"
                     >
                     <a
@@ -51,7 +53,7 @@
                     <sdx-icon 
                         class="scm-reference-magnifying-glass-icon" 
                         icon-name="icon-search" size="3"
-                        ng-click="openFlyover()">
+                        ng-click="onSearchIconClick($event)">
                     </sdx-icon>
                 </div>
                 <div class="scm-reference-dropdown-container" ng-show="showResults">
@@ -101,11 +103,22 @@
             </div>
             `,
         controller: ($scope, $http, spUtil) => {
-            if (!$scope.label || !$scope.table || !$scope.displayField) {
+            if (!$scope.table || !$scope.displayField) {
                 console.error(
-                    "scmRefPicker: Missing required attributes. Please provide label, table, and displayField.",
+                    "scmRefPicker: Missing required attributes. Please provide table and displayField.",
                 );
                 return;
+            }
+
+            $scope.isFlyoverEnabled =
+                String($scope.enableFlyover || "false").toLowerCase() ===
+                "true";
+
+            if ($scope.isFlyoverEnabled && !$scope.advancedSearchListProvider) {
+                console.error(
+                    "scmRefPicker: advancedSearchListProvider is required when enableFlyover is true.",
+                );
+                $scope.isFlyoverEnabled = false;
             }
 
             $scope.displayUid = spUtil.createUid("xxxx-xxxx");
@@ -349,7 +362,22 @@
                 }, 0);
             };
 
+            scope.onInputClick = ($event) => {
+                if (scope.isFlyoverEnabled) {
+                    if ($event && typeof $event.preventDefault === "function") {
+                        $event.preventDefault();
+                    }
+                    return;
+                }
+
+                scope.openList();
+            };
+
             scope.openFlyover = () => {
+                if (!scope.isFlyoverEnabled) {
+                    return;
+                }
+
                 if (!scope.activeFlyover) {
                     scope.activeFlyover = new scmFlyover(
                         "scm-ref-picker-flyover",
@@ -365,6 +393,23 @@
                 });
 
                 scope.activeFlyover.open();
+            };
+
+            scope.onSearchIconClick = ($event) => {
+                if ($event && typeof $event.preventDefault === "function") {
+                    $event.preventDefault();
+                }
+                if ($event && typeof $event.stopPropagation === "function") {
+                    $event.stopPropagation();
+                }
+
+                if (scope.isFlyoverEnabled) {
+                    scope.closeList();
+                    scope.openFlyover();
+                    return;
+                }
+
+                scope.openList();
             };
 
             const unregisterSelect = scope.$on(
@@ -384,7 +429,13 @@
                     }
 
                     ngModelCtrl.$setViewValue(payload.sysId);
+                    ngModelCtrl.$setDirty();
+                    ngModelCtrl.$setTouched();
                     scope.displayValue = payload.displayValue || "";
+                    scope.showResults = false;
+                    scope.moreResults = false;
+                    scope.results = [];
+                    scope.searchTerm = "";
                     scope.$applyAsync();
 
                     if (
@@ -463,14 +514,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>166</sys_mod_count>
+        <sys_mod_count>168</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 10:23:41</sys_updated_on>
+        <sys_updated_on>2026-06-21 17:45:14</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

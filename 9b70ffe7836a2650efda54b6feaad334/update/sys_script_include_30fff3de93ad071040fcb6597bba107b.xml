@@ -17,6 +17,16 @@ ContactList.CONTACT_MAIN_LIST_BREADCRUMB = [
 ];
 
 ContactList.prototype = Object.extendsObject(BaseTableProvider, {
+    getRowClickAction: function () {
+        return {
+            target: "firstColumn",
+            action: {
+                type: "link",
+                urlField: "_primaryLink",
+            },
+        };
+    },
+
     getContextMenuItems: function (record) {
         return [
             {
@@ -62,12 +72,19 @@ ContactList.prototype = Object.extendsObject(BaseTableProvider, {
                 { label: "Email", name: "email", default: true },
                 { label: "Business Phone", name: "phone" },
                 { label: "Title", name: "title", default: true },
-                { label: "Department", name: "department" },
+                {
+                    label: "Department",
+                    name: "department",
+                    sourceField: "department.name",
+                },
                 { label: "Company", name: "company" },
                 { label: "Manager", name: "manager" },
             ],
             /* prettier-ignore-end */
             can_filter: "true",
+            reference_search_field_map: {
+                department: "name",
+            },
             id_field: "user_name",
             filter_fields: [
                 {
@@ -75,6 +92,7 @@ ContactList.prototype = Object.extendsObject(BaseTableProvider, {
                     label: "Department",
                     type: "reference",
                     referenceTable: "cmn_department",
+                    referenceSearchField: "name",
                     displayFields: "name;id",
                     displayField: "name",
                     searchFields: "name;id",
@@ -97,13 +115,13 @@ ContactList.prototype = Object.extendsObject(BaseTableProvider, {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:11:14</sys_created_on>
         <sys_id>30fff3de93ad071040fcb6597bba107b</sys_id>
-        <sys_mod_count>12</sys_mod_count>
+        <sys_mod_count>19</sys_mod_count>
         <sys_name>ContactList</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_30fff3de93ad071040fcb6597bba107b</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 10:12:36</sys_updated_on>
+        <sys_updated_on>2026-06-21 18:30:47</sys_updated_on>
     </sys_script_include>
 </record_update>

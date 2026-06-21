@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:56:41</sys_created_on>
         <sys_id>b14a8c269321471040fcb6597bba1066</sys_id>
-        <sys_mod_count>5</sys_mod_count>
+        <sys_mod_count>37</sys_mod_count>
         <sys_name>scm-table-filters</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_b14a8c269321471040fcb6597bba1066</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 09:45:45</sys_updated_on>
+        <sys_updated_on>2026-06-21 21:14:13</sys_updated_on>
         <template><![CDATA[<sdx-dialog
     label="Filter records"
     id="{{c.filtersDialogId}}"
@@ -26,65 +26,218 @@
             id="scm-table-filters-icon"
             title="Apply filters to the table"
             ng-disabled="!data.canApplyFilters"
+            ng-click="c.onOpenFiltersDialog()"
         ></sdx-icon>
     </sdx-dialog-toggle>
     <sdx-dialog-content>
         <div class="scm-filters-dialog-form">
             <div
-                class="scm-filters-field-dialog margin-bottom-1"
-                ng-repeat="filter in c.filters"
+                class="row scm-filters-condition-row"
+                ng-class="{ 'scm-filters-condition-row--or': $index > 0 && c.filters[$index - 1].logicalOperator === 'or', 'scm-filters-condition-row--and': $index > 0 && c.filters[$index - 1].logicalOperator !== 'or' }"
+                ng-repeat="condition in c.filters track by condition.id"
             >
-                <div ng-if="filter.type === 'choice'">
-                    <label
-                        for="{{filter.id}}"
-                        class="scm-filter-dialog-choice-field-label"
-                        ng-bind="filter.label"
-                    ></label>
-                    <select
-                        id="{{filter.id}}"
-                        ng-model="filter.value"
-                        class="scm-filter-dialog-choice-field-input"
-                        ng-disabled="filter.loading"
-                    >
-                        <option
-                            value=""
-                            ng-if="!filter.loading"
-                            ng-bind="'-- Select ' + filter.label + ' --'"
-                        ></option>
-                        <option
-                            value=""
-                            ng-if="filter.loading"
-                            ng-bind="'-- Loading options... --'"
-                        ></option>
-                        <option
-                            ng-repeat="choice in filter.choiceValues"
-                            value="{{choice.value}}"
-                            ng-bind="choice.label"
-                        ></option>
-                    </select>
-                    <sdx-loading-spinner
-                        ng-if="filter.loading"
-                        class="scm-filter-dialog-choice-field-loading-spinner"
-                    ></sdx-loading-spinner>
+                <div class="col-md-1 scm-filters-condition-connector-column">
+                    <span
+                        class="scm-filters-condition-connector-label"
+                        ng-if="$index > 0"
+                        ng-bind="(c.filters[$index - 1].logicalOperator || 'and').toUpperCase()"
+                    ></span>
                 </div>
+
+                <div class="col-md-3 scm-filters-condition-cell">
+                    <label ng-if="$first" class="scm-filters-native-label">
+                        Field
+                    </label>
+                    <select
+                        class="input scm-filters-native-select"
+                        ng-model="condition.field"
+                        ng-change="c.onConditionFieldChange(condition)"
+                        ng-options="field.field as field.label for field in c.data.filterFields"
+                    >
+                        <option value="">Select field</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3 scm-filters-condition-cell">
+                    <label ng-if="$first" class="scm-filters-native-label">
+                        Operator
+                    </label>
+                    <select
+                        class="input scm-filters-native-select"
+                        ng-model="condition.operator"
+                        ng-disabled="!condition.field"
+                        ng-change="c.onConditionOperatorChange(condition)"
+                        ng-options="operator.value as operator.label for operator in c.getOperatorsForCondition(condition)"
+                    >
+                        <option value="">Select operator</option>
+                    </select>
+                </div>
+
                 <div
-                    ng-if="filter.type === 'reference'"
-                    class="scm-filter-dialog-reference-field-container"
+                    class="col-md-3 scm-filters-condition-cell scm-filters-condition-value-cell"
                 >
-                    <scm-ref-picker
-                        label="{{filter.label}}"
-                        table="{{filter.referenceTable}}"
-                        display-field="{{filter.displayField}}"
-                        search-fields="{{filter.searchFields}}"
-                        placeholder="{{filter.placeholder}}"
-                        reference-qualifier="{{filter.referenceQualifier}}"
-                        page-size="{{filter.pageSize}}"
-                        minimum-input-length="{{filter.minimumInputLength}}"
-                        display-fields="{{filter.displayFields}}"
-                        order-by="{{filter.orderBy}}"
-                        order-direction="{{filter.orderDirection}}"
-                        ng-model="filter.value"
-                    ></scm-ref-picker>
+                    <div
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && condition.type === 'choice'"
+                    >
+                        <label ng-if="$first" class="scm-filters-native-label">
+                            Value
+                        </label>
+                        <select
+                            class="input scm-filters-native-select"
+                            ng-model="condition.value"
+                            ng-disabled="condition.loading"
+                            ng-options="choice.value as choice.label for choice in condition.choiceValues"
+                        >
+                            <option value="">
+                                {{ condition.loading ? '-- Loading options...
+                                --' : '-- Select value --' }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && condition.type === 'reference' && c.shouldUseReferencePicker(condition) && condition.referenceTable && condition.displayField"
+                        class="scm-filter-dialog-reference-field-container"
+                    >
+                        <div class="scm-filter-dialog-reference-layout">
+                            <scm-ref-picker
+                                label="Value"
+                                table="{{condition.referenceTable}}"
+                                display-field="{{condition.displayField}}"
+                                search-fields="{{condition.searchFields || condition.displayField}}"
+                                placeholder="{{condition.placeholder}}"
+                                reference-qualifier="{{condition.referenceQualifier}}"
+                                page-size="{{condition.pageSize}}"
+                                minimum-input-length="{{condition.minimumInputLength}}"
+                                display-fields="{{condition.displayFields || condition.displayField}}"
+                                order-by="{{condition.orderBy}}"
+                                order-direction="{{condition.orderDirection}}"
+                                ng-model="condition.value"
+                            ></scm-ref-picker>
+                        </div>
+                    </div>
+
+                    <div
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && condition.type === 'reference' && !c.shouldUseReferencePicker(condition)"
+                    >
+                        <label ng-if="$first" class="scm-filters-native-label">
+                            Value
+                        </label>
+                        <input
+                            type="text"
+                            class="input scm-filters-native-input"
+                            aria-label="Filter value"
+                            ng-model="condition.value"
+                        />
+                    </div>
+
+                    <div
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && condition.type === 'date'"
+                    >
+                        <sdx-input
+                            type="date"
+                            label="{{ $first ? 'Value' : '' }}"
+                            sr-hint="Filter value"
+                            placeholder="e.g. 01.01.2000"
+                            change-callback="sdxInputHandler(this)"
+                            scm-model-provider
+                            ng-model="condition.value"
+                            ng-value="condition.value"
+                        ></sdx-input>
+                    </div>
+
+                    <div
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && condition.type !== 'choice' && condition.type !== 'reference' && condition.type !== 'date'"
+                    >
+                        <sdx-input
+                            type="text"
+                            label="{{ $first ? 'Value' : '' }}"
+                            sr-hint="Filter value"
+                            placeholder="Filter value"
+                            change-callback="sdxInputHandler(this)"
+                            scm-model-provider
+                            ng-model="condition.value"
+                            ng-value="condition.value"
+                        ></sdx-input>
+                    </div>
+
+                    <div
+                        class="scm-filter-dialog-between-value"
+                        ng-if="condition.field && condition.operator && c.requiresConditionValue(condition) && c.isBetweenOperator(condition)"
+                    >
+                        <span>and</span>
+                        <sdx-input
+                            ng-if="condition.type === 'string'"
+                            type="text"
+                            label=""
+                            sr-hint="Second filter value"
+                            placeholder="Second value"
+                            class="scm-filter-dialog-choice-field-input scm-filter-dialog-between-input"
+                            change-callback="sdxInputHandler(this)"
+                            scm-model-provider
+                            ng-model="condition.valueTo"
+                        ></sdx-input>
+                        <input
+                            ng-if="condition.type !== 'date' && condition.type !== 'string'"
+                            type="text"
+                            class="input scm-filter-dialog-choice-field-input scm-filter-dialog-between-input"
+                            aria-label="Second filter value"
+                            ng-model="condition.valueTo"
+                        />
+                        <sdx-input
+                            ng-if="condition.type === 'date'"
+                            type="date"
+                            label=""
+                            sr-hint="Second filter value"
+                            placeholder="e.g. 01.01.2000"
+                            class="scm-filter-dialog-choice-field-input scm-filter-dialog-between-input"
+                            change-callback="sdxInputHandler(this)"
+                            scm-model-provider
+                            ng-model="condition.valueTo"
+                        ></sdx-input>
+                    </div>
+
+                    <div ng-if="!condition.field || !condition.operator">
+                        <sdx-input
+                            label="{{ $first ? 'Value' : '' }}"
+                            sr-hint="Filter value"
+                            placeholder="Select operator first"
+                            disabled
+                        ></sdx-input>
+                    </div>
+
+                    <div
+                        ng-if="condition.field && condition.operator && !c.requiresConditionValue(condition)"
+                    >
+                        <sdx-input
+                            label="{{ $first ? 'Value' : '' }}"
+                            sr-hint="No value required"
+                            placeholder="No value required"
+                            disabled
+                        ></sdx-input>
+                    </div>
+                </div>
+
+                <div class="col-md-2 scm-filters-condition-row-actions">
+                    <sdx-button-group layout="fixed">
+                        <sdx-button
+                            theme="transparent"
+                            label="AND"
+                            ng-click="c.addFilterCondition($index, 'and')"
+                        ></sdx-button>
+                        <sdx-button
+                            theme="transparent"
+                            label="OR"
+                            ng-click="c.addFilterCondition($index, 'or')"
+                        ></sdx-button>
+                        <sdx-button
+                            theme="transparent"
+                            icon-name="icon-close"
+                            icon-size="2"
+                            sr-hint="Remove condition"
+                            ng-click="c.removeFilterCondition($index)"
+                        ></sdx-button>
+                    </sdx-button-group>
                 </div>
             </div>
         </div>
@@ -120,29 +273,86 @@
 <style>
     .scm-filters-dialog-form {
         margin-bottom: var(--scm-spacing-3);
-        width: 50vw;
-        min-height: 50vh;
+        width: 70vw;
+        min-height: 35vh;
     }
 
-    .scm-filter-dialog-field {
-        margin-bottom: var(--scm-spacing-2);
+    .scm-filters-condition-cell {
+        min-width: 0;
     }
 
-    .scm-filter-dialog-choice-field-label {
-        font-weight: var(--scm-font-weight-regular);
-        font-size: var(--scm-font-size-medium);
-        color: var(--scm-color-gray-tint-4);
-        margin-bottom: var(--scm-spacing-1);
+    .scm-filters-native-label {
         display: block;
+        margin-bottom: 4px;
+        font-size: var(--scm-font-size-small);
+        color: var(--scm-color-gray-shade-6, #666);
+    }
+
+    .scm-filters-native-select {
+        width: 100%;
+        min-height: 32px;
+    }
+
+    .scm-filters-native-input {
+        width: 100%;
+        min-height: 32px;
+    }
+
+    .scm-filters-condition-value-cell {
+        display: flex;
+        flex-direction: column;
+        gap: var(--scm-spacing-1);
+    }
+
+    .scm-filters-condition-row {
+        margin-bottom: var(--scm-spacing-2);
+        align-items: flex-end;
+    }
+
+    .scm-filters-condition-row--and {
+        margin-top: var(--scm-spacing-2);
+    }
+
+    .scm-filters-condition-row--or {
+        margin-top: calc(var(--scm-spacing-2) * -1);
+        margin-bottom: 4px;
+    }
+
+    .scm-filters-condition-connector-column {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-start;
+        min-height: 62px;
+        padding-bottom: 10px;
+    }
+
+    .scm-filters-condition-row-actions {
+        display: flex;
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding-bottom: var(--scm-spacing-1);
+        white-space: nowrap;
+        padding-left: 0;
+    }
+
+    .scm-filters-condition-row-actions sdx-button:focus,
+    .scm-filters-condition-row-actions sdx-button:focus-visible,
+    .scm-filters-condition-row-actions sdx-button:active {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: transparent !important;
+    }
+
+    .scm-filters-condition-connector-label {
+        min-width: 32px;
+        text-align: left;
+        font-size: var(--scm-font-size-small);
+        color: var(--scm-color-blue);
+        font-weight: var(--scm-font-weight-semi-bold);
     }
 
     .scm-filter-dialog-choice-field-input {
         width: 100%;
-        padding: var(--scm-padding-2);
-        border: var(--scm-border-width-thin) var(--scm-border-style-default)
-            var(--scm-color-gray-tint-4);
-        border-radius: 5px;
-        font-size: var(--scm-font-size-medium);
     }
 
     .scm-filter-dialog-choice-field-loading-spinner {
@@ -151,8 +361,25 @@
         margin-top: 8px;
     }
 
-    .scm-filter-dialog-reference-field-container {
-        margin-bottom: var(--scm-spacing-2);
+    .scm-filter-dialog-reference-layout {
+        display: block;
+        align-items: end;
+    }
+
+    .scm-filter-dialog-between-value {
+        display: flex;
+        align-items: center;
+        gap: var(--scm-spacing-1);
+    }
+
+    .scm-filter-dialog-between-input {
+        max-width: 180px;
+    }
+
+    .scm-filter-dialog-between-value > span {
+        min-width: 24px;
+        color: var(--scm-color-gray-tint-4);
+        font-size: var(--scm-font-size-small);
     }
 
     .scm-filter-dialog-actions-container {

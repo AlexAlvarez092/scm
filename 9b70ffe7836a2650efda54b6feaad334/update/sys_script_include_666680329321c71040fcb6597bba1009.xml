@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableFilterApplier</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableFilterApplier</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * TableFilterApplier
+ *
+ * Responsible for applying filter clauses to GlideRecord objects.
+ * Handles encoded query building and logical operator combination.
+ *
+ * @class
+ */
+var TableFilterApplier = Class.create();
+TableFilterApplier.prototype = {
+    initialize: function (params) {
+        params = params || {};
+        this.logger = params.logger;
+        this.configObject = params.configObject || {};
+        this.queryBuilder = params.queryBuilder;
+    },
+
+    /**
+     * Apply filters to a GlideRecord or GlideAggregate.
+     *
+     * @param {GlideRecord|GlideAggregate} glideRecord
+     * @param {Array} filters
+     */
+    applyFilters: function (glideRecord, filters) {
+        filters = filters || [];
+
+        if (
+            !glideRecord ||
+            typeof glideRecord.addQuery !== "function" ||
+            typeof glideRecord.addEncodedQuery !== "function"
+        ) {
+            if (this.logger) {
+                this.logger.warn({
+                    method: "applyFilters",
+                    message: "Invalid GlideRecord provided for filtering",
+                });
+            }
+            return;
+        }
+
+        if (this.configObject.static_query) {
+            glideRecord.addEncodedQuery(this.configObject.static_query);
+        }
+
+        var encodedFilters = "";
+
+        for (var i = 0; i < filters.length; i++) {
+            var filter = filters[i];
+            var clause = this.queryBuilder.buildEncodedFilterClause(filter);
+
+            if (!clause) {
+                continue;
+            }
+
+            if (!encodedFilters) {
+                encodedFilters = clause;
+                continue;
+            }
+
+            // Use the logicalOperator from the PREVIOUS filter to determine how to connect
+            var prevFilter = filters[i - 1];
+            var logicalOperator = String(prevFilter.logicalOperator || "and")
+                .toLowerCase()
+                .trim();
+
+            encodedFilters +=
+                logicalOperator === "or" ? "^OR" + clause : "^" + clause;
+        }
+
+        if (encodedFilters) {
+            glideRecord.addEncodedQuery(encodedFilters);
+        }
+    },
+
+    /**
+     * Apply a single operator filter to a GlideRecord.
+     * Legacy method, kept for compatibility.
+     *
+     * @param {GlideRecord} glideRecord
+     * @param {Object} filter
+     * @param {string} operator
+     */
+    applyOperatorFilter: function (glideRecord, filter, operator) {
+        var field = filter.field;
+        var value = filter.value;
+        var valueTo = filter.valueTo;
+        var queryField = field;
+
+        if (
+            filter.type === "reference" &&
+            this.queryBuilder.isReferenceTextOperator(operator)
+        ) {
+            queryField = this.queryBuilder.resolveReferenceTextQueryField(
+                filter,
+                operator,
+            );
+        }
+
+        if (operator === "is_anything") {
+            return;
+        }
+
+        if (operator === "is_empty") {
+            glideRecord.addEncodedQuery(queryField + "ISEMPTY");
+            return;
+        }
+
+        if (operator === "is_not_empty") {
+            glideRecord.addEncodedQuery(queryField + "ISNOTEMPTY");
+            return;
+        }
+
+        if (operator === "between") {
+            if (value != null && String(value) !== "") {
+                var encodedRange = String(value);
+                if (valueTo != null && String(valueTo) !== "") {
+                    encodedRange += "@" + String(valueTo);
+                }
+                glideRecord.addQuery(queryField, "BETWEEN", encodedRange);
+            }
+            return;
+        }
+
+        var glideOperator = this.queryBuilder.OPERATOR_MAP[operator];
+        if (!glideOperator) {
+            if (this.logger) {
+                this.logger.warn({
+                    method: "applyOperatorFilter",
+                    message: "Unsupported operator",
+                    operator: operator,
+                    filter: filter,
+                });
+            }
+            return;
+        }
+
+        if (operator === "is_empty_string") {
+            glideRecord.addQuery(queryField, glideOperator, "");
+            return;
+        }
+
+        glideRecord.addQuery(queryField, glideOperator, value);
+    },
+
+    type: "TableFilterApplier",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:17:53</sys_created_on>
+        <sys_id>666680329321c71040fcb6597bba1009</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>TableFilterApplier</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_666680329321c71040fcb6597bba1009</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 19:26:43</sys_updated_on>
+    </sys_script_include>
+</record_update>

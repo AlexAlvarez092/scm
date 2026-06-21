@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableQueryBuilder</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableQueryBuilder</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * TableQueryBuilder
+ *
+ * Responsible for constructing encoded filter clauses for GlideRecord queries.
+ * Handles all operator mappings, date normalization, and reference field resolution.
+ *
+ * @class
+ */
+var TableQueryBuilder = Class.create();
+TableQueryBuilder.prototype = {
+    /**
+     * Operator mappings for GlideRecord encoded queries.
+     * Maps logical operators to their GlideRecord equivalents.
+     */
+    OPERATOR_MAP: {
+        is: "=",
+        on: "=",
+        is_not: "!=",
+        not_on: "!=",
+        is_same: "=",
+        is_different: "!=",
+        contains: "CONTAINS",
+        does_not_contain: "DOES NOT CONTAIN",
+        starts_with: "STARTSWITH",
+        ends_with: "ENDSWITH",
+        is_one_of: "IN",
+        is_not_one_of: "NOT IN",
+        is_empty_string: "=",
+        less_than_or_equal: "<=",
+        greater_than_or_equal: ">=",
+        before: "<",
+        at_or_before: "<=",
+        after: ">",
+        at_or_after: ">=",
+        is_more_than: ">",
+        is_less_than: "<",
+    },
+
+    /**
+     * Human-readable labels for filter operators.
+     */
+    OPERATOR_LABELS: {
+        is: "is",
+        is_not: "is not",
+        contains: "contains",
+        does_not_contain: "does not contain",
+        starts_with: "starts with",
+        ends_with: "ends with",
+        is_empty: "is empty",
+        is_not_empty: "is not empty",
+        is_anything: "is anything",
+        is_one_of: "is one of",
+        is_not_one_of: "is not one of",
+        is_empty_string: "is empty string",
+        less_than_or_equal: "less than or equal to",
+        greater_than_or_equal: "greater than or equal to",
+        between: "between",
+        is_same: "is same",
+        is_different: "is different",
+        on: "on",
+        not_on: "not on",
+        before: "before",
+        at_or_before: "at or before",
+        after: "after",
+        at_or_after: "at or after",
+        is_more_than: "is more than",
+        is_less_than: "is less than",
+    },
+
+    initialize: function (params) {
+        params = params || {};
+        this.logger = params.logger;
+        this.configObject = params.configObject || {};
+    },
+
+    /**
+     * Build an encoded filter clause for a single filter.
+     *
+     * @param {Object} filter
+     * @return {string} Encoded query clause or empty string if invalid
+     */
+    buildEncodedFilterClause: function (filter) {
+        if (!filter || !filter.field) {
+            return "";
+        }
+
+        var operator = String((filter && filter.operator) || "")
+            .toLowerCase()
+            .trim();
+        var queryField = filter.field;
+        var value = filter.value;
+        var valueTo = filter.valueTo;
+
+        if (!operator) {
+            if (filter.type === "choice" || filter.type === "reference") {
+                operator = "is";
+            } else if (
+                filter.type === "string" ||
+                filter.type === "column_contains"
+            ) {
+                operator = "contains";
+            }
+
+        }
+
+        if (
+            filter.type === "reference" &&
+            this.isReferenceTextOperator(operator)
+        ) {
+            queryField = this.resolveReferenceTextQueryField(filter, operator);
+        }
+
+        if (filter.type === "date") {
+            var dateClause = this.buildDateEncodedClause(
+                queryField,
+                operator,
+                value,
+                valueTo,
+            );
+
+            if (dateClause !== null) {
+                return dateClause;
+            }
+        }
+
+        if (operator !== "is_anything" && this.operatorNeedsValue(operator)) {
+            if (value == null || String(value) === "") {
+                return "";
+            }
+        }
+
+        if (operator === "is_anything") {
+            return "";
+        }
+
+        if (operator === "is_empty") {
+            return queryField + "ISEMPTY";
+        }
+
+        if (operator === "is_not_empty") {
+            return queryField + "ISNOTEMPTY";
+        }
+
+        if (operator === "between") {
+            var range = String(value);
+            if (valueTo != null && String(valueTo) !== "") {
+                range += "@" + String(valueTo);
+            }
+            return queryField + "BETWEEN" + range;
+        }
+
+        var encodedOperator = this.OPERATOR_MAP[operator];
+        if (!encodedOperator) {
+            if (this.logger) {
+                this.logger.warn({
+                    method: "buildEncodedFilterClause",
+                    message: "Unsupported operator",
+                    operator: operator,
+                    filter: filter,
+                });
+            }
+            return "";
+        }
+
+        if (operator === "is_empty_string") {
+            return queryField + encodedOperator;
+        }
+
+        return queryField + encodedOperator + String(value);
+    },
+
+    /**
+     * Build an encoded date filter clause.
+     *
+     * @param {string} queryField
+     * @param {string} operator
+     * @param {string} value
+     * @param {string} valueTo
+     * @return {string|null}
+     */
+    buildDateEncodedClause: function (queryField, operator, value, valueTo) {
+        var normalized = this.normalizeDateValue(value);
+        var normalizedTo = this.normalizeDateValue(valueTo);
+
+        if (!normalized) {
+            return null;
+        }
+
+        if (operator === "on") {
+            /* prettier-ignore */
+            return (queryField + "ON" + normalized.date + "@javascript:gs.dateGenerate('" + normalized.date + "','start')@javascript:gs.dateGenerate('" + normalized.date + "','end')");
+        }
+
+        if (operator === "not_on") {
+            /* prettier-ignore */
+            return (queryField + "NOTON" + normalized.date + "@javascript:gs.dateGenerate('" + normalized.date + "','start')@javascript:gs.dateGenerate('" + normalized.date + "','end')");
+        }
+
+        if (operator === "before") {
+            /* prettier-ignore */
+            return (queryField + "<javascript:gs.dateGenerate('" + normalized.date + "','00:00:00')");
+        }
+
+        if (operator === "at_or_before") {
+            /* prettier-ignore */
+            return (queryField + "<=javascript:gs.dateGenerate('" + normalized.date + "','23:59:59')");
+        }
+
+        if (operator === "after") {
+            /* prettier-ignore */
+            return (queryField + ">javascript:gs.dateGenerate('" + normalized.date + "','23:59:59')");
+        }
+
+        if (operator === "at_or_after") {
+            /* prettier-ignore */
+            return (queryField + ">=javascript:gs.dateGenerate('" + normalized.date + "','00:00:00')");
+        }
+
+        if (operator === "between") {
+            if (!normalizedTo) {
+                /* prettier-ignore */
+                return (queryField + "BETWEENjavascript:gs.dateGenerate('" + normalized.date + "','00:00:00')");
+            }
+
+            /* prettier-ignore */
+            return (queryField + "BETWEENjavascript:gs.dateGenerate('" + normalized.date + "','00:00:00')@javascript:gs.dateGenerate('" + normalizedTo.date + "','23:59:59')");
+        }
+
+        return null;
+    },
+
+    /**
+     * Normalize a date value from multiple formats.
+     * Supports: DD.MM.YYYY and YYYY-MM-DD
+     *
+     * @param {string} value
+     * @return {Object|null} {date, start, end} or null if invalid
+     */
+    normalizeDateValue: function (value) {
+        if (value == null || String(value) === "") {
+            return null;
+        }
+
+        var raw = String(value).trim();
+        var year = "";
+        var month = "";
+        var day = "";
+
+        var dotMatch = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+        if (dotMatch) {
+            day = dotMatch[1];
+            month = dotMatch[2];
+            year = dotMatch[3];
+        }
+
+        var isoMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) {
+            year = isoMatch[1];
+            month = isoMatch[2];
+            day = isoMatch[3];
+        }
+
+        if (!year || !month || !day) {
+            return null;
+        }
+
+        var dateOnly = year + "-" + month + "-" + day;
+
+        return {
+            date: dateOnly,
+            start: dateOnly + " 00:00:00",
+            end: dateOnly + " 23:59:59",
+        };
+    },
+
+    /**
+     * Check if an operator requires a value.
+     *
+     * @param {string} operator
+     * @return {boolean}
+     */
+    operatorNeedsValue: function (operator) {
+        operator = String(operator || "").toLowerCase();
+
+        return (
+            operator !== "is_empty" &&
+            operator !== "is_not_empty" &&
+            operator !== "is_anything"
+        );
+    },
+
+    /**
+     * Get human-readable label for an operator.
+     *
+     * @param {string} operator
+     * @return {string}
+     */
+    getOperatorLabel: function (operator) {
+        var key = String(operator || "is").toLowerCase();
+        return this.OPERATOR_LABELS[key] || key || "is";
+    },
+
+    /**
+     * Check if operator is a reference text search operator.
+     *
+     * @param {string} operator
+     * @return {boolean}
+     */
+    isReferenceTextOperator: function (operator) {
+        return (
+            operator === "contains" ||
+            operator === "does_not_contain" ||
+            operator === "starts_with" ||
+            operator === "ends_with"
+        );
+    },
+
+    /**
+     * Resolve the query field for reference text search.
+     *
+     * @param {Object} filter
+     * @param {string} operator
+     * @return {string}
+     */
+    resolveReferenceTextQueryField: function (filter, operator) {
+        var baseField = filter.field;
+        var referenceSearchField = this.resolveReferenceSearchField(filter);
+
+        if (!referenceSearchField) {
+            return baseField;
+        }
+
+        if (String(referenceSearchField).indexOf(".") !== -1) {
+            return referenceSearchField;
+        }
+
+        return baseField + "." + referenceSearchField;
+    },
+
+    /**
+     * Get the search field to use for reference filtering.
+     *
+     * @param {Object} filter
+     * @return {string}
+     */
+    resolveReferenceSearchField: function (filter) {
+        var map = this.getReferenceSearchFieldMap() || {};
+        var mappedField = filter && filter.field ? map[filter.field] : "";
+
+        if (mappedField) {
+            return mappedField;
+        }
+
+        if (filter.referenceSearchField) {
+            return filter.referenceSearchField;
+        }
+
+        if (filter.searchFields) {
+            var firstSearchField = String(filter.searchFields)
+                .split(";")
+                .map(function (value) {
+                    return String(value || "").trim();
+                })
+                .filter(function (value) {
+                    return !!value;
+                })[0];
+
+            if (firstSearchField) {
+                return firstSearchField;
+            }
+        }
+
+        return filter.displayField || "name";
+    },
+
+    /**
+     * Get reference search field map from config.
+     *
+     * @return {Object}
+     */
+    getReferenceSearchFieldMap: function () {
+        return this.configObject.reference_search_field_map || {};
+    },
+
+    type: "TableQueryBuilder",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:17:43</sys_created_on>
+        <sys_id>6e5644fe93ed871040fcb6597bba1060</sys_id>
+        <sys_mod_count>5</sys_mod_count>
+        <sys_name>TableQueryBuilder</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_6e5644fe93ed871040fcb6597bba1060</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 21:11:23</sys_updated_on>
+    </sys_script_include>
+</record_update>

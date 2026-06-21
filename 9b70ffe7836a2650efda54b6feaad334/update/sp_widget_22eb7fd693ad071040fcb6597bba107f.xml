@@ -1,21 +1,89 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($sce, spUtil, scmBreadcrumbsManager, $rootScope) {
+        <client_script><![CDATA[api.controller = function ($sce, spUtil, $rootScope, $scope, scmTableFilter) {
     const c = this;
+    const OPERATOR_OPTIONS = {
+        reference: [
+            { value: "is", label: "is" },
+            { value: "is_not", label: "is not" },
+            { value: "starts_with", label: "starts with" },
+            { value: "contains", label: "contains" },
+        ],
+        date: [
+            { value: "on", label: "on" },
+            { value: "before", label: "before" },
+            { value: "at_or_before", label: "at or before" },
+            { value: "after", label: "after" },
+            { value: "at_or_after", label: "at or after" },
+        ],
+        choice: [
+            { value: "is", label: "is" },
+            { value: "is_not", label: "is not" },
+        ],
+        string: [
+            { value: "starts_with", label: "starts with" },
+            { value: "ends_with", label: "ends with" },
+            { value: "contains", label: "contains" },
+            { value: "does_not_contain", label: "does not contain" },
+            { value: "is", label: "is" },
+            { value: "is_not", label: "is not" },
+            { value: "is_empty", label: "is empty" },
+            { value: "is_not_empty", label: "is not empty" },
+        ],
+    };
+    const COLUMN_SEARCH_OPERATORS = ["starts_with", "is", "contains"];
 
     if (c.data.redirectTo404) {
         return;
     }
 
-    init();
-
     c.setLimit = function () {
         if (!c.data.canSavePreferences) return;
-        savePreference("limit", c.data.limit).then(() => {});
+        savePreference("limit", c.data.limit)
+            .then(() => {
+                c.page = 1;
+                getTotalRecords();
+                getTableData();
+            })
+            .catch(() => {
+                // Keep current state if preference save fails.
+            });
     };
 
     c.closeDialogById = angular.noop;
+    c.filterFieldMap = {};
+    c.choiceValuesCache = {};
+    c.choiceValueRequestState = {};
+    c.columnSearchRequestId = 0;
+    c.tableDataRequestId = 0;
+    c.totalRecordsRequestId = 0;
+
+    const deregisterRefreshListener = $rootScope.$on(
+        "scmTable:refresh",
+        (event, payload) => {
+            const requestedTransactionId = payload?.transactionId;
+
+            // Ignore refresh requests for other table instances.
+            if (
+                requestedTransactionId &&
+                requestedTransactionId !== c.data.transactionId
+            ) {
+                return;
+            }
+
+            getTotalRecords();
+            getTableData();
+        },
+    );
+
+    $scope.$on("$destroy", () => {
+        if (typeof deregisterRefreshListener === "function") {
+            deregisterRefreshListener();
+        }
+    });
+
+    init();
 
     c.goToFirstPage = function () {
         c.page = 1;
@@ -143,6 +211,8 @@
             .then((response) => {
                 c.data.columns = response.data.columns;
                 syncColumnSelectorLists();
+                syncColumnSearchTermsFromAppliedFilters();
+                ensureChoiceValuesForColumnSearch();
                 c.revertingListView = false;
                 c.closeDialogById(c.settingsDialogId);
                 getTableData();
@@ -162,47 +232,31 @@
     };
 
     c.applyFilters = function () {
-        c.appliedFilters = c.filters
-            .filter((filter) => {
-                return filter.value && filter.value !== "";
-            })
-            .map((filter) => {
-                return {
-                    field: filter.field,
-                    label: filter.label,
-                    type: filter.type,
-                    value: filter.value,
-                    choiceValues: filter.choiceValues,
-                    referenceTable: filter.referenceTable,
-                    displayFields: filter.displayFields,
-                    referenceQualifier: filter.referenceQualifier,
-                    id: filter.id,
-                };
-            });
+        const nextAppliedFilters = buildDialogFilters();
 
-        c.page = 1;
-        getTotalRecords();
-        getTableData();
-        getAppliedFiltersInfoMessage();
-        c.closeDialogById(c.filtersDialogId);
+        resolveReferenceFilterDisplayValues(nextAppliedFilters).then(() => {
+            c.appliedFilters = nextAppliedFilters;
+            syncColumnSearchTermsFromAppliedFilters();
+
+            c.page = 1;
+            getTotalRecords();
+            getTableData();
+            getAppliedFiltersInfoMessage();
+            c.closeDialogById(c.filtersDialogId);
+        });
     };
 
     c.cancelFilters = function () {
-        c.filters.forEach((filter) => {
-            const appliedFilter = c.appliedFilters.find(
-                (af) => af.field === filter.field,
-            );
-            filter.value = appliedFilter ? appliedFilter.value : "";
+        restoreFilterConditionsFromApplied();
+        resolveReferenceFilterDisplayValues(c.filters || []).then(() => {
+            c.closeDialogById(c.filtersDialogId);
         });
-        c.closeDialogById(c.filtersDialogId);
     };
 
     c.removeAllFilters = function () {
-        c.filters.forEach((filter) => {
-            filter.value = "";
-        });
-
         c.appliedFilters = [];
+        c.filters = [scmTableFilter.createEmptyFilterCondition()];
+        syncColumnSearchTermsFromAppliedFilters();
         c.page = 1;
         getTotalRecords();
         getTableData();
@@ -210,18 +264,192 @@
         c.closeDialogById(c.filtersDialogId);
     };
 
-    c.getPrimaryCellHref = function (record) {
-        const action = c.data.primaryCellClickAction || {};
+    c.addFilterCondition = function (afterIndex, logicalOperator) {
+        c.filters = scmTableFilter.addFilterCondition(
+            c.filters,
+            afterIndex,
+            logicalOperator,
+        );
+    };
 
-        if (action.type !== "link") {
+    c.onColumnSearchChange = function () {
+        var requestId = (c.columnSearchRequestId || 0) + 1;
+        c.columnSearchRequestId = requestId;
+
+        ensureChoiceValuesForColumnSearch().then(() => {
+            if (requestId !== c.columnSearchRequestId) {
+                return;
+            }
+
+            applyColumnSearchToAppliedFilters();
+        });
+    };
+
+    c.onColumnSearchKeyUp = function ($event) {
+        if (!$event || $event.key !== "Enter") {
+            return;
+        }
+
+        c.onColumnSearchChange();
+    };
+
+    c.getColumnSearchControlType = function (fieldName) {
+        var fieldConfig = c.filterFieldMap[fieldName];
+        if (!fieldConfig || !fieldConfig.type) {
+            return "none";
+        }
+
+        if (fieldConfig.type === "string") {
+            return "string";
+        }
+
+        if (fieldConfig.type === "choice") {
+            return "choice";
+        }
+
+        if (fieldConfig.type === "reference") {
+            return "reference";
+        }
+
+        return "none";
+    };
+
+    c.getColumnSearchChoiceOptions = function (fieldName) {
+        return getChoiceOptionsForField(fieldName);
+    };
+
+    c.getColumnSearchReferenceConfig = function (fieldName) {
+        return c.filterFieldMap[fieldName] || {};
+    };
+
+    c.shouldShowColumnSearchRow = function () {
+        return c.data.canFilter && !hasAmbiguousColumnSearchState();
+    };
+
+    c.removeFilterCondition = function (conditionIndex) {
+        c.filters = scmTableFilter.removeFilterCondition(
+            c.filters,
+            conditionIndex,
+        );
+    };
+
+    c.onConditionFieldChange = function (condition) {
+        if (!condition) {
+            return;
+        }
+
+        condition.source = "";
+
+        const fieldConfig = c.filterFieldMap[condition.field] || null;
+        populateConditionFromField(condition, fieldConfig);
+    };
+
+    c.onConditionOperatorChange = function (condition) {
+        if (!condition) {
+            return;
+        }
+
+        if (!c.requiresConditionValue(condition)) {
+            condition.value = "";
+            condition.valueTo = "";
+        }
+    };
+
+    c.getOperatorsForCondition = function (condition) {
+        if (!condition || !condition.field) {
+            return [];
+        }
+
+        const type = condition && condition.type ? condition.type : "string";
+
+        if (type === "reference") {
+            return OPERATOR_OPTIONS.reference;
+        }
+
+        if (type === "date") {
+            return OPERATOR_OPTIONS.date;
+        }
+
+        if (type === "choice") {
+            return OPERATOR_OPTIONS.choice;
+        }
+
+        return OPERATOR_OPTIONS.string;
+    };
+
+    c.requiresConditionValue = function (condition) {
+        return scmTableFilter.requiresConditionValue(condition);
+    };
+
+    c.isBetweenOperator = function (condition) {
+        return ((condition && condition.operator) || "") === "between";
+    };
+
+    c.shouldUseReferencePicker = function (condition) {
+        if (!condition || condition.type !== "reference") {
+            return false;
+        }
+
+        const operator = (condition.operator || "").toLowerCase();
+        return operator === "is" || operator === "is_not";
+    };
+
+    c.onOpenFiltersDialog = function () {
+        restoreFilterConditionsFromApplied();
+        resolveReferenceFilterDisplayValues(c.filters || []);
+    };
+
+    c.getRowClickAction = function () {
+        return c.data.rowClickAction || { target: "none", action: {} };
+    };
+
+    c.hasRowClickAction = function () {
+        const clickAction = c.getRowClickAction();
+        return (
+            clickAction &&
+            (clickAction.target === "firstColumn" ||
+                clickAction.target === "row")
+        );
+    };
+
+    c.getActionHref = function (record, actionConfig) {
+        if (
+            !actionConfig ||
+            actionConfig.type !== "link" ||
+            !actionConfig.urlField
+        ) {
             return undefined;
         }
 
-        if (!action.urlField) {
-            return undefined;
+        return sanitizeHref(record?.[actionConfig.urlField]);
+    };
+
+    c.getRowClickHref = function (record) {
+        const clickAction = c.getRowClickAction();
+        return c.getActionHref(record, clickAction.action || {});
+    };
+
+    c.shouldHandleRowClick = function (record, field, isFirstColumn) {
+        const clickAction = c.getRowClickAction();
+
+        if (!c.hasRowClickAction()) {
+            return false;
         }
 
-        return record?.[action.urlField];
+        if (clickAction.target === "firstColumn" && !isFirstColumn) {
+            return false;
+        }
+
+        if (c.hasAnyBlockHref(record, field)) {
+            return false;
+        }
+
+        return true;
+    };
+
+    c.shouldHandleWholeRowClick = function () {
+        const clickAction = c.getRowClickAction();
+        return c.hasRowClickAction() && clickAction.target === "row";
     };
 
     c.getCellContent = function (record, field) {
@@ -239,7 +467,7 @@
     };
 
     c.getBlockHref = function (block) {
-        return block && block.href ? block.href : undefined;
+        return block && block.href ? sanitizeHref(block.href) : undefined;
     };
 
     c.hasAnyBlockHref = function (record, field) {
@@ -248,23 +476,17 @@
             .some((block) => !!c.getBlockHref(block));
     };
 
-    c.shouldUsePrimaryCellLink = function (record, field, isFirstColumn) {
-        return (
-            isFirstColumn &&
-            !!c.getPrimaryCellHref(record) &&
-            !c.hasAnyBlockHref(record, field)
-        );
-    };
+    c.onTableRowClick = function ($event, record) {
+        if (!c.shouldHandleWholeRowClick()) {
+            return;
+        }
 
-    c.shouldUsePrimaryCellEvent = function (record, field, isFirstColumn) {
-        const action = c.data.primaryCellClickAction || {};
+        const target = $event && $event.target;
+        if (target && target.closest("a, button, input, select, textarea")) {
+            return;
+        }
 
-        return (
-            isFirstColumn &&
-            action.type === "event" &&
-            !!action.eventName &&
-            !c.hasAnyBlockHref(record, field)
-        );
+        runRowClickAction($event, record);
     };
 
     c.contextMenu = { visible: false, x: 0, y: 0, items: [], record: null };
@@ -314,8 +536,13 @@
         }
 
         if (action.href) {
-            const target = action.target || "_self";
-            const openedWindow = window.open(action.href, target);
+            const safeHref = sanitizeHref(action.href);
+            if (!safeHref) {
+                return;
+            }
+
+            const target = sanitizeTarget(action.target);
+            const openedWindow = window.open(safeHref, target);
             if (openedWindow && target === "_blank") {
                 openedWindow.opener = null;
             }
@@ -328,6 +555,39 @@
             );
         }
     };
+
+    c.onRowClick = function ($event, record) {
+        runRowClickAction($event, record);
+    };
+
+    function runRowClickAction($event, record) {
+        const clickAction = c.getRowClickAction();
+        const action = clickAction.action || {};
+
+        if (!action.type) {
+            return;
+        }
+
+        if (action.type === "event" && action.eventName) {
+            $event.preventDefault();
+            dispatchRowClickEvent(action, record, $event);
+            return;
+        }
+
+        if (action.type === "link") {
+            const href = c.getActionHref(record, action);
+
+            if (!href) {
+                $event.preventDefault();
+                return;
+            }
+
+            if (clickAction.target === "row") {
+                $event.preventDefault();
+                window.location.assign(href);
+            }
+        }
+    }
 
     function writeToClipboard(value) {
         const text = value == null ? "" : String(value);
@@ -376,36 +636,6 @@
         return Object.keys(style).length > 0 ? style : undefined;
     };
 
-    c.onPrimaryCellClick = function ($event, record, field) {
-        const action = c.data.primaryCellClickAction || {};
-
-        if (action.type === "event" && action.eventName) {
-            $event.preventDefault();
-            dispatchActionEvent(action, record, field, $event);
-            return;
-        }
-
-        if (action.type === "link") {
-            const href = c.getPrimaryCellHref(record);
-            if (!href) {
-                $event.preventDefault();
-            }
-        }
-    };
-
-    function getBreadcrumbs() {
-        return c.server
-            .get({
-                action: "getBreadcrumbs",
-                transactionId: c.data.transactionId,
-                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-            })
-            .then((response) => {
-                const breadcrumbs = response.data.breadcrumbs || [];
-                scmBreadcrumbsManager.set(breadcrumbs);
-            });
-    }
-
     function getTableColumns() {
         return c.server
             .get({
@@ -416,6 +646,8 @@
             .then((response) => {
                 c.data.columns = response.data.columns;
                 syncColumnSelectorLists();
+                syncColumnSearchTermsFromAppliedFilters();
+                ensureChoiceValuesForColumnSearch();
                 c.showTableHeader =
                     (c.data.columns || []).filter((field) => field.label)
                         .length > 0;
@@ -430,11 +662,389 @@
                 (selectedField) => selectedField.name === field.name,
             );
         });
+
         c.fieldToAdd = null;
         c.fieldToRemove = null;
     }
 
+    function buildDialogFilters() {
+        return scmTableFilter.buildDialogFilters(c.filters);
+    }
+
+    function parseColumnSearchInput(rawValue) {
+        var value = String(rawValue == null ? "" : rawValue).trim();
+
+        if (!value) {
+            return null;
+        }
+
+        if (value.charAt(0) === "=") {
+            var isValue = value.substring(1).trim();
+            return isValue ? { operator: "is", value: isValue } : null;
+        }
+
+        if (value.charAt(0) === "*") {
+            var containsValue = value.substring(1).trim();
+            return containsValue
+                ? { operator: "contains", value: containsValue }
+                : null;
+        }
+
+        return { operator: "starts_with", value: value };
+    }
+
+    function toColumnSearchInputValue(filter) {
+        if (!filter || !filter.operator) {
+            return "";
+        }
+
+        var value = String(filter.value == null ? "" : filter.value);
+        var operator = String(filter.operator).toLowerCase().trim();
+
+        if (operator === "is") {
+            return "=" + value;
+        }
+
+        if (operator === "contains") {
+            return "*" + value;
+        }
+
+        if (operator === "starts_with") {
+            return value;
+        }
+
+        return "";
+    }
+
+    function getChoiceOptionsForField(fieldName, fallbackOptions) {
+        var options = [];
+
+        if (
+            fieldName &&
+            c.filterFieldMap[fieldName] &&
+            Array.isArray(c.filterFieldMap[fieldName].choiceValues)
+        ) {
+            options = c.filterFieldMap[fieldName].choiceValues;
+        }
+
+        if (
+            !options.length &&
+            fieldName &&
+            Array.isArray(c.choiceValuesCache[fieldName])
+        ) {
+            options = c.choiceValuesCache[fieldName];
+        }
+
+        if (!options.length && Array.isArray(fallbackOptions)) {
+            options = fallbackOptions;
+        }
+
+        return options;
+    }
+
+    function ensureChoiceValuesForColumnSearch() {
+        var requests = [];
+
+        (c.data.columns || []).forEach((column) => {
+            var fieldName = column && column.name;
+            if (!fieldName) {
+                return;
+            }
+
+            var fieldConfig = c.filterFieldMap[fieldName];
+            if (!fieldConfig || fieldConfig.type !== "choice") {
+                return;
+            }
+
+            var cachedOptions = getChoiceOptionsForField(fieldName);
+            if (cachedOptions.length) {
+                return;
+            }
+
+            var tempFilter = {
+                field: fieldName,
+                type: "choice",
+                choiceValues: [],
+            };
+
+            requests.push(
+                loadChoiceValues(tempFilter).then(() => {
+                    if (c.filterFieldMap[fieldName]) {
+                        c.filterFieldMap[fieldName].choiceValues = angular.copy(
+                            tempFilter.choiceValues || [],
+                        );
+                    }
+                }),
+            );
+        });
+
+        return Promise.all(requests);
+    }
+
+    function canManageAsColumnSearchFilter(filter) {
+        if (!filter || !filter.field) {
+            return false;
+        }
+
+        if (filter.source !== "column_search") {
+            return false;
+        }
+
+        if (
+            filter.type !== "string" &&
+            filter.type !== "choice" &&
+            filter.type !== "reference"
+        ) {
+            return false;
+        }
+
+        var operator = String(filter.operator || "")
+            .toLowerCase()
+            .trim();
+
+        if (filter.type === "choice" || filter.type === "reference") {
+            if (operator !== "is") {
+                return false;
+            }
+
+            return filter.value != null && String(filter.value) !== "";
+        }
+
+        if (!COLUMN_SEARCH_OPERATORS.includes(operator)) {
+            return false;
+        }
+
+        if (!filter.value || String(filter.value).trim() === "") {
+            return false;
+        }
+
+        return (c.data.columns || []).some((column) => {
+            return column && column.name === filter.field;
+        });
+    }
+
+    function applyColumnSearchToAppliedFilters() {
+        var currentFilters = Array.isArray(c.appliedFilters)
+            ? c.appliedFilters.slice()
+            : [];
+        var baseFilters = currentFilters.filter((filter) => {
+            return !canManageAsColumnSearchFilter(filter);
+        });
+
+        var nextColumnFilters = [];
+        var columnFields = c.data.columns || [];
+
+        columnFields.forEach((column) => {
+            var fieldName = column && column.name;
+            if (!fieldName) {
+                return;
+            }
+
+            var fieldConfig = c.filterFieldMap[fieldName];
+            if (!fieldConfig) {
+                return;
+            }
+
+            var controlType = c.getColumnSearchControlType(fieldName);
+            if (controlType === "none") {
+                return;
+            }
+
+            var selectedValue =
+                c.columnSearchTerms && c.columnSearchTerms[fieldName];
+
+            if (controlType === "choice") {
+                if (selectedValue == null || String(selectedValue) === "") {
+                    return;
+                }
+
+                var choiceOptions = getChoiceOptionsForField(fieldName);
+                var matchedChoice = (choiceOptions || []).find((choice) => {
+                    return String(choice.value) === String(selectedValue);
+                });
+
+                nextColumnFilters.push({
+                    field: fieldName,
+                    label: fieldConfig.label || column.label || fieldName,
+                    type: "choice",
+                    logicalOperator: "and",
+                    value: String(selectedValue),
+                    valueTo: "",
+                    operator: "is",
+                    choiceValues: angular.copy(choiceOptions),
+                    referenceTable: fieldConfig.referenceTable,
+                    referenceSearchField: fieldConfig.referenceSearchField,
+                    displayField: fieldConfig.displayField,
+                    searchFields: fieldConfig.searchFields,
+                    displayFields: fieldConfig.displayFields,
+                    referenceQualifier: fieldConfig.referenceQualifier,
+                    displayValue: matchedChoice
+                        ? matchedChoice.label || ""
+                        : "",
+                    source: "column_search",
+                });
+
+                return;
+            }
+
+            if (controlType === "reference") {
+                if (selectedValue == null || String(selectedValue) === "") {
+                    return;
+                }
+
+                nextColumnFilters.push({
+                    field: fieldName,
+                    label: fieldConfig.label || column.label || fieldName,
+                    type: "reference",
+                    logicalOperator: "and",
+                    value: String(selectedValue),
+                    valueTo: "",
+                    operator: "is",
+                    choiceValues: [],
+                    referenceTable: fieldConfig.referenceTable,
+                    referenceSearchField: fieldConfig.referenceSearchField,
+                    displayField: fieldConfig.displayField,
+                    searchFields: fieldConfig.searchFields,
+                    displayFields: fieldConfig.displayFields,
+                    referenceQualifier: fieldConfig.referenceQualifier,
+                    displayValue: "",
+                    source: "column_search",
+                });
+
+                return;
+            }
+
+            var parsed = parseColumnSearchInput(
+                c.columnSearchTerms && c.columnSearchTerms[fieldName],
+            );
+
+            if (!parsed) {
+                return;
+            }
+
+            nextColumnFilters.push({
+                field: fieldName,
+                label: fieldConfig.label || column.label || fieldName,
+                type: "string",
+                logicalOperator: "and",
+                value: parsed.value,
+                valueTo: "",
+                operator: parsed.operator,
+                choiceValues: fieldConfig.choiceValues || [],
+                referenceTable: fieldConfig.referenceTable,
+                referenceSearchField: fieldConfig.referenceSearchField,
+                displayField: fieldConfig.displayField,
+                searchFields: fieldConfig.searchFields,
+                displayFields: fieldConfig.displayFields,
+                referenceQualifier: fieldConfig.referenceQualifier,
+                displayValue: "",
+                source: "column_search",
+            });
+        });
+
+        if (baseFilters.length > 0 && nextColumnFilters.length > 0) {
+            baseFilters[baseFilters.length - 1].logicalOperator = "and";
+        }
+
+        c.appliedFilters = baseFilters.concat(nextColumnFilters);
+
+        if (c.appliedFilters.length > 0) {
+            c.appliedFilters[0].logicalOperator = "and";
+        }
+
+        restoreFilterConditionsFromApplied();
+
+        c.page = 1;
+        getTotalRecords();
+        getTableData();
+        getAppliedFiltersInfoMessage();
+    }
+
+    function syncColumnSearchTermsFromAppliedFilters() {
+        var nextTerms = {};
+        var trackedFields = {};
+
+        (c.data.columns || []).forEach((column) => {
+            if (column && column.name) {
+                nextTerms[column.name] = "";
+            }
+        });
+
+        (c.appliedFilters || []).forEach((filter) => {
+            if (!canManageAsColumnSearchFilter(filter)) {
+                return;
+            }
+
+            var fieldName = filter.field;
+            if (!(fieldName in nextTerms)) {
+                return;
+            }
+
+            trackedFields[fieldName] = trackedFields[fieldName] || 0;
+            trackedFields[fieldName] += 1;
+
+            if (trackedFields[fieldName] > 1) {
+                nextTerms[fieldName] = "";
+                return;
+            }
+
+            if (filter.type === "choice" || filter.type === "reference") {
+                nextTerms[fieldName] = String(filter.value || "");
+                return;
+            }
+
+            nextTerms[fieldName] = toColumnSearchInputValue(filter);
+        });
+
+        c.columnSearchTerms = nextTerms;
+    }
+
+    function hasAmbiguousColumnSearchState() {
+        var filters = Array.isArray(c.appliedFilters) ? c.appliedFilters : [];
+
+        if (filters.length <= 1) {
+            return false;
+        }
+
+        var fieldCounts = {};
+
+        for (var i = 0; i < filters.length; i++) {
+            var filter = filters[i];
+            if (!filter || !filter.field) {
+                continue;
+            }
+
+            // Any OR chain should hide column search, matching backend behavior.
+            if (
+                i < filters.length - 1 &&
+                String(filter.logicalOperator || "and")
+                    .toLowerCase()
+                    .trim() === "or"
+            ) {
+                return true;
+            }
+
+            if (!canManageAsColumnSearchFilter(filter)) {
+                continue;
+            }
+
+            fieldCounts[filter.field] = (fieldCounts[filter.field] || 0) + 1;
+            if (fieldCounts[filter.field] > 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function getAppliedFiltersForRequests() {
+        return scmTableFilter.getAppliedFiltersForRequests(c.appliedFilters);
+    }
+
     function getTableData() {
+        var requestId = (c.tableDataRequestId || 0) + 1;
+        c.tableDataRequestId = requestId;
+
         c.showSpinner = true;
         return c.server
             .get({
@@ -442,29 +1052,38 @@
                 transactionId: c.data.transactionId,
                 tableProviderScriptInclude: c.data.tableProviderScriptInclude,
                 page: c.page,
-                filters: c.appliedFilters || [],
+                filters: getAppliedFiltersForRequests(),
             })
             .then((response) => {
+                if (requestId !== c.tableDataRequestId) {
+                    return;
+                }
+
                 c.records = response.data.records;
                 c.data.orderBy = response.data.orderBy;
                 c.data.orderDirection = response.data.orderDirection;
             })
             .catch(() => {
+                if (requestId !== c.tableDataRequestId) {
+                    return;
+                }
+
                 c.records = [];
             })
             .finally(() => {
-                c.showSpinner = false;
+                if (requestId === c.tableDataRequestId) {
+                    c.showSpinner = false;
+                }
             });
     }
 
-    function dispatchActionEvent(action, record, field, event) {
+    function dispatchRowClickEvent(action, record, event) {
         const payload = action.payloadField
             ? record?.[action.payloadField]
             : action.payload || {};
 
         $rootScope.$broadcast(action.eventName, {
             record: record,
-            field: field,
             data: c.data,
             event: event,
             payload: payload || {},
@@ -472,75 +1091,72 @@
     }
 
     function getTotalRecords() {
+        var requestId = (c.totalRecordsRequestId || 0) + 1;
+        c.totalRecordsRequestId = requestId;
+
         c.server
             .get({
                 action: "getTotalRecords",
                 transactionId: c.data.transactionId,
                 tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                filters: c.appliedFilters || [],
+                filters: getAppliedFiltersForRequests(),
             })
             .then((response) => {
+                if (requestId !== c.totalRecordsRequestId) {
+                    return;
+                }
+
                 c.totalRecords = response.data.totalRecords;
-                c.totalPages = Math.ceil(c.totalRecords / c.data.limit);
+                const limit = parseInt(c.data.limit, 10) || 0;
+                c.totalPages =
+                    limit > 0 ? Math.ceil(c.totalRecords / limit) : 0;
+            })
+            .catch(() => {
+                if (requestId !== c.totalRecordsRequestId) {
+                    return;
+                }
+
+                c.totalRecords = 0;
+                c.totalPages = 0;
             });
     }
 
     function initializeFilters() {
-        c.filters = [];
+        c.filterFieldMap = scmTableFilter.buildFilterFieldMap(
+            c.data.filterFields,
+        );
 
-        if (c.data.filterFields.length > 0) {
-            c.data.filterFields.forEach((fieldConfig) => {
-                const filter = {
-                    field: fieldConfig.field,
-                    label: fieldConfig.label,
-                    type: fieldConfig.type,
-                    value: "",
-                    choiceValues: [],
-                    loading: false,
-                    id: spUtil.createUid("xxxx-xxxx"),
-                };
+        restoreFilterConditionsFromApplied();
+    }
 
-                if (fieldConfig.type === "reference") {
-                    filter.referenceTable = fieldConfig.referenceTable;
-                    filter.displayField = fieldConfig.displayField;
-                    filter.searchFields = fieldConfig.searchFields;
-                    filter.placeholder =
-                        fieldConfig.placeholder ||
-                        "Search " + fieldConfig.label;
-                    filter.referenceQualifier = fieldConfig.referenceQualifier;
-                    filter.pageSize = fieldConfig.pageSize;
-                    filter.minimumInputLength =
-                        fieldConfig.minimumInputLength || 3;
-                    filter.displayFields = fieldConfig.displayFields;
-                    filter.orderBy = fieldConfig.orderBy;
-                    filter.orderDirection = fieldConfig.orderDirection;
-                }
+    function createEmptyFilterCondition() {
+        return scmTableFilter.createEmptyFilterCondition();
+    }
 
-                if (filter.type === "choice") {
-                    loadChoiceValues(filter);
-                }
+    function populateConditionFromField(condition, fieldConfig) {
+        scmTableFilter.populateConditionFromField(condition, fieldConfig, {
+            loadChoiceValues: loadChoiceValues,
+        });
+    }
 
-                c.filters.push(filter);
-            });
-        }
+    function restoreFilterConditionsFromApplied() {
+        c.filters = scmTableFilter.restoreFilterConditionsFromApplied({
+            appliedFilters: c.appliedFilters,
+            filterFieldMap: c.filterFieldMap,
+            createEmptyFilterCondition: createEmptyFilterCondition,
+            populateConditionFromField: populateConditionFromField,
+        });
     }
 
     function loadChoiceValues(filter) {
-        filter.loading = true;
-        c.server
-            .get({
-                action: "getChoiceValues",
-                transactionId: c.data.transactionId,
-                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                fieldName: filter.field,
-            })
-            .then((response) => {
-                filter.choiceValues = response.data.choiceValues || [];
-                filter.loading = false;
-            })
-            .catch(() => {
-                filter.loading = false;
-            });
+        return scmTableFilter.loadChoiceValues({
+            server: c.server,
+            transactionId: c.data.transactionId,
+            tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            filter: filter,
+            choiceValuesCache: c.choiceValuesCache,
+            choiceValueRequestState: c.choiceValueRequestState,
+        });
     }
 
     function savePreference(preferenceName, preferenceValue) {
@@ -562,16 +1178,24 @@
                 action: "getAppliedFiltersInfoMessage",
                 transactionId: c.data.transactionId,
                 tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                appliedFilters: c.appliedFilters || [],
+                appliedFilters: getAppliedFiltersForRequests(),
             })
             .then((response) => {
-                c.appliedFiltersHtml = sanitizeTrustedHtml(
-                    response.data.appliedFiltersHtml,
-                );
+                const htmlContent = response.data.appliedFiltersHtml || "";
+                c.appliedFiltersHtml = sanitizeTrustedHtml(htmlContent);
             })
             .catch(() => {
                 c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
             });
+    }
+
+    function resolveReferenceFilterDisplayValues(filters) {
+        return scmTableFilter.resolveReferenceFilterDisplayValues({
+            server: c.server,
+            transactionId: c.data.transactionId,
+            tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            filters: filters,
+        });
     }
 
     function sanitizeTrustedHtml(html) {
@@ -613,6 +1237,50 @@
         return $sce.trustAsHtml(parsed.body.innerHTML || "<span></span>");
     }
 
+    function sanitizeHref(rawHref) {
+        if (!rawHref) {
+            return undefined;
+        }
+
+        const href = String(rawHref).trim();
+        if (!href) {
+            return undefined;
+        }
+
+        // Block explicitly unsafe schemes.
+        if (/^(javascript:|data:|vbscript:)/i.test(href)) {
+            return undefined;
+        }
+
+        // Allow safe in-portal and relative routes.
+        if (
+            href.startsWith("?") ||
+            href.startsWith("/") ||
+            href.startsWith("#")
+        ) {
+            return href;
+        }
+
+        // Allow explicit safe schemes only.
+        if (/^(https?:|mailto:|tel:)/i.test(href)) {
+            return href;
+        }
+
+        // Allow remaining non-schemed relative URLs like "id=contacts".
+        if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
+            return href;
+        }
+
+        return undefined;
+    }
+
+    function sanitizeTarget(rawTarget) {
+        const target = String(rawTarget || "_self").trim();
+        return ["_self", "_blank", "_parent", "_top"].includes(target)
+            ? target
+            : "_self";
+    }
+
     function init() {
         c.totalRecords = 0;
         c.totalPages = 0;
@@ -626,18 +1294,26 @@
         c.filtersDialogId = spUtil.createUid("xxxx-xxxx");
         c.limitSelectId = spUtil.createUid("xxxx-xxxx");
 
+        c.filterFieldMap = scmTableFilter.buildFilterFieldMap(
+            c.data.filterFields,
+        );
+        c.appliedFilters = [];
+        c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
+        c.columnSearchTerms = {};
+
         getTotalRecords();
         getTableData();
-        getBreadcrumbs();
 
         syncColumnSelectorLists();
 
         if (c.data.canFilter) {
             c.filters = [];
-            c.appliedFilters = [];
-            c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
             initializeFilters();
+            resolveReferenceFilterDisplayValues(c.filters);
+            ensureChoiceValuesForColumnSearch();
         }
+
+        syncColumnSearchTermsFromAppliedFilters();
 
         c.showTableHeader =
             (c.data.columns || []).filter((field) => field.label).length > 0;
@@ -655,6 +1331,7 @@
 #table-wrapper {
     width: 100%;
     overflow-x: auto;
+    overflow-y: visible;
 
     table {
         width: 100%;
@@ -714,6 +1391,79 @@
                             --scm-border-radius-small
                         );
                     }
+                }
+            }
+
+            .scm-table-column-search-row {
+                height: auto;
+                position: relative;
+                z-index: 20;
+
+                th {
+                    padding-top: var(--scm-spacing-1);
+                    padding-bottom: var(--scm-spacing-1);
+                    overflow: visible;
+                    height: auto;
+                    white-space: normal;
+                }
+
+                .scm-table-column-search-input {
+                    width: 100%;
+                    min-width: 0;
+                    box-sizing: border-box;
+                    font-size: var(--scm-font-size-medium);
+                    font-weight: 300;
+                    line-height: 24px;
+                    letter-spacing: 0.1px;
+                }
+
+                .scm-table-column-search-reference {
+                    position: relative;
+                    z-index: 50;
+                }
+
+                .scm-table-column-search-reference scm-ref-picker {
+                    display: block;
+                    position: relative;
+                    z-index: 60;
+                }
+
+                .scm-table-column-search-select {
+                    color: var(--scm-color-gray);
+                    height: var(--scm-reference-input-height);
+                    padding: var(--scm-spacing-1) var(--scm-padding-4);
+                    font-size: 18px;
+                    font-weight: 300;
+                    line-height: 24px;
+                    letter-spacing: 0.1px;
+                }
+
+                .scm-table-column-search-select--placeholder {
+                    color: var(--scm-color-gray-tint-5);
+                }
+
+                .scm-table-column-search-select option {
+                    color: var(--scm-color-gray);
+                }
+
+                .scm-table-column-search-reference .scm-reference-input {
+                    font-size: 18px;
+                    font-weight: 300;
+                    line-height: 24px;
+                    letter-spacing: 0.1px;
+                    padding-top: var(--scm-spacing-1);
+                    padding-bottom: var(--scm-spacing-1);
+                }
+
+                .scm-table-column-search-reference
+                    .scm-reference-input::placeholder {
+                    color: var(--scm-color-gray-tint-5);
+                }
+
+                .scm-table-column-search-reference
+                    .scm-reference-dropdown-container,
+                .scm-table-column-search-reference .scm-autocomplete-list {
+                    z-index: 70;
                 }
             }
         }
@@ -929,11 +1679,37 @@
         color: var(--scm-color-gray);
         font-weight: var(--scm-font-weight-light);
         font-size: var(--scm-font-size-xsmall);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--scm-spacing-1);
+
+        em {
+            font-style: italic;
+            color: var(--scm-color-int-blue);
+        }
 
         .filter-separator {
-            margin: 0 var(--scm-spacing-2);
-            font-weight: var(--scm-font-weight-semibold);
+            margin: 0 var(--scm-spacing-1);
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .filter-separator--or {
             color: var(--scm-color-int-blue);
+            font-weight: var(--scm-font-weight-semibold);
+        }
+
+        .filter-separator--and {
+            color: var(--scm-color-gray-shade-5, #aaa);
+            font-weight: var(--scm-font-weight-semibold);
+        }
+
+        .filter-bracket-open,
+        .filter-bracket-close {
+            color: var(--scm-color-int-blue);
+            font-weight: var(--scm-font-weight-semibold);
+            margin: 0 2px;
         }
     }
 }
@@ -1123,9 +1899,6 @@
  *   @param  {Array}  appliedFilters - Active filter objects from the client.
  *   @return {string} HTML string describing the active filters (rendered below the toolbar).
  *
- * getBreadcrumbs()
- *   @return {Array<{title: string, link: string}>} Breadcrumb items for the page.
- *
  * getChoiceValues(fieldName)
  *   @param  {string} fieldName - Field whose choice list is needed.
  *   @return {Array<{value: string, label: string}>}
@@ -1145,12 +1918,14 @@
  *   @return {Array<Object>} Filter field configurations. Each object must include:
  *     - field      {string}            Field name to filter on.
  *     - label      {string}            Display label.
- *     - type       {string}            "choice" | "reference" | "string".
+ *     - type       {string}            "choice" | "reference" | "string" | "date".
  *     For type "reference", also include:
  *     - referenceTable     {string}
  *     - displayField       {string}
  *     - displayFields      {string}    Semicolon-separated fields to display.
  *     - searchFields       {string}    Semicolon-separated fields to search.
+ *     - referenceSearchField {string}  Optional preferred field for text operators
+ *                                      (e.g. starts with/contains/ends with).
  *     - referenceQualifier {string}
  *     - placeholder        {string}
  *     - pageSize           {string}
@@ -1178,12 +1953,20 @@
  *     - layout {string}  "stack" | "inline"
  *     - blocks {Array<{ value: string, className?: string, href?: string }>}
  *
- * getPrimaryCellClickAction()
- *   @return {Object} Action for first-cell click.
- *     Supported shapes:
- *     - { type: "link", urlField: "_primaryLink" }
- *     - { type: "event", eventName: "my:event", payloadField: "_primaryPayload" }
- *   The provider must populate those fields in each record returned by getTableData().
+ * getRowClickAction()
+ *   @return {Object} Row click behavior and action.
+ *     Supported shape:
+ *     {
+ *       target: "firstColumn" | "row" | "none",
+ *       action: {
+ *         type: "link" | "event",
+ *         urlField?: string,
+ *         eventName?: string,
+ *         payloadField?: string,
+ *         payload?: Object
+ *       }
+ *     }
+ *   The provider must populate referenced fields in each record returned by getTableData().
  *
  * getOrderBy()
  *   @return {string} Field name to sort by.
@@ -1197,9 +1980,23 @@
  * getTableColumns()
  *   @return {Array<{name: string, label: string, width?: string, minWidth?: string, maxWidth?: string}>}
  *     Active columns to render (respects user preferences if applicable).
+ *     Optional per-column rendering keys:
+ *       - sourceField     {string}   Field or dot-walk used to read value for this column.
+ *       - useDisplayValue {boolean}  true (default) uses getDisplayValue, false uses getValue.
  *
  * getTableData({ filters, page })
- *   @param  {Array}  filters - Applied filter objects from the client.
+ *   @param  {Array<Object>}  filters - Applied filter conditions from the client.
+ *     Condition shape:
+ *       - field              {string}
+ *       - label              {string}
+ *       - type               {string}
+ *       - operator           {string}  (e.g. is, is_not, contains, between, ...)
+ *       - value              {string}
+ *       - valueTo            {string}  Optional second value for between.
+ *       - referenceTable     {string}  For reference type.
+ *       - displayField       {string}  For reference type.
+ *       - searchFields       {string}  For reference type.
+ *       - referenceSearchField {string} Optional per-field override for reference text operators.
  *   @param  {number} page    - Current page number (1-based).
  *   @return {Array<Object>}  Array of plain objects. Each object must contain a key
  *                            per active column name plus the id field.
@@ -1209,8 +2006,16 @@
  *   @return {number} Number of records per page.
  *
  * getTotalRecords(filters)
- *   @param  {Array}  filters - Applied filter objects from the client.
+ *   @param  {Array<Object>} filters - Same condition shape as getTableData().
  *   @return {number} Total matching record count (used for pagination).
+ *
+ * getReferenceSearchField(filter, operator)
+ *   Optional override in providers.
+ *   @param {Object} filter   - One filter condition.
+ *   @param {string} operator - Normalized operator.
+ *   @return {string} Reference target field used for text operators on references.
+ *                    Can be either "fieldName" (appended to reference dot-walk)
+ *                    or full dot-walk path.
  *
  * saveUserPreference(preferenceName, preferenceValue)
  *   @param {string} preferenceName  - "columns" | "orderBy" | "orderDirection" | "limit".
@@ -1222,6 +2027,16 @@
  *
  * showTableMetadata()
  *   @return {boolean} Whether the metadata bar (record count, pagination info) is visible.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SERVER ACTIONS USED BY CLIENT
+ * ─────────────────────────────────────────────────────────────────────────────
+ * getChoiceValues            -> data.choiceValues
+ * getReferenceDisplayValue   -> data.displayValue
+ * getTableColumns            -> data.columns
+ * getTableData               -> data.records + data.orderBy + data.orderDirection
+ * getTotalRecords            -> data.totalRecords
+ * getAppliedFiltersInfoMessage -> data.appliedFiltersHtml
  * ─────────────────────────────────────────────────────────────────────────────
  */
 (function () {
@@ -1281,14 +2096,19 @@
     }
 
     if (input && input.action === "getAppliedFiltersInfoMessage") {
-        data.appliedFiltersHtml = widgetHelper.getAppliedFiltersInfoMessage(
-            input.appliedFilters,
-        );
+        const filtersForMessage = resolveEffectiveFilters(input.appliedFilters);
+
+        data.appliedFiltersHtml =
+            widgetHelper.getAppliedFiltersInfoMessage(filtersForMessage);
         return;
     }
 
     if (input && input.action === "getTotalRecords") {
-        data.totalRecords = widgetHelper.getTotalRecords(input.filters);
+        const effectiveFiltersForCount = resolveEffectiveFilters(input.filters);
+
+        data.totalRecords = widgetHelper.getTotalRecords(
+            effectiveFiltersForCount,
+        );
         return;
     }
 
@@ -1297,8 +2117,8 @@
         return;
     }
 
-    if (input && input.action === "getBreadcrumbs") {
-        data.breadcrumbs = widgetHelper.getBreadcrumbs();
+    if (input && input.action === "getReferenceDisplayValue") {
+        data.displayValue = getReferenceDisplayValue(input.table, input.sysId);
         return;
     }
 
@@ -1318,6 +2138,7 @@
 
     if (input && input.action === "getTableData") {
         const columns = normalizeColumns(widgetHelper.getTableColumns());
+        const effectiveFilters = resolveEffectiveFilters(input.filters);
 
         if (typeof widgetHelper.getCellContent !== "function") {
             logger.error(
@@ -1330,7 +2151,7 @@
         }
 
         const providerRecords = widgetHelper.getTableData({
-            filters: input.filters,
+            filters: effectiveFilters,
             page: input.page,
         });
 
@@ -1362,7 +2183,15 @@
     data.idField = widgetHelper.getIdField();
 
     data.canFilter = widgetHelper.canFilter();
-    data.filterFields = widgetHelper.getFilterFields();
+    data.filterFields = buildUnifiedFilterFields(
+        widgetHelper.getAllAvailableColumns(),
+        widgetHelper.getFilterFields(),
+    );
+
+    if (data.canFilter && data.filterFields.length === 0) {
+        data.canFilter = false;
+    }
+
     data.limit = widgetHelper.getTableLimit();
 
     data.canSavePreferences = widgetHelper.canSavePreferences();
@@ -1373,13 +2202,21 @@
     data.canConfigureColumns = widgetHelper.canConfigureColumns();
     data.showMetadata = widgetHelper.showTableMetadata();
     data.showAppliedFilters = widgetHelper.showAppliedFilters();
-    data.primaryCellClickAction = widgetHelper.getPrimaryCellClickAction();
+    data.rowClickAction =
+        typeof widgetHelper.getRowClickAction === "function"
+            ? widgetHelper.getRowClickAction()
+            : { target: "none", action: {} };
     data.hasContextMenu =
         typeof widgetHelper.getContextMenuItems === "function";
 })();
 
 function decorateRecords(widgetHelper, records, columns) {
     var hasContextMenu = typeof widgetHelper.getContextMenuItems === "function";
+    var rowClickAction =
+        typeof widgetHelper.getRowClickAction === "function"
+            ? widgetHelper.getRowClickAction()
+            : {};
+    var clickAction = rowClickAction.action || {};
 
     return (records || []).map(function (record) {
         var decoratedRecord = Object.assign({}, record);
@@ -1396,6 +2233,17 @@ function decorateRecords(widgetHelper, records, columns) {
             decoratedRecord.__contextMenuItems = normalizeContextMenuItems(
                 widgetHelper.getContextMenuItems(record),
             );
+        }
+
+        // Ensure custom providers returning plain objects preserve link fields.
+        if (clickAction.type === "link" && clickAction.urlField) {
+            var urlField = clickAction.urlField;
+            if (
+                !decoratedRecord.hasOwnProperty(urlField) &&
+                record.hasOwnProperty(urlField)
+            ) {
+                decoratedRecord[urlField] = record[urlField];
+            }
         }
 
         return decoratedRecord;
@@ -1458,7 +2306,10 @@ function normalizeCellBlock(block) {
     }
 
     if (typeof block.href === "string" && block.href) {
-        normalized.href = block.href;
+        var safeBlockHref = sanitizeHref(block.href);
+        if (safeBlockHref) {
+            normalized.href = safeBlockHref;
+        }
     }
 
     return normalized;
@@ -1492,9 +2343,17 @@ function normalizeContextMenuItem(item) {
     }
 
     if (typeof item.action.href === "string" && item.action.href) {
-        normalizedAction.href = item.action.href;
-        if (typeof item.action.target === "string" && item.action.target) {
-            normalizedAction.target = item.action.target;
+        var safeActionHref = sanitizeHref(item.action.href);
+        if (safeActionHref) {
+            normalizedAction.href = safeActionHref;
+        }
+
+        if (
+            normalizedAction.href &&
+            typeof item.action.target === "string" &&
+            item.action.target
+        ) {
+            normalizedAction.target = sanitizeTarget(item.action.target);
         }
     }
 
@@ -1538,13 +2397,12 @@ function validateProviderContract(widgetHelper, logger) {
         "canConfigureColumns",
         "getAllAvailableColumns",
         "getAppliedFiltersInfoMessage",
-        "getBreadcrumbs",
         "getChoiceValues",
         "getDefaultColumns",
         "getDetailViewPage",
         "getFilterFields",
         "getIdField",
-        "getPrimaryCellClickAction",
+        "getRowClickAction",
         "getCellContent",
         "getOrderBy",
         "getOrderDirection",
@@ -1571,6 +2429,10 @@ function validateProviderContract(widgetHelper, logger) {
     }
 
     return true;
+}
+
+function resolveEffectiveFilters(filters) {
+    return Array.isArray(filters) ? filters : [];
 }
 
 function normalizeColumns(columns) {
@@ -1607,7 +2469,157 @@ function normalizeColumn(column) {
         normalized.maxWidth = column.maxWidth;
     }
 
+    if (typeof column.sourceField === "string" && column.sourceField) {
+        normalized.sourceField = column.sourceField;
+    }
+
+    if (typeof column.useDisplayValue === "boolean") {
+        normalized.useDisplayValue = column.useDisplayValue;
+    }
+
     return normalized;
+}
+
+function buildUnifiedFilterFields(allColumns, configuredFilterFields) {
+    var configuredMap = {};
+    var configured = normalizeFilterFields(configuredFilterFields);
+
+    for (var i = 0; i < configured.length; i++) {
+        configuredMap[configured[i].field] = configured[i];
+    }
+
+    var unified = [];
+    var normalizedAllColumns = normalizeColumns(allColumns);
+
+    for (var j = 0; j < normalizedAllColumns.length; j++) {
+        var column = normalizedAllColumns[j];
+        if (!column || !column.name) {
+            continue;
+        }
+
+        if (configuredMap[column.name]) {
+            unified.push(configuredMap[column.name]);
+            continue;
+        }
+
+        unified.push({
+            field: column.name,
+            label: column.label || column.name,
+            type: "string",
+        });
+    }
+
+    // Keep explicitly configured filter fields that are not present in columns.
+    for (var k = 0; k < configured.length; k++) {
+        var configuredField = configured[k];
+        var existsInUnified = unified.some(function (item) {
+            return item.field === configuredField.field;
+        });
+
+        if (!existsInUnified) {
+            unified.push(configuredField);
+        }
+    }
+
+    return unified;
+}
+
+function normalizeFilterFields(filterFields) {
+    if (!Array.isArray(filterFields)) {
+        return [];
+    }
+
+    return filterFields
+        .map(normalizeFilterField)
+        .filter(Boolean);
+}
+
+function normalizeFilterField(filterField) {
+    if (!filterField || typeof filterField !== "object") {
+        return null;
+    }
+
+    var fieldName =
+        typeof filterField.field === "string" ? filterField.field.trim() : "";
+
+    if (!fieldName) {
+        return null;
+    }
+
+    var normalized = Object.assign({}, filterField);
+    normalized.field = fieldName;
+    normalized.label =
+        typeof filterField.label === "string" && filterField.label
+            ? filterField.label
+            : fieldName;
+    normalized.type =
+        typeof filterField.type === "string" && filterField.type
+            ? filterField.type
+            : "string";
+
+    return normalized;
+}
+
+function getReferenceDisplayValue(tableName, sysId) {
+    if (!tableName || !sysId) {
+        return "";
+    }
+
+    try {
+        var gr = new GlideRecord(tableName);
+        if (gr.get(sysId)) {
+            return gr.getDisplayValue() || "";
+        }
+    } catch (error) {
+        // Return empty string on lookup failures to keep client flow resilient.
+    }
+
+    return "";
+}
+
+function sanitizeHref(rawHref) {
+    if (!rawHref) {
+        return "";
+    }
+
+    var href = String(rawHref).trim();
+    if (!href) {
+        return "";
+    }
+
+    if (/^(javascript:|data:|vbscript:)/i.test(href)) {
+        return "";
+    }
+
+    if (
+        href.indexOf("?") === 0 ||
+        href.indexOf("/") === 0 ||
+        href.indexOf("#") === 0
+    ) {
+        return href;
+    }
+
+    if (/^(https?:|mailto:|tel:)/i.test(href)) {
+        return href;
+    }
+
+    if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
+        return href;
+    }
+
+    return "";
+}
+
+function sanitizeTarget(rawTarget) {
+    var target = String(rawTarget || "_self").trim();
+    var allowedTargets = {
+        _self: true,
+        _blank: true,
+        _parent: true,
+        _top: true,
+    };
+
+    return allowedTargets[target] ? target : "_self";
 }
 ]]></script>
         <servicenow>false</servicenow>
@@ -1615,14 +2627,14 @@ function normalizeColumn(column) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 20:53:34</sys_created_on>
         <sys_id>22eb7fd693ad071040fcb6597bba107f</sys_id>
-        <sys_mod_count>42</sys_mod_count>
+        <sys_mod_count>105</sys_mod_count>
         <sys_name>scm-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_22eb7fd693ad071040fcb6597bba107f</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 10:17:13</sys_updated_on>
+        <sys_updated_on>2026-06-21 21:25:25</sys_updated_on>
         <template><![CDATA[<div ng-if="!data.redirectTo404">
     <div id="table-header" ng-if="data.title || data.showNewRecordButton">
         <h1 class="h1" ng-bind="::data.title" ng-if="::data.title"></h1>
@@ -1657,9 +2669,6 @@ function normalizeColumn(column) {
         id="applied-filters-wrapper"
         ng-if="c.appliedFilters && c.appliedFilters.length > 0 && data.showAppliedFilters"
     >
-        <div id="applied-filters-header">
-            <span ng-bind="::'Applied filters:'"></span>
-        </div>
         <div id="applied-filters-list">
             <span ng-bind-html="c.appliedFiltersHtml"></span>
         </div>
@@ -1669,6 +2678,7 @@ function normalizeColumn(column) {
             <thead ng-if="c.showTableHeader">
                 <tr>
                     <th
+                        class="text-truncate"
                         ng-repeat="field in c.data.columns"
                         ng-style="c.getColumnStyle(field)"
                         ng-attr-aria-sort="{{ c.data.orderBy === field.name ? (c.data.orderDirection === 'ASC' ? 'ascending' : 'descending') : 'none' }}"
@@ -1694,12 +2704,87 @@ function normalizeColumn(column) {
                         ></sdx-icon>
                     </th>
                 </tr>
+                <tr
+                    class="scm-table-column-search-row"
+                    ng-if="c.shouldShowColumnSearchRow()"
+                >
+                    <th
+                        ng-repeat="field in c.data.columns"
+                        ng-style="c.getColumnStyle(field)"
+                    >
+                        <sdx-input
+                            ng-if="c.getColumnSearchControlType(field.name) === 'string'"
+                            type="text"
+                            label=""
+                            class="scm-table-column-search-input"
+                            sr-hint="Column search"
+                            ng-model="c.columnSearchTerms[field.name]"
+                            change-callback="sdxInputHandler(this)"
+                            scm-model-provider
+                            ng-click="$event.stopPropagation()"
+                            ng-keyup="c.onColumnSearchKeyUp($event)"
+                            ng-attr-placeholder="Search {{ field.label || field.name }}"
+                            aria-label="Column search"
+                            title="Syntax: text = starts with, =text = is, *text = contains. Press Enter to search"
+                        ></sdx-input>
+                        <select
+                            ng-if="c.getColumnSearchControlType(field.name) === 'choice'"
+                            class="input scm-table-column-search-input scm-table-column-search-select"
+                            ng-class="{ 'scm-table-column-search-select--placeholder': !c.columnSearchTerms[field.name] }"
+                            ng-model="c.columnSearchTerms[field.name]"
+                            ng-change="c.onColumnSearchChange()"
+                            ng-click="$event.stopPropagation()"
+                            aria-label="Column search"
+                        >
+                            <option value="">
+                                Select {{ field.label || field.name }}
+                            </option>
+                            <option
+                                ng-repeat="choice in c.getColumnSearchChoiceOptions(field.name) track by choice.value"
+                                ng-value="choice.value"
+                            >
+                                {{ choice.label }}
+                            </option>
+                        </select>
+                        <div
+                            ng-if="c.getColumnSearchControlType(field.name) === 'reference'"
+                            class="scm-table-column-search-reference"
+                            ng-click="$event.stopPropagation()"
+                        >
+                            <scm-ref-picker
+                                label=""
+                                table="{{ c.getColumnSearchReferenceConfig(field.name).referenceTable }}"
+                                display-field="{{ c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                                search-fields="{{ c.getColumnSearchReferenceConfig(field.name).searchFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                                placeholder="Search {{ field.label || field.name }}"
+                                reference-qualifier="{{ c.getColumnSearchReferenceConfig(field.name).referenceQualifier }}"
+                                page-size="{{ c.getColumnSearchReferenceConfig(field.name).pageSize }}"
+                                minimum-input-length="{{ c.getColumnSearchReferenceConfig(field.name).minimumInputLength || 3 }}"
+                                display-fields="{{ c.getColumnSearchReferenceConfig(field.name).displayFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                                order-by="{{ c.getColumnSearchReferenceConfig(field.name).orderBy }}"
+                                order-direction="{{ c.getColumnSearchReferenceConfig(field.name).orderDirection }}"
+                                ng-model="c.columnSearchTerms[field.name]"
+                                ng-change="c.onColumnSearchChange()"
+                            ></scm-ref-picker>
+                        </div>
+                        <input
+                            ng-if="c.getColumnSearchControlType(field.name) === 'none'"
+                            type="text"
+                            class="input scm-table-column-search-input"
+                            value=""
+                            disabled
+                            ng-attr-placeholder="Search not available"
+                            aria-label="Column search unavailable"
+                        />
+                    </th>
+                </tr>
             </thead>
             <tbody>
                 <tr
                     ng-repeat="record in c.records track by $index"
                     ng-if="!c.showSpinner"
                     scm-contextmenu="c.onRowContextMenu($event, record)"
+                    ng-click="c.onTableRowClick($event, record)"
                 >
                     <td
                         ng-repeat="field in c.data.columns"
@@ -1709,53 +2794,65 @@ function normalizeColumn(column) {
                     >
                         <a
                             class="scm-table-cell-block-link"
-                            ng-if="c.shouldUsePrimaryCellLink(record, field, $first)"
-                            ng-attr-href="{{ c.getPrimaryCellHref(record) }}"
-                            ng-click="c.onPrimaryCellClick($event, record, field)"
+                            ng-if="c.shouldHandleRowClick(record, field, $first) && c.getRowClickAction().action.type === 'link'"
+                            ng-attr-href="{{ c.getRowClickHref(record) }}"
+                            ng-click="c.onRowClick($event, record)"
                         >
                             <span
                                 ng-repeat="block in c.getCellBlocks(record, field) track by $index"
                                 class="scm-table-cell-block"
                                 ng-class="block.className"
                                 ng-attr-title="{{ block.value }}"
-                                ng-bind="block.value"
-                            ></span>
+                            >
+                                <sdx-text-truncate
+                                    >{{ block.value }}</sdx-text-truncate
+                                >
+                            </span>
                         </a>
                         <button
                             type="button"
                             class="scm-table-cell-block-button"
-                            ng-if="c.shouldUsePrimaryCellEvent(record, field, $first)"
-                            ng-click="c.onPrimaryCellClick($event, record, field)"
+                            ng-if="c.shouldHandleRowClick(record, field, $first) && c.getRowClickAction().action.type !== 'link'"
+                            ng-click="c.onRowClick($event, record)"
                         >
                             <span
                                 ng-repeat="block in c.getCellBlocks(record, field) track by $index"
-                                class="scm-table-cell-block"
+                                class="scm-table-cell-block text-truncate"
                                 ng-class="block.className"
                                 ng-attr-title="{{ block.value }}"
-                                ng-bind="block.value"
-                            ></span>
+                            >
+                                <sdx-text-truncate
+                                    >{{ block.value }}</sdx-text-truncate
+                                >
+                            </span>
                         </button>
                         <span
-                            ng-if="!c.shouldUsePrimaryCellLink(record, field, $first) && !c.shouldUsePrimaryCellEvent(record, field, $first)"
+                            ng-if="!c.shouldHandleRowClick(record, field, $first)"
                             class="scm-table-cell-block-group"
                         >
                             <a
                                 ng-repeat="block in c.getCellBlocks(record, field) track by $index"
                                 ng-if="c.getBlockHref(block)"
-                                class="scm-table-cell-block scm-table-cell-block-link"
+                                class="scm-table-cell-block scm-table-cell-block-link text-truncate"
                                 ng-attr-href="{{ c.getBlockHref(block) }}"
                                 ng-class="block.className"
                                 ng-attr-title="{{ block.value }}"
-                                ng-bind="block.value"
-                            ></a>
+                            >
+                                <sdx-text-truncate
+                                    >{{ block.value }}</sdx-text-truncate
+                                >
+                            </a>
                             <span
                                 ng-repeat="block in c.getCellBlocks(record, field) track by $index"
                                 ng-if="!c.getBlockHref(block)"
-                                class="scm-table-cell-block"
+                                class="scm-table-cell-block text-truncate"
                                 ng-class="block.className"
                                 ng-attr-title="{{ block.value }}"
-                                ng-bind="block.value"
-                            ></span>
+                            >
+                                <sdx-text-truncate
+                                    >{{ block.value }}</sdx-text-truncate
+                                >
+                            </span>
                         </span>
                     </td>
                 </tr>

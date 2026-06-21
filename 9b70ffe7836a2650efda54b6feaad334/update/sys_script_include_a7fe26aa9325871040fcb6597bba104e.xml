@@ -32,6 +32,29 @@ BaseTableProvider.prototype = {
             orderDirection: this.configObject.order_direction_preference_name,
             limit: this.configObject.limit_preference_name,
         };
+
+        // Initialize helper classes
+        this.queryBuilder = new TableQueryBuilder({
+            logger: this.logger,
+            configObject: this.configObject,
+        });
+
+        this.filterApplier = new TableFilterApplier({
+            logger: this.logger,
+            configObject: this.configObject,
+            queryBuilder: this.queryBuilder,
+        });
+
+        this.recordDecorator = new TableRecordDecorator({
+            logger: this.logger,
+            configObject: this.configObject,
+            provider: this,
+        });
+
+        this.htmlGenerator = new TableHTMLGenerator({
+            logger: this.logger,
+            queryBuilder: this.queryBuilder,
+        });
     },
 
     canCreate: function () {
@@ -56,7 +79,8 @@ BaseTableProvider.prototype = {
     canFilter: function () {
         return (
             this.configObject.can_filter === "true" &&
-            (this.configObject.filter_fields || []).length > 0
+            ((this.configObject.filter_fields || []).length > 0 ||
+                (this.configObject.columns || []).length > 0)
         );
     },
 
@@ -76,62 +100,7 @@ BaseTableProvider.prototype = {
     },
 
     getAppliedFiltersInfoMessage: function (appliedFilters) {
-        appliedFilters = appliedFilters || [];
-        var htmlString = "";
-
-        try {
-            for (var i = 0; i < appliedFilters.length; i++) {
-                var filter = appliedFilters[i];
-                var isLastFilter = i === appliedFilters.length - 1;
-
-                if (filter.type === "reference") {
-                    var grRef = new GlideRecord(filter.referenceTable);
-                    if (grRef.get(filter.value)) {
-                        /* prettier-ignore */
-                        htmlString += "<span>" + this._escapeHtml(filter.label) + " = " + this._escapeHtml(grRef.getDisplayValue()) + "</span>";
-                    } else {
-                        /* prettier-ignore */
-                        htmlString += "<span>" + this._escapeHtml(filter.label) + " = " + this._escapeHtml(filter.value) + "</span>";
-                    }
-                }
-
-                if (filter.type === "choice") {
-                    var choiceValues = filter.choiceValues || [];
-                    var displayValue = filter.value;
-
-                    for (var j = 0; j < choiceValues.length; j++) {
-                        if (choiceValues[j].value === filter.value) {
-                            displayValue = choiceValues[j].label;
-                            break;
-                        }
-                    }
-                    /* prettier-ignore */
-                    htmlString += "<span>" + this._escapeHtml(filter.label) + " = " + this._escapeHtml(displayValue) + "</span>";
-                }
-
-                if (filter.type === "string") {
-                    /* prettier-ignore */
-                    htmlString += "<span>" + this._escapeHtml(filter.label) + " = " + this._escapeHtml(filter.value) + "</span>";
-                }
-
-                if (!isLastFilter) {
-                    htmlString += '<span class="filter-separator">></span>';
-                }
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getAppliedFiltersInfoMessage",
-                message: "Error generating applied filters info message",
-                error: error.message,
-                appliedFilters: appliedFilters,
-            });
-        }
-
-        return htmlString;
-    },
-
-    getBreadcrumbs: function () {
-        return this.configObject.breadcrumbs || [];
+        return this.htmlGenerator.getAppliedFiltersInfoMessage(appliedFilters);
     },
 
     getChoiceValues: function (fieldName) {
@@ -150,6 +119,7 @@ BaseTableProvider.prototype = {
             grTable.addQuery("name", hierarchy[iterator]);
             grTable.addQuery("element", fieldName);
             grTable.addQuery("inactive", false);
+            grTable.orderBy("sequence");
             grTable.query();
 
             while (grTable.next()) {
@@ -184,10 +154,13 @@ BaseTableProvider.prototype = {
         return this.configObject.id_field || "sys_id";
     },
 
-    getPrimaryCellClickAction: function () {
+    getRowClickAction: function () {
         return {
-            type: "link",
-            urlField: "_primaryLink",
+            target: "firstColumn",
+            action: {
+                type: "link",
+                urlField: "_primaryLink",
+            },
         };
     },
 
@@ -311,8 +284,14 @@ BaseTableProvider.prototype = {
             grRecord.query();
 
             while (grRecord.next()) {
-                var record = this._buildBaseRecord(grRecord, columns);
-                var decoratedRecord = this._decorateRecord(record, grRecord);
+                var record = this.recordDecorator.buildBaseRecord(
+                    grRecord,
+                    columns,
+                );
+                var decoratedRecord = this.recordDecorator.decorateRecord(
+                    record,
+                    grRecord,
+                );
                 records.push(decoratedRecord || record);
             }
 
@@ -412,95 +391,70 @@ BaseTableProvider.prototype = {
     },
 
     _applyFilters: function (glideRecord, filters) {
-        filters = filters || [];
+        this.filterApplier.applyFilters(glideRecord, filters);
+    },
 
-        if (
-            !glideRecord ||
-            typeof glideRecord.addQuery !== "function" ||
-            typeof glideRecord.addEncodedQuery !== "function"
-        ) {
-            this.logger.warn({
-                method: "_applyFilters",
-                message: "Invalid GlideRecord provided for filtering",
-            });
-            return;
-        }
+    _buildEncodedFilterClause: function (filter) {
+        return this.queryBuilder.buildEncodedFilterClause(filter);
+    },
 
-        if (this.configObject.static_query) {
-            glideRecord.addEncodedQuery(this.configObject.static_query);
-        }
+    _buildDateEncodedClause: function (queryField, operator, value, valueTo) {
+        return this.queryBuilder.buildDateEncodedClause(
+            queryField,
+            operator,
+            value,
+            valueTo,
+        );
+    },
 
-        for (var i = 0; i < filters.length; i++) {
-            var filter = filters[i];
+    _normalizeDateValue: function (value) {
+        return this.queryBuilder.normalizeDateValue(value);
+    },
 
-            if (
-                !filter ||
-                !filter.field ||
-                filter.value == null ||
-                filter.value === ""
-            ) {
-                continue;
-            }
+    _operatorNeedsValue: function (operator) {
+        return this.queryBuilder.operatorNeedsValue(operator);
+    },
 
-            switch (filter.type) {
-                case "choice":
-                case "reference":
-                    glideRecord.addQuery(filter.field, filter.value);
-                    break;
-                case "string":
-                    /* prettier-ignore */
-                    glideRecord.addQuery(filter.field, "CONTAINS", filter.value);
-                    break;
-                default:
-                    this.logger.warn({
-                        method: "_applyFilters",
-                        message: "Unknown filter type",
-                        filter: filter,
-                    });
-                    break;
-            }
-        }
+    _applyOperatorFilter: function (glideRecord, filter, operator) {
+        this.filterApplier.applyOperatorFilter(glideRecord, filter, operator);
+    },
+
+    _isReferenceTextOperator: function (operator) {
+        return this.queryBuilder.isReferenceTextOperator(operator);
+    },
+
+    _resolveReferenceTextQueryField: function (filter, operator) {
+        return this.queryBuilder.resolveReferenceTextQueryField(
+            filter,
+            operator,
+        );
+    },
+
+    getReferenceSearchFieldMap: function () {
+        return this.queryBuilder.getReferenceSearchFieldMap();
+    },
+
+    getReferenceSearchField: function (filter) {
+        return this.queryBuilder.resolveReferenceSearchField(filter);
     },
 
     _escapeHtml: function (value) {
-        return String(value == null ? "" : value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/\"/g, "&quot;")
-            .replace(/'/g, "&#39;");
+        return this.htmlGenerator.escapeHtml(value);
     },
 
     _buildBaseRecord: function (glideRecord, columns) {
-        var record = {};
+        return this.recordDecorator.buildBaseRecord(glideRecord, columns);
+    },
 
-        for (var i = 0; i < columns.length; i++) {
-            var columnName = columns[i].name;
-            record[columnName] = glideRecord.getDisplayValue(columnName) || "";
-        }
-
-        record.sys_id = glideRecord.getUniqueValue();
-
-        var primaryAction = this.getPrimaryCellClickAction() || {};
-        var urlField = primaryAction.urlField || "_primaryLink";
-
-        if (
-            primaryAction.type === "link" &&
-            urlField &&
-            !record.hasOwnProperty(urlField)
-        ) {
-            record[urlField] = this._buildPrimaryLink(record);
-        }
-
-        return record;
+    _resolveColumnValue: function (glideRecord, column) {
+        return this.recordDecorator.resolveColumnValue(glideRecord, column);
     },
 
     _buildPrimaryLink: function (record) {
-        /* prettier-ignore */
-        return ("?id=" + this.getDetailViewPage() + "&scm_record_id=" + (record[this.getIdField()] || ""));
+        return this.recordDecorator.buildPrimaryLink(record);
     },
 
-    _decorateRecord: function (record) {
+    decorateRecord: function (record, glideRecord) {
         return record;
     },
 
@@ -515,13 +469,13 @@ BaseTableProvider.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-21 09:55:58</sys_created_on>
         <sys_id>a7fe26aa9325871040fcb6597bba104e</sys_id>
-        <sys_mod_count>1</sys_mod_count>
+        <sys_mod_count>21</sys_mod_count>
         <sys_name>BaseTableProvider</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_a7fe26aa9325871040fcb6597bba104e</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 10:12:39</sys_updated_on>
+        <sys_updated_on>2026-06-21 21:11:24</sys_updated_on>
     </sys_script_include>
 </record_update>

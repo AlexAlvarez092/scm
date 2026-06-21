@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmTableFilter</name>
+        <script><![CDATA[function scmTableFilter(spUtil) {
+    "use strict";
+
+    function normalizeLogicalOperator(logicalOperator) {
+        return String(logicalOperator || "and").toLowerCase() === "or"
+            ? "or"
+            : "and";
+    }
+
+    function createEmptyFilterCondition() {
+        return {
+            id: spUtil.createUid("xxxx-xxxx"),
+            field: "",
+            label: "",
+            type: "",
+            logicalOperator: "and",
+            operator: "",
+            value: "",
+            valueTo: "",
+            choiceValues: [],
+            loading: false,
+        };
+    }
+
+    function getDefaultOperatorForType(type) {
+        if (type === "date") {
+            return "on";
+        }
+
+        if (type === "string") {
+            return "contains";
+        }
+
+        return "is";
+    }
+
+    function requiresConditionValue(condition) {
+        if (!condition || !condition.field || !condition.operator) {
+            return false;
+        }
+
+        return !["is_empty", "is_not_empty", "is_anything"].includes(
+            condition.operator,
+        );
+    }
+
+    function buildFilterFieldMap(filterFields) {
+        var map = {};
+
+        (filterFields || []).forEach(function (fieldConfig) {
+            if (!fieldConfig || !fieldConfig.field) {
+                return;
+            }
+
+            map[fieldConfig.field] = angular.copy(fieldConfig);
+        });
+
+        return map;
+    }
+
+    function populateConditionFromField(condition, fieldConfig, options) {
+        options = options || {};
+        var loadChoiceValues = options.loadChoiceValues;
+
+        if (!fieldConfig) {
+            condition.label = "";
+            condition.type = "";
+            condition.operator = "";
+            condition.value = "";
+            condition.valueTo = "";
+            condition.displayValue = "";
+            condition.choiceValues = [];
+            condition.loading = false;
+            condition.referenceTable = undefined;
+            condition.referenceSearchField = undefined;
+            condition.displayField = undefined;
+            condition.searchFields = undefined;
+            condition.placeholder = undefined;
+            condition.referenceQualifier = undefined;
+            condition.pageSize = undefined;
+            condition.minimumInputLength = 3;
+            condition.displayFields = undefined;
+            condition.orderBy = undefined;
+            condition.orderDirection = undefined;
+            return;
+        }
+
+        condition.label = fieldConfig.label || "";
+        condition.type = fieldConfig.type || "string";
+        condition.operator = getDefaultOperatorForType(condition.type);
+        condition.value = "";
+        condition.valueTo = "";
+        condition.displayValue = "";
+
+        condition.referenceTable = fieldConfig.referenceTable;
+        condition.referenceSearchField = fieldConfig.referenceSearchField;
+        condition.displayField = fieldConfig.displayField;
+        condition.searchFields =
+            fieldConfig.searchFields ||
+            fieldConfig.referenceSearchField ||
+            fieldConfig.displayField ||
+            "";
+        condition.placeholder =
+            fieldConfig.placeholder ||
+            (fieldConfig.label ? "Search " + fieldConfig.label : "Search");
+        condition.referenceQualifier = fieldConfig.referenceQualifier;
+        condition.pageSize = fieldConfig.pageSize;
+        condition.minimumInputLength = fieldConfig.minimumInputLength || 3;
+        condition.displayFields =
+            fieldConfig.displayFields || fieldConfig.displayField || "";
+        condition.orderBy = fieldConfig.orderBy;
+        condition.orderDirection = fieldConfig.orderDirection;
+
+        if (condition.type === "choice") {
+            if (typeof loadChoiceValues === "function") {
+                loadChoiceValues(condition);
+            }
+            return;
+        }
+
+        condition.choiceValues = [];
+        condition.loading = false;
+    }
+
+    function restoreFilterConditionsFromApplied(options) {
+        options = options || {};
+
+        var appliedFilters = options.appliedFilters || [];
+        var filterFieldMap = options.filterFieldMap || {};
+        var createEmpty =
+            options.createEmptyFilterCondition || createEmptyFilterCondition;
+        var populate = options.populateConditionFromField;
+
+        var filterConditions = [];
+
+        appliedFilters.forEach(function (appliedFilter) {
+            var condition = createEmpty();
+            condition.field = appliedFilter.field;
+
+            if (typeof populate === "function") {
+                populate(
+                    condition,
+                    filterFieldMap[appliedFilter.field] || null,
+                );
+            }
+
+            condition.operator = appliedFilter.operator || condition.operator;
+            condition.logicalOperator = normalizeLogicalOperator(
+                appliedFilter.logicalOperator,
+            );
+            condition.value = appliedFilter.value || "";
+            condition.valueTo = appliedFilter.valueTo || "";
+            condition.displayValue = appliedFilter.displayValue || "";
+            condition.source = appliedFilter.source || "";
+
+            filterConditions.push(condition);
+        });
+
+        return filterConditions.length ? filterConditions : [createEmpty()];
+    }
+
+    function buildDialogFilters(filters) {
+        if (!Array.isArray(filters)) {
+            return [];
+        }
+
+        return filters
+            .filter(function (filter) {
+                if (!filter || !filter.field) {
+                    return false;
+                }
+
+                if (!requiresConditionValue(filter)) {
+                    return true;
+                }
+
+                return filter.value != null && String(filter.value) !== "";
+            })
+            .map(function (filter) {
+                return {
+                    field: filter.field,
+                    label: filter.label,
+                    type: filter.type,
+                    logicalOperator: normalizeLogicalOperator(
+                        filter.logicalOperator,
+                    ),
+                    value: filter.value,
+                    valueTo: filter.valueTo,
+                    operator: filter.operator,
+                    choiceValues: filter.choiceValues,
+                    referenceTable: filter.referenceTable,
+                    referenceSearchField: filter.referenceSearchField,
+                    displayField: filter.displayField,
+                    searchFields: filter.searchFields,
+                    displayFields: filter.displayFields,
+                    referenceQualifier: filter.referenceQualifier,
+                    displayValue: filter.displayValue,
+                    source: filter.source,
+                    id: filter.id,
+                };
+            });
+    }
+
+    function getAppliedFiltersForRequests(appliedFilters) {
+        return Array.isArray(appliedFilters) ? appliedFilters : [];
+    }
+
+    function addFilterCondition(filters, afterIndex, logicalOperator) {
+        var nextFilters = Array.isArray(filters)
+            ? filters.slice()
+            : [createEmptyFilterCondition()];
+
+        var nextCondition = createEmptyFilterCondition();
+
+        if (
+            Number.isInteger(afterIndex) &&
+            afterIndex >= 0 &&
+            afterIndex < nextFilters.length
+        ) {
+            // Assign logicalOperator to the filter at afterIndex (the one being connected FROM)
+            nextFilters[afterIndex].logicalOperator =
+                normalizeLogicalOperator(logicalOperator);
+            // Add new condition after it
+            nextFilters.splice(afterIndex + 1, 0, nextCondition);
+        } else {
+            nextFilters.push(nextCondition);
+        }
+
+        return nextFilters;
+    }
+
+    function removeFilterCondition(filters, conditionIndex) {
+        if (!Array.isArray(filters)) {
+            return [createEmptyFilterCondition()];
+        }
+
+        var nextFilters = filters.slice();
+        nextFilters.splice(conditionIndex, 1);
+
+        if (nextFilters.length === 0) {
+            nextFilters.push(createEmptyFilterCondition());
+        }
+
+        return nextFilters;
+    }
+
+    function loadChoiceValues(options) {
+        options = options || {};
+
+        var server = options.server;
+        var transactionId = options.transactionId;
+        var tableProviderScriptInclude = options.tableProviderScriptInclude;
+        var filter = options.filter;
+        var choiceValuesCache = options.choiceValuesCache || {};
+        var choiceValueRequestState = options.choiceValueRequestState || {};
+        var requestKey =
+            String(transactionId || "") +
+            "::" +
+            String(tableProviderScriptInclude || "") +
+            "::" +
+            String((filter && filter.field) || "");
+        var requestId = (choiceValueRequestState[requestKey] || 0) + 1;
+        choiceValueRequestState[requestKey] = requestId;
+
+        if (!filter || !filter.field || !server) {
+            return Promise.resolve();
+        }
+
+        if (choiceValuesCache[filter.field]) {
+            filter.choiceValues = angular.copy(choiceValuesCache[filter.field]);
+            filter.loading = false;
+            return Promise.resolve(filter.choiceValues);
+        }
+
+        filter.loading = true;
+        return server
+            .get({
+                action: "getChoiceValues",
+                transactionId: transactionId,
+                tableProviderScriptInclude: tableProviderScriptInclude,
+                fieldName: filter.field,
+            })
+            .then(function (response) {
+                if (choiceValueRequestState[requestKey] !== requestId) {
+                    return [];
+                }
+
+                filter.choiceValues = response.data.choiceValues || [];
+                choiceValuesCache[filter.field] = angular.copy(
+                    filter.choiceValues,
+                );
+                filter.loading = false;
+                return filter.choiceValues;
+            })
+            .catch(function () {
+                if (choiceValueRequestState[requestKey] !== requestId) {
+                    return [];
+                }
+
+                filter.loading = false;
+                return [];
+            });
+    }
+
+    function resolveReferenceFilterDisplayValues(options) {
+        options = options || {};
+
+        var server = options.server;
+        var transactionId = options.transactionId;
+        var tableProviderScriptInclude = options.tableProviderScriptInclude;
+        var filters = options.filters || [];
+
+        if (!server) {
+            return Promise.resolve();
+        }
+
+        var referenceFilters = (filters || []).filter(function (filter) {
+            return (
+                filter &&
+                filter.type === "reference" &&
+                filter.referenceTable &&
+                filter.value
+            );
+        });
+
+        var requests = referenceFilters.map(function (filter) {
+            return server
+                .get({
+                    action: "getReferenceDisplayValue",
+                    transactionId: transactionId,
+                    tableProviderScriptInclude: tableProviderScriptInclude,
+                    table: filter.referenceTable,
+                    sysId: filter.value,
+                })
+                .then(function (response) {
+                    filter.displayValue = response.data.displayValue || "";
+                })
+                .catch(function () {
+                    filter.displayValue = filter.value || "";
+                });
+        });
+
+        return Promise.all(requests);
+    }
+
+    return {
+        createEmptyFilterCondition: createEmptyFilterCondition,
+        getDefaultOperatorForType: getDefaultOperatorForType,
+        requiresConditionValue: requiresConditionValue,
+        buildFilterFieldMap: buildFilterFieldMap,
+        populateConditionFromField: populateConditionFromField,
+        restoreFilterConditionsFromApplied: restoreFilterConditionsFromApplied,
+        buildDialogFilters: buildDialogFilters,
+        getAppliedFiltersForRequests: getAppliedFiltersForRequests,
+        addFilterCondition: addFilterCondition,
+        removeFilterCondition: removeFilterCondition,
+        loadChoiceValues: loadChoiceValues,
+        resolveReferenceFilterDisplayValues:
+            resolveReferenceFilterDisplayValues,
+    };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:24:58</sys_created_on>
+        <sys_id>150804f29321c71040fcb6597bba10e8</sys_id>
+        <sys_mod_count>9</sys_mod_count>
+        <sys_name>scmTableFilter</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_150804f29321c71040fcb6597bba10e8</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 21:11:26</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>

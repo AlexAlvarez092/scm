@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableRecordDecorator</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableRecordDecorator</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[/**
+ * TableRecordDecorator
+ *
+ * Responsible for building and decorating record objects from GlideRecord data.
+ * Handles column resolution, primary link building, and record transformation.
+ *
+ * @class
+ */
+var TableRecordDecorator = Class.create();
+TableRecordDecorator.prototype = {
+    initialize: function (params) {
+        params = params || {};
+        this.logger = params.logger;
+        this.configObject = params.configObject || {};
+        this.provider = params.provider;
+    },
+
+    /**
+     * Build a base record object from a GlideRecord.
+     *
+     * @param {GlideRecord} glideRecord
+     * @param {Array} columns
+     * @return {Object}
+     */
+    buildBaseRecord: function (glideRecord, columns) {
+        var record = {};
+
+        for (var i = 0; i < columns.length; i++) {
+            var column = columns[i] || {};
+            var columnName = column.name;
+
+            if (!columnName) {
+                continue;
+            }
+
+            record[columnName] = this.resolveColumnValue(glideRecord, column);
+        }
+
+        record.sys_id = glideRecord.getUniqueValue();
+
+        var rowClickAction =
+            typeof this.provider.getRowClickAction === "function"
+                ? this.provider.getRowClickAction()
+                : {};
+        var actionConfig = rowClickAction.action || {};
+        var urlField = actionConfig.urlField || "_primaryLink";
+
+        if (
+            actionConfig.type === "link" &&
+            urlField &&
+            !record.hasOwnProperty(urlField)
+        ) {
+            record[urlField] = this.buildPrimaryLink(record);
+        }
+
+        return record;
+    },
+
+    /**
+     * Resolve a column value from a GlideRecord.
+     *
+     * @param {GlideRecord} glideRecord
+     * @param {Object} column
+     * @return {string}
+     */
+    resolveColumnValue: function (glideRecord, column) {
+        var sourceField = column.sourceField || column.name;
+        var useDisplayValue = column.useDisplayValue !== false;
+        var value = "";
+
+        if (!sourceField) {
+            return value;
+        }
+
+        if (useDisplayValue) {
+            value = glideRecord.getDisplayValue(sourceField);
+        } else {
+            value = glideRecord.getValue(sourceField);
+
+            // getValue does not reliably support dot-walk fields.
+            if (value == null && sourceField.indexOf(".") !== -1) {
+                value = glideRecord.getDisplayValue(sourceField);
+            }
+        }
+
+        return value || "";
+    },
+
+    /**
+     * Build the primary link for a record.
+     *
+     * @param {Object} record
+     * @return {string}
+     */
+    buildPrimaryLink: function (record) {
+        /* prettier-ignore */
+        return ("?id=" + this.provider.getDetailViewPage() + "&scm_record_id=" + (record[this.provider.getIdField()] || ""));
+    },
+
+    /**
+     * Decorate a record after initial build.
+     * Override this method in subclasses for custom decoration.
+     *
+     * @param {Object} record
+     * @param {GlideRecord} glideRecord
+     * @return {Object}
+     */
+    decorateRecord: function (record, glideRecord) {
+        if (
+            !this.provider ||
+            typeof this.provider.decorateRecord !== "function"
+        ) {
+            return record;
+        }
+
+        try {
+            return this.provider.decorateRecord(record, glideRecord) || record;
+        } catch (error) {
+            if (this.logger) {
+                this.logger.error({
+                    method: "decorateRecord",
+                    message: "Error in provider decorateRecord hook",
+                    error: error.message,
+                    providerType: this.provider.type,
+                });
+            }
+        }
+
+        return record;
+    },
+
+    type: "TableRecordDecorator",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 16:18:04</sys_created_on>
+        <sys_id>4976c0329321c71040fcb6597bba10c6</sys_id>
+        <sys_mod_count>4</sys_mod_count>
+        <sys_name>TableRecordDecorator</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_4976c0329321c71040fcb6597bba10c6</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 18:30:47</sys_updated_on>
+    </sys_script_include>
+</record_update>

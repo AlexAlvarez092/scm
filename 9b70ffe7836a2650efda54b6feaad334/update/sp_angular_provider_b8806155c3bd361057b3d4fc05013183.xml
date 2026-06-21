@@ -5,13 +5,38 @@
     "use strict";
 
     const EVENT_NAME = "scm-navigation-breadcrumbs_set";
+    var currentBreadcrumbs = [];
+
+    function normalize(breadcrumbs) {
+        if (!Array.isArray(breadcrumbs)) {
+            return [];
+        }
+
+        return breadcrumbs
+            .filter(function (item) {
+                return !!item;
+            })
+            .map(function (item) {
+                return {
+                    title: String(item.title || ""),
+                    link: String(item.link || "#"),
+                    icon: item.icon ? String(item.icon) : "",
+                };
+            });
+    }
 
     function set(breadcrumbs) {
-        $rootScope.$broadcast(EVENT_NAME, breadcrumbs);
+        currentBreadcrumbs = normalize(breadcrumbs);
+        $rootScope.$broadcast(EVENT_NAME, currentBreadcrumbs);
+    }
+
+    function get() {
+        return currentBreadcrumbs.slice();
     }
 
     return {
         set: set,
+        get: get,
     };
 }
 ]]></script>
@@ -19,14 +44,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-12 21:05:06</sys_created_on>
         <sys_id>b8806155c3bd361057b3d4fc05013183</sys_id>
-        <sys_mod_count>5</sys_mod_count>
+        <sys_mod_count>6</sys_mod_count>
         <sys_name>scmBreadcrumbsManager</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_b8806155c3bd361057b3d4fc05013183</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 11:44:58</sys_updated_on>
+        <sys_updated_on>2026-06-21 15:12:27</sys_updated_on>
         <type>factory</type>
     </sp_angular_provider>
 </record_update>

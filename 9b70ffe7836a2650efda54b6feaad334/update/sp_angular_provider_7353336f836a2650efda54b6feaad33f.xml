@@ -9,14 +9,43 @@
         require: "ngModel",
         compile: function ($element, $attr) {
             return function (scope, element, attrs, ngModel) {
+                function readValueAttribute() {
+                    var newValue = element.attr("value");
+
+                    if (newValue == null) {
+                        newValue = "";
+                    }
+
+                    return newValue;
+                }
+
+                function syncModelFromAttribute() {
+                    var newValue = readValueAttribute();
+
+                    if (ngModel.$viewValue !== newValue) {
+                        ngModel.$setViewValue(newValue);
+                        ngModel.$setTouched();
+                    }
+                }
+
+                ngModel.$render = function () {
+                    var value = ngModel.$viewValue;
+
+                    if (Array.isArray(value)) {
+                        value = value.length ? value[0] : "";
+                    }
+
+                    if (value == null) {
+                        value = "";
+                    }
+
+                    element.attr("value", String(value));
+                };
+
                 var observer = new MutationObserver(function (mutations) {
                     mutations.forEach(function (mutation) {
                         if (mutation.attributeName === "value") {
-                            var newValue = element.val();
-                            if (ngModel.$viewValue !== newValue) {
-                                ngModel.$setViewValue(newValue);
-                                ngModel.$setTouched();
-                            }
+                            syncModelFromAttribute();
                         }
                     });
                 });
@@ -38,14 +67,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-07-11 18:09:00</sys_created_on>
         <sys_id>7353336f836a2650efda54b6feaad33f</sys_id>
-        <sys_mod_count>3</sys_mod_count>
+        <sys_mod_count>11</sys_mod_count>
         <sys_name>scmModelProvider</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_7353336f836a2650efda54b6feaad33f</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-07 12:38:07</sys_updated_on>
+        <sys_updated_on>2026-06-21 17:24:04</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>
