@@ -324,6 +324,7 @@
 
         link: (scope, element, attrs, ngModelCtrl) => {
             scope.ngModelCtrl = ngModelCtrl;
+            scope.activeFlyover = null;
 
             ngModelCtrl.$render = function () {
                 const sysId = ngModelCtrl.$viewValue;
@@ -349,42 +350,71 @@
             };
 
             scope.openFlyover = () => {
-                const flyover = new scmFlyover("scm-ref-picker-flyover", scope);
-                flyover.setAppendToBody(true);
-                flyover.setOptions({
+                if (!scope.activeFlyover) {
+                    scope.activeFlyover = new scmFlyover(
+                        "scm-ref-picker-flyover",
+                        scope,
+                    );
+                    scope.activeFlyover.setAppendToBody(true);
+                    scope.activeFlyover.setTitle("Advanced Search");
+                }
+
+                scope.activeFlyover.setOptions({
                     tableProviderScriptInclude:
                         scope.advancedSearchListProvider,
                 });
-                flyover.setTitle("Advanced Search");
-                scope.activeFlyover = flyover;
-                flyover.open();
+
+                scope.activeFlyover.open();
             };
 
-            scope.$on("scmRefPicker:select", (e, params) => {
-                const payload = params?.payload || {};
+            const unregisterSelect = scope.$on(
+                "scmRefPicker:select",
+                (e, params) => {
+                    const payload = params?.payload || {};
+
+                    if (
+                        payload.targetDisplayUid &&
+                        payload.targetDisplayUid !== scope.displayUid
+                    ) {
+                        return;
+                    }
+
+                    if (!payload.sysId) {
+                        return;
+                    }
+
+                    ngModelCtrl.$setViewValue(payload.sysId);
+                    scope.displayValue = payload.displayValue || "";
+                    scope.$applyAsync();
+
+                    if (
+                        payload.closeFlyover === true &&
+                        scope.activeFlyover &&
+                        scope.activeFlyover.isOpen()
+                    ) {
+                        scope.activeFlyover.close();
+                    }
+                },
+            );
+
+            scope.$on("$destroy", () => {
+                if (typeof unregisterSelect === "function") {
+                    unregisterSelect();
+                }
 
                 if (
-                    payload.targetDisplayUid &&
-                    payload.targetDisplayUid !== scope.displayUid
+                    scope.activeFlyover &&
+                    typeof scope.activeFlyover.destroy === "function"
                 ) {
-                    return;
-                }
-
-                if (!payload.sysId) {
-                    return;
-                }
-
-                ngModelCtrl.$setViewValue(payload.sysId);
-                scope.displayValue = payload.displayValue || "";
-                scope.$applyAsync();
-
-                if (
-                    payload.closeFlyover === true &&
+                    scope.activeFlyover.destroy();
+                } else if (
                     scope.activeFlyover &&
                     scope.activeFlyover.isOpen()
                 ) {
                     scope.activeFlyover.close();
                 }
+
+                scope.activeFlyover = null;
             });
 
             scope.closeList = () => {
@@ -433,14 +463,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-08-28 20:10:38</sys_created_on>
         <sys_id>5f7b574b93a7a210e393f6fa3d03d678</sys_id>
-        <sys_mod_count>165</sys_mod_count>
+        <sys_mod_count>166</sys_mod_count>
         <sys_name>scmRefPicker</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_5f7b574b93a7a210e393f6fa3d03d678</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 22:55:51</sys_updated_on>
+        <sys_updated_on>2026-06-21 10:23:41</sys_updated_on>
         <type>directive</type>
     </sp_angular_provider>
 </record_update>

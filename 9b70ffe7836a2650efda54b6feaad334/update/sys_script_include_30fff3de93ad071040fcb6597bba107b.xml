@@ -16,440 +16,25 @@ ContactList.CONTACT_MAIN_LIST_BREADCRUMB = [
     { title: "Contacts", link: "?id=contacts" },
 ];
 
-ContactList.prototype = {
-    initialize: function (params) {
-        params = params || {};
-
-        this.transactionId = params.transactionId || gs.generateGUID();
-        this.providerParams = params.providerParams || {};
-
-        this.logger = new Logger({
-            transactionId: this.transactionId,
-            source: this.type,
-            includeTimeStamp: true,
-            includeUserInfo: true,
-            includeSessionId: true,
-        });
-
-        this.configObject = this._initializeConfigObject();
-        this.preferenceNames = {
-            columns: this.configObject.fields_preference_name,
-            orderBy: this.configObject.order_by_preference_name,
-            orderDirection: this.configObject.order_direction_preference_name,
-            limit: this.configObject.limit_preference_name,
-        };
-    },
-
-    canCreate: function () {
-        try {
-            if (this.configObject.show_new_record_button !== "true") {
-                return false;
-            }
-
-            const gr = new GlideRecordSecure(this.configObject.table);
-            return gr.isValid() && gr.canCreate();
-        } catch (error) {
-            this.logger.error({
-                method: "canCreate",
-                message: "Error checking create permissions",
-                error: error.message,
-                table: this.configObject.table,
-            });
-            return false;
-        }
-    },
-
-    canFilter: function () {
-        return (
-            this.configObject.can_filter === "true" &&
-            (this.configObject.filter_fields || []).length > 0
-        );
-    },
-
-    canSavePreferences: function () {
-        return this.configObject.can_save_preferences === "true";
-    },
-
-    canConfigureColumns: function () {
-        return (
-            this.configObject.can_configure_columns === "true" ||
-            !this.configObject.hasOwnProperty("can_configure_columns")
-        );
-    },
-
-    getAllAvailableColumns: function () {
-        return this.configObject.columns;
-    },
-
-    getAppliedFiltersInfoMessage: function (appliedFilters = []) {
-        let htmlString = "";
-
-        try {
-            for (const filter of appliedFilters) {
-                const isLastFilter =
-                    filter === appliedFilters[appliedFilters.length - 1];
-
-                if (filter.type === "reference") {
-                    const grRef = new GlideRecord(filter.referenceTable);
-                    if (grRef.get(filter.value)) {
-                        /* prettier-ignore */
-                        htmlString += "<span>" + filter.label + " = " + grRef.getDisplayValue() + "</span>";
-                    } else {
-                        /* prettier-ignore */
-                        htmlString += "<span>" + filter.label + " = " + filter.value + "</span>";
-                    }
-                }
-
-                if (filter.type === "choice") {
-                    const displayValue =
-                        filter.choiceValues.find(
-                            (choice) => choice.value === filter.value,
-                        )?.label || filter.value;
-
-                    /* prettier-ignore */
-                    htmlString += "<span>" + filter.label + " = " + displayValue + "</span>";
-                }
-
-                if (filter.type === "string") {
-                    /* prettier-ignore */
-                    htmlString += "<span>" + filter.label + " = " + filter.value + "</span>";
-                }
-
-                if (!isLastFilter) {
-                    htmlString += '<span class="filter-separator">></span>';
-                }
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getAppliedFiltersInfoMessage",
-                message: "Error generating applied filters info message",
-                error: error.message,
-                appliedFilters: appliedFilters,
-            });
-        }
-
-        return htmlString;
-    },
-
-    getBreadcrumbs: function () {
-        return this.configObject.breadcrumbs || [];
-    },
-
-    getChoiceValues: function (fieldName) {
-        const choices = [];
-
-        if (!fieldName) return choices;
-
-        const glideTableHierarchy = new GlideTableHierarchy(
-            this.configObject.table,
-        );
-        const hierarchy = glideTableHierarchy.getTables();
-
-        let iterator = 0;
-
-        do {
-            const grTable = new GlideRecord("sys_choice");
-            grTable.addQuery("name", hierarchy[iterator]);
-            grTable.addQuery("element", fieldName);
-            grTable.addQuery("inactive", false);
-            grTable.query();
-
-            while (grTable.next()) {
-                choices.push({
-                    value: grTable.getValue("value"),
-                    label:
-                        grTable.getValue("label") || grTable.getValue("value"),
-                });
-            }
-
-            iterator++;
-        } while (choices.length === 0 && iterator < hierarchy.length);
-
-        return choices;
-    },
-
-    getDefaultColumns: function () {
-        const columns = this.configObject.columns.filter(function (column) {
-            return column.default === true;
-        });
-        return columns;
-    },
-
-    getDetailViewPage: function () {
-        return this.configObject.detail_view_page || "error-404";
-    },
-
-    getFilterFields: function () {
-        return this.configObject.filter_fields || [];
-    },
-
-    getIdField: function () {
-        return this.configObject.id_field || "sys_id";
-    },
-
-    getPrimaryCellClickAction: function () {
-        return {
-            type: "link",
-            urlField: "_primaryLink",
-        };
-    },
-
-    getCellContent: function (field, record) {
-        return {
-            layout: "stack",
-            blocks: [{ value: record[field.name] || "" }],
-        };
-    },
-
-    getOrderBy: function () {
-        if (!this.canSavePreferences()) {
-            return this.configObject.order_by;
-        }
-
-        try {
-            const orderByPreference = gs
-                .getUser()
-                .getPreference(this.preferenceNames.orderBy);
-
-            if (orderByPreference) {
-                return orderByPreference;
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getOrderBy",
-                message: "Error getting order by",
-                error: error.message,
-                user: gs.getUserID(),
-                preferenceName: this.preferenceNames.orderBy,
-            });
-        }
-
-        return this.configObject.order_by;
-    },
-
-    getOrderDirection: function () {
-        if (!this.canSavePreferences()) {
-            return this.configObject.order_direction;
-        }
-
-        try {
-            const orderDirectionPreference = gs
-                .getUser()
-                .getPreference(this.preferenceNames.orderDirection);
-
-            if (orderDirectionPreference) {
-                return orderDirectionPreference;
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getOrderDirection",
-                message: "Error getting order direction",
-                error: error.message,
-                user: gs.getUserID(),
-                preferenceName: this.preferenceNames.orderDirection,
-            });
-        }
-
-        return this.configObject.order_direction;
-    },
-
-    getPageTitle: function () {
-        return this.configObject.page_title;
-    },
-
-    getTableColumns: function () {
-        if (!this.canSavePreferences()) {
-            return this.getDefaultColumns();
-        }
-
-        try {
-            const fieldsPreferencedByUser = gs
-                .getUser()
-                .getPreference(this.preferenceNames.columns);
-
-            if (fieldsPreferencedByUser) {
-                return JSON.parse(fieldsPreferencedByUser);
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getTableColumns",
-                message: "Error getting table columns from preference",
-                error: error.message,
-                user: gs.getUserID(),
-                preferenceName: this.preferenceNames.columns,
-            });
-        }
-
-        return this.getDefaultColumns();
-    },
-
-    getTableData: function ({ filters = [], page = 1 }) {
-        try {
-            const records = [];
-
-            const tableName = this.configObject.table;
-            const limit = this.getTableLimit();
-            const firstRow = (parseInt(page, 10) - 1) * parseInt(limit, 10);
-            const lastRow = firstRow + parseInt(limit, 10);
-            const orderBy = this.getOrderBy();
-            const orderDirection = this.getOrderDirection();
-            const columns = this.getTableColumns();
-
-            if (columns.length === 0) return records;
-
-            const grRecord = new GlideRecord(tableName);
-            this._applyFilters(grRecord, filters);
-            grRecord.setLimit(parseInt(limit, 10));
-            grRecord.chooseWindow(firstRow, lastRow);
-
-            if (orderDirection === "ASC") {
-                grRecord.orderBy(orderBy);
-            } else {
-                grRecord.orderByDesc(orderBy);
-            }
-
-            grRecord.query();
-
-            while (grRecord.next()) {
-                const record = {};
-
-                for (const column of columns) {
-                    const columnName = column.name;
-                    record[columnName] =
-                        grRecord.getDisplayValue(columnName) || "";
-                }
-
-                record.sys_id = grRecord.getUniqueValue();
-                /* prettier-ignore */
-                record._primaryLink = "?id=" + this.getDetailViewPage() + "&scm_record_id=" + (record[this.getIdField()] || "");
-
-                records.push(record);
-            }
-
-            return records;
-        } catch (error) {
-            this.logger.error({
-                method: "getTableData",
-                message: "Error getting table data",
-                error: error.message,
-                filters: filters,
-                page: page,
-            });
-            return [];
-        }
-    },
-
-    getTableLimit: function () {
-        if (!this.canSavePreferences()) {
-            return parseInt(this.configObject.limit || 10, 10);
-        }
-
-        try {
-            const limitPreference = gs
-                .getUser()
-                .getPreference(this.preferenceNames.limit);
-
-            if (limitPreference) {
-                return parseInt(limitPreference, 10);
-            }
-        } catch (error) {
-            this.logger.error({
-                method: "getTableLimit",
-                message: "Error getting table limit",
-                error: error.message,
-                user: gs.getUserID(),
-                preferenceName: this.preferenceNames.limit,
-            });
-        }
-
-        return parseInt(this.configObject.limit || 10, 10);
-    },
-
-    getTotalRecords: function (filters = []) {
-        try {
-            const gaRecord = new GlideAggregate(this.configObject.table);
-
-            this._applyFilters(gaRecord, filters);
-
-            gaRecord.addAggregate("COUNT");
-            gaRecord.query();
-
-            gaRecord.next();
-
-            return gaRecord.getAggregate("COUNT");
-        } catch (error) {
-            this.logger.error({
-                method: "getTotalRecords",
-                message: "Error getting total records",
-                error: error.message,
-                filters: filters,
-            });
-            return -1;
-        }
-    },
-
-    saveUserPreference: function (preferenceName, preferenceValue) {
-        if (!this.preferenceNames[preferenceName] || !preferenceValue) {
-            this.logger.warn({
-                preferenceName: preferenceName,
-                preferenceValue: preferenceValue,
-                message: "Invalid input",
-            });
-            return;
-        }
-
-        gs.getUser().savePreference(
-            this.preferenceNames[preferenceName],
-            String(preferenceValue),
-        );
-    },
-
-    showAppliedFilters: function () {
-        return (
-            this.configObject.show_applied_filters === "true" ||
-            !this.configObject.hasOwnProperty("show_applied_filters")
-        );
-    },
-
-    showTableMetadata: function () {
-        return (
-            this.configObject.show_table_metadata === "true" ||
-            !this.configObject.hasOwnProperty("show_table_metadata")
-        );
-    },
-
-    _applyFilters: function (glideRecord, filters = []) {
-        if (!glideRecord || !glideRecord.isValidRecord) {
-            this.logger.warn({
-                method: "_applyFilters",
-                message: "Invalid GlideRecord provided for filtering",
-                glideRecord: glideRecord,
-                typeof_glideRecord: typeof glideRecord,
-            });
-            return;
-        }
-
-        if (this.configObject.static_query) {
-            glideRecord.addEncodedQuery(this.configObject.static_query);
-        }
-
-        for (const filter of filters) {
-            switch (filter.type) {
-                case "choice":
-                    glideRecord.addQuery(filter.field, filter.value);
-                    break;
-                case "reference":
-                    glideRecord.addQuery(filter.field, filter.value);
-                    break;
-                default:
-                    this.logger.warn({
-                        method: "_applyFilters",
-                        message: "Unknown filter type",
-                        filter: filter,
-                    });
-                    break;
-            }
-        }
+ContactList.prototype = Object.extendsObject(BaseTableProvider, {
+    getContextMenuItems: function (record) {
+        return [
+            {
+                label: "Copy ID",
+                iconName: "icon-idcard",
+                action: { clipboard: record.user_name || "" },
+            },
+            {
+                label: "Copy URL",
+                iconName: "icon-reply-message",
+                action: { clipboard: record._primaryLink || "" },
+            },
+            {
+                label: "Open in new tab",
+                iconName: "icon-play-filled",
+                action: { href: record._primaryLink, target: "_blank" },
+            },
+        ];
     },
 
     _initializeConfigObject: function () {
@@ -469,49 +54,19 @@ ContactList.prototype = {
             limit_preference_name: "scm_portal.contacts.limit",
             can_configure_columns: "true",
             detail_view_page: "contact_details",
+            /* prettier-ignore-start */
             columns: [
-                {
-                    label: "User ID",
-                    name: "user_name",
-                    default: true,
-                },
-                {
-                    label: "First name",
-                    name: "first_name",
-                    default: true,
-                },
-                {
-                    label: "Last name",
-                    name: "last_name",
-                    default: true,
-                },
-                {
-                    label: "Email",
-                    name: "email",
-                    default: true,
-                },
-                {
-                    label: "Business Phone",
-                    name: "phone",
-                },
-                {
-                    label: "Title",
-                    name: "title",
-                    default: true,
-                },
-                {
-                    label: "Department",
-                    name: "department",
-                },
-                {
-                    label: "Company",
-                    name: "company",
-                },
-                {
-                    label: "Manager",
-                    name: "manager",
-                },
+                { label: "User ID", name: "user_name", default: true },
+                { label: "First name", name: "first_name", default: true },
+                { label: "Last name", name: "last_name", default: true },
+                { label: "Email", name: "email", default: true },
+                { label: "Business Phone", name: "phone" },
+                { label: "Title", name: "title", default: true },
+                { label: "Department", name: "department" },
+                { label: "Company", name: "company" },
+                { label: "Manager", name: "manager" },
             ],
+            /* prettier-ignore-end */
             can_filter: "true",
             id_field: "user_name",
             filter_fields: [
@@ -536,19 +91,19 @@ ContactList.prototype = {
     },
 
     type: "ContactList",
-};
+});
 ]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:11:14</sys_created_on>
         <sys_id>30fff3de93ad071040fcb6597bba107b</sys_id>
-        <sys_mod_count>8</sys_mod_count>
+        <sys_mod_count>12</sys_mod_count>
         <sys_name>ContactList</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_30fff3de93ad071040fcb6597bba107b</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 23:14:49</sys_updated_on>
+        <sys_updated_on>2026-06-21 10:12:36</sys_updated_on>
     </sys_script_include>
 </record_update>

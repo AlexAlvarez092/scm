@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:56:41</sys_created_on>
         <sys_id>b14a8c269321471040fcb6597bba1066</sys_id>
-        <sys_mod_count>2</sys_mod_count>
+        <sys_mod_count>5</sys_mod_count>
         <sys_name>scm-table-filters</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_b14a8c269321471040fcb6597bba1066</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 22:24:12</sys_updated_on>
+        <sys_updated_on>2026-06-21 09:45:45</sys_updated_on>
         <template><![CDATA[<sdx-dialog
     label="Filter records"
     id="{{c.filtersDialogId}}"
@@ -90,20 +90,29 @@
         </div>
         <div class="scm-filter-dialog-actions-container">
             <sdx-button
-                id="scm-table-filters-cancel"
                 theme="transparent"
-                icon-name="icon-close"
+                icon-name="icon-reply-message"
                 icon-size="2"
-                ng-click="c.cancelFilters()"
-                label="Cancel"
+                ng-click="c.removeAllFilters()"
+                label="Remove all filters"
             ></sdx-button>
-            <sdx-button
-                theme="transparent"
-                icon-name="icon-save"
-                icon-size="2"
-                ng-click="c.applyFilters()"
-                label="Save"
-            ></sdx-button>
+            <div class="scm-filter-dialog-actions-container-save-cancel-group">
+                <sdx-button
+                    id="scm-table-filters-cancel"
+                    theme="transparent"
+                    icon-name="icon-close"
+                    icon-size="2"
+                    ng-click="c.cancelFilters()"
+                    label="Cancel"
+                ></sdx-button>
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-save"
+                    icon-size="2"
+                    ng-click="c.applyFilters()"
+                    label="Save"
+                ></sdx-button>
+            </div>
         </div>
     </sdx-dialog-content>
 </sdx-dialog>
@@ -111,6 +120,8 @@
 <style>
     .scm-filters-dialog-form {
         margin-bottom: var(--scm-spacing-3);
+        width: 50vw;
+        min-height: 50vh;
     }
 
     .scm-filter-dialog-field {
@@ -148,9 +159,15 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: var(--scm-spacing-2);
-        justify-content: flex-end;
+        justify-content: space-between;
         margin-top: var(--scm-spacing-3);
+    }
+
+    .scm-filter-dialog-actions-container-save-cancel-group {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--scm-spacing-2);
     }
 </style>
 ]]></template>

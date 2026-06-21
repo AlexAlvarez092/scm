@@ -5,8 +5,6 @@
     const CLOSE_TIMEOUT = 300;
     const OPEN_THROTTLE_TIMEOUT = 500;
 
-    let timeoutInstance;
-
     return function (widgetId, scopeCtrl) {
         this.flyover = {
             flyoverId: spUtil.createUid("xxxx-xxxx"),
@@ -18,16 +16,19 @@
             hasFullClass: false,
             options: {},
             isOpen: false,
-            functionOnOpen: "",
-            functionOnClose: "",
+            functionOnOpen: null,
+            functionOnClose: null,
             width: 85,
             appendToBody: false,
         };
 
         let that = this;
         that.childScope = null;
+        that.openThrottlePromise = null;
+        that.closePromise = null;
+        that.openSequence = 0;
 
-        scopeCtrl.$on(
+        that.unregisterCloseTriggered = scopeCtrl.$on(
             "scmFlyover-close-triggered-" + this.flyover.flyoverId,
             function (e) {
                 close.apply(that);
@@ -41,13 +42,13 @@
         that.setSubTitle = setSubTitle;
         that.onOpen = onOpen;
         that.onClose = onClose;
-        that.setTitle = setTitle;
         that.hasFullClass = hasFullClass;
         that.setFlyoverWidth = setFlyoverWidth;
         that.setAppendToBody = setAppendToBody;
         that.setWidgetId = setWidgetId;
         that.isOpen = isOpen;
         that.setTransactionId = setTransactionId;
+        that.destroy = destroy;
 
         return that;
     };
@@ -55,17 +56,24 @@
     function open() {
         let that = this;
 
-        if (that.flyover.isOpen || timeoutInstance) {
+        if (that.flyover.isOpen || that.openThrottlePromise) {
             return new Promise(function (resolve) {
                 resolve();
             });
         }
 
-        timeoutInstance = $timeout(function () {
-            timeoutInstance = null;
+        if (that.closePromise) {
+            $timeout.cancel(that.closePromise);
+            that.closePromise = null;
+        }
+
+        that.openThrottlePromise = $timeout(function () {
+            that.openThrottlePromise = null;
         }, OPEN_THROTTLE_TIMEOUT);
 
         that.flyover.isOpen = true;
+        that.openSequence += 1;
+        const requestSequence = that.openSequence;
 
         that.childScope = that.flyover.scope.$new(true);
 
@@ -81,8 +89,15 @@
                 widgetOptions: that.flyover.options,
             })
             .then(function (response) {
+                if (
+                    !that.flyover.isOpen ||
+                    requestSequence !== that.openSequence
+                ) {
+                    return that;
+                }
+
                 if (that.flyover.functionOnOpen) {
-                    _evalFunction(that, that.flyover.functionOnOpen);
+                    _executeCallback(that, that.flyover.functionOnOpen);
                 }
 
                 _generateWidgetHTML(that, response, that.flyover.scope);
@@ -146,18 +161,34 @@
     }
 
     function onOpen(functionToBeExecuted) {
-        this.flyover.functionOnOpen = functionToBeExecuted;
+        this.flyover.functionOnOpen =
+            typeof functionToBeExecuted === "function"
+                ? functionToBeExecuted
+                : null;
+
+        if (functionToBeExecuted && !this.flyover.functionOnOpen) {
+            console.warn(
+                "scmFlyover.onOpen expects a function callback. Ignoring invalid callback.",
+            );
+        }
     }
 
     function onClose(functionToBeExecuted) {
-        this.flyover.functionOnClose = functionToBeExecuted;
+        this.flyover.functionOnClose =
+            typeof functionToBeExecuted === "function"
+                ? functionToBeExecuted
+                : null;
+
+        if (functionToBeExecuted && !this.flyover.functionOnClose) {
+            console.warn(
+                "scmFlyover.onClose expects a function callback. Ignoring invalid callback.",
+            );
+        }
     }
 
-    function _evalFunction(that, functionToEval) {
-        if (typeof functionToEval === "string") {
-            eval(functionToEval);
-        } else {
-            functionToEval(that);
+    function _executeCallback(that, callback) {
+        if (typeof callback === "function") {
+            callback(that);
         }
     }
 
@@ -176,30 +207,62 @@
     function close() {
         let that = this;
 
-        return $timeout(function () {
-            that.flyover.isOpen = false;
+        that.flyover.isOpen = false;
+        that.openSequence += 1;
 
-            if (that.childScope) {
-                that.childScope.$destroy();
-                that.childScope = null;
-            }
+        if (that.closePromise) {
+            return that.closePromise;
+        }
 
-            let widgetElement = document.querySelector(
-                "#flyoverContainer-" + that.flyover.flyoverId,
-            );
-            if (widgetElement) {
-                widgetElement.remove();
-            }
-
-            let functionCloseToBeExecuted = that.flyover.functionOnClose;
-            if (functionCloseToBeExecuted) {
-                _evalFunction(that, functionCloseToBeExecuted);
-            }
+        that.closePromise = $timeout(function () {
+            teardownFlyover(that, true);
+            that.closePromise = null;
         }, CLOSE_TIMEOUT);
+
+        return that.closePromise;
     }
 
     function isOpen() {
         return this.flyover.isOpen;
+    }
+
+    function teardownFlyover(that, executeOnClose) {
+        if (that.childScope) {
+            that.childScope.$destroy();
+            that.childScope = null;
+        }
+
+        let widgetElement = document.querySelector(
+            "#flyoverContainer-" + that.flyover.flyoverId,
+        );
+        if (widgetElement) {
+            widgetElement.remove();
+        }
+
+        if (executeOnClose && that.flyover.functionOnClose) {
+            _executeCallback(that, that.flyover.functionOnClose);
+        }
+    }
+
+    function destroy() {
+        if (this.openThrottlePromise) {
+            $timeout.cancel(this.openThrottlePromise);
+            this.openThrottlePromise = null;
+        }
+
+        if (this.closePromise) {
+            $timeout.cancel(this.closePromise);
+            this.closePromise = null;
+        }
+
+        this.flyover.isOpen = false;
+        this.openSequence += 1;
+        teardownFlyover(this, false);
+
+        if (typeof this.unregisterCloseTriggered === "function") {
+            this.unregisterCloseTriggered();
+            this.unregisterCloseTriggered = null;
+        }
     }
 }
 ]]></script>
@@ -207,14 +270,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-10 16:54:06</sys_created_on>
         <sys_id>432b29d393732a10e393f6fa3d03d662</sys_id>
-        <sys_mod_count>8</sys_mod_count>
+        <sys_mod_count>10</sys_mod_count>
         <sys_name>scmFlyover</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_432b29d393732a10e393f6fa3d03d662</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 11:44:55</sys_updated_on>
+        <sys_updated_on>2026-06-21 10:25:00</sys_updated_on>
         <type>service</type>
     </sp_angular_provider>
 </record_update>

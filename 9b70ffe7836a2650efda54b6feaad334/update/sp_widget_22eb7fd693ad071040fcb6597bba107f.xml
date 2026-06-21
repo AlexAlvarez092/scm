@@ -15,6 +15,8 @@
         savePreference("limit", c.data.limit).then(() => {});
     };
 
+    c.closeDialogById = angular.noop;
+
     c.goToFirstPage = function () {
         c.page = 1;
         getTableData();
@@ -53,7 +55,7 @@
         } else {
             savePromise = c.data.canSavePreferences
                 ? savePreference("orderBy", fieldName).then(() => {
-                      savePreference("orderDirection", "ASC");
+                      return savePreference("orderDirection", "ASC");
                   })
                 : Promise.resolve();
         }
@@ -110,28 +112,24 @@
             ? savePreference("columns", JSON.stringify(c.selectedFieldsList))
             : Promise.resolve();
 
-        savePromise.then(() => {
-            getTableColumns().then(() => {
+        savePromise
+            .then(() => {
+                getTableColumns().then(() => {
+                    c.savingListView = false;
+                    c.closeDialogById(c.settingsDialogId);
+                });
+                getTableData();
+            })
+            .catch(() => {
                 c.savingListView = false;
-                document.getElementById(c.settingsDialogId).close();
             });
-            getTableData();
-        });
     };
 
     c.cancelListView = function () {
         c.cancelingListView = true;
-        c.selectedFieldsList = angular.copy(c.data.columns);
-        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable);
-        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
-            return !c.selectedFieldsList.some(
-                (selectedField) => selectedField.name === field.name,
-            );
-        });
-        c.fieldToAdd = null;
-        c.fieldToRemove = null;
+        syncColumnSelectorLists();
         c.cancelingListView = false;
-        document.getElementById(c.settingsDialogId).close();
+        c.closeDialogById(c.settingsDialogId);
     };
 
     c.revertListViewToDefault = function () {
@@ -144,9 +142,13 @@
             })
             .then((response) => {
                 c.data.columns = response.data.columns;
+                syncColumnSelectorLists();
                 c.revertingListView = false;
-                document.getElementById(c.settingsDialogId).close();
+                c.closeDialogById(c.settingsDialogId);
                 getTableData();
+            })
+            .catch(() => {
+                c.revertingListView = false;
             });
     };
 
@@ -182,7 +184,7 @@
         getTotalRecords();
         getTableData();
         getAppliedFiltersInfoMessage();
-        document.getElementById(c.filtersDialogId).close();
+        c.closeDialogById(c.filtersDialogId);
     };
 
     c.cancelFilters = function () {
@@ -192,7 +194,20 @@
             );
             filter.value = appliedFilter ? appliedFilter.value : "";
         });
-        document.getElementById(c.filtersDialogId).close();
+        c.closeDialogById(c.filtersDialogId);
+    };
+
+    c.removeAllFilters = function () {
+        c.filters.forEach((filter) => {
+            filter.value = "";
+        });
+
+        c.appliedFilters = [];
+        c.page = 1;
+        getTotalRecords();
+        getTableData();
+        getAppliedFiltersInfoMessage();
+        c.closeDialogById(c.filtersDialogId);
     };
 
     c.getPrimaryCellHref = function (record) {
@@ -210,7 +225,9 @@
     };
 
     c.getCellContent = function (record, field) {
-        return record.__cellContent[field.name] || { layout: "stack", blocks: [] };
+        return (
+            record.__cellContent[field.name] || { layout: "stack", blocks: [] }
+        );
     };
 
     c.getCellBlocks = function (record, field) {
@@ -219,6 +236,144 @@
 
     c.getCellLayout = function (record, field) {
         return c.getCellContent(record, field).layout || "stack";
+    };
+
+    c.getBlockHref = function (block) {
+        return block && block.href ? block.href : undefined;
+    };
+
+    c.hasAnyBlockHref = function (record, field) {
+        return c
+            .getCellBlocks(record, field)
+            .some((block) => !!c.getBlockHref(block));
+    };
+
+    c.shouldUsePrimaryCellLink = function (record, field, isFirstColumn) {
+        return (
+            isFirstColumn &&
+            !!c.getPrimaryCellHref(record) &&
+            !c.hasAnyBlockHref(record, field)
+        );
+    };
+
+    c.shouldUsePrimaryCellEvent = function (record, field, isFirstColumn) {
+        const action = c.data.primaryCellClickAction || {};
+
+        return (
+            isFirstColumn &&
+            action.type === "event" &&
+            !!action.eventName &&
+            !c.hasAnyBlockHref(record, field)
+        );
+    };
+
+    c.contextMenu = { visible: false, x: 0, y: 0, items: [], record: null };
+
+    c.onRowContextMenu = function ($event, record) {
+        if (!c.data.hasContextMenu) return false;
+
+        const items = record.__contextMenuItems || [];
+        if (!items.length) return false;
+
+        let x = $event.clientX;
+        let y = $event.clientY;
+
+        // Keyboard-triggered context menus can arrive without pointer coordinates.
+        if ((x === 0 && y === 0) || (x == null && y == null)) {
+            const target = $event.currentTarget || $event.target;
+            if (target && target.getBoundingClientRect) {
+                const rect = target.getBoundingClientRect();
+                x = rect.left + 12;
+                y = rect.top + 12;
+            }
+        }
+
+        c.contextMenu = {
+            visible: true,
+            x: x || 12,
+            y: y || 12,
+            items: items,
+            record: record,
+        };
+
+        return true;
+    };
+
+    c.closeContextMenu = function () {
+        c.contextMenu.visible = false;
+    };
+
+    c.onContextMenuItemClick = function (item) {
+        c.closeContextMenu();
+
+        const action = item.action;
+        if (!action) return;
+
+        if (action.clipboard != null) {
+            writeToClipboard(action.clipboard);
+        }
+
+        if (action.href) {
+            const target = action.target || "_self";
+            const openedWindow = window.open(action.href, target);
+            if (openedWindow && target === "_blank") {
+                openedWindow.opener = null;
+            }
+        }
+
+        if (action.broadcast) {
+            $rootScope.$broadcast(
+                action.broadcast.eventName,
+                action.broadcast.payload || {},
+            );
+        }
+    };
+
+    function writeToClipboard(value) {
+        const text = value == null ? "" : String(value);
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).catch(() => {
+                fallbackCopyText(text);
+            });
+            return;
+        }
+
+        fallbackCopyText(text);
+    }
+
+    function fallbackCopyText(text) {
+        try {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "fixed";
+            textarea.style.top = "-9999px";
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(textarea);
+        } catch (error) {
+            // Best-effort fallback; no-op if browser blocks legacy copy APIs.
+        }
+    }
+
+    c.getColumnStyle = function (field) {
+        const style = {};
+
+        if (field.width) {
+            style.width = field.width;
+        }
+
+        if (field.minWidth) {
+            style.minWidth = field.minWidth;
+        }
+
+        if (field.maxWidth) {
+            style.maxWidth = field.maxWidth;
+        }
+
+        return Object.keys(style).length > 0 ? style : undefined;
     };
 
     c.onPrimaryCellClick = function ($event, record, field) {
@@ -260,12 +415,28 @@
             })
             .then((response) => {
                 c.data.columns = response.data.columns;
+                syncColumnSelectorLists();
+                c.showTableHeader =
+                    (c.data.columns || []).filter((field) => field.label)
+                        .length > 0;
             });
+    }
+
+    function syncColumnSelectorLists() {
+        c.selectedFieldsList = angular.copy(c.data.columns || []);
+        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable || []);
+        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
+            return !c.selectedFieldsList.some(
+                (selectedField) => selectedField.name === field.name,
+            );
+        });
+        c.fieldToAdd = null;
+        c.fieldToRemove = null;
     }
 
     function getTableData() {
         c.showSpinner = true;
-        c.server
+        return c.server
             .get({
                 action: "getTableData",
                 transactionId: c.data.transactionId,
@@ -277,6 +448,11 @@
                 c.records = response.data.records;
                 c.data.orderBy = response.data.orderBy;
                 c.data.orderDirection = response.data.orderDirection;
+            })
+            .catch(() => {
+                c.records = [];
+            })
+            .finally(() => {
                 c.showSpinner = false;
             });
     }
@@ -389,10 +565,52 @@
                 appliedFilters: c.appliedFilters || [],
             })
             .then((response) => {
-                c.appliedFiltersHtml = $sce.trustAsHtml(
+                c.appliedFiltersHtml = sanitizeTrustedHtml(
                     response.data.appliedFiltersHtml,
                 );
+            })
+            .catch(() => {
+                c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
             });
+    }
+
+    function sanitizeTrustedHtml(html) {
+        if (!html) {
+            return $sce.trustAsHtml("<span></span>");
+        }
+
+        if (typeof DOMParser === "undefined") {
+            return $sce.trustAsHtml("<span></span>");
+        }
+
+        const parser = new DOMParser();
+        const parsed = parser.parseFromString(String(html), "text/html");
+
+        parsed
+            .querySelectorAll("script, iframe, object, embed")
+            .forEach((node) => {
+                node.remove();
+            });
+
+        parsed.querySelectorAll("*").forEach((node) => {
+            Array.from(node.attributes).forEach((attribute) => {
+                const name = attribute.name.toLowerCase();
+                const value = String(attribute.value || "").toLowerCase();
+
+                if (name.indexOf("on") === 0) {
+                    node.removeAttribute(attribute.name);
+                }
+
+                if (
+                    (name === "href" || name === "src") &&
+                    value.indexOf("javascript:") === 0
+                ) {
+                    node.removeAttribute(attribute.name);
+                }
+            });
+        });
+
+        return $sce.trustAsHtml(parsed.body.innerHTML || "<span></span>");
     }
 
     function init() {
@@ -412,13 +630,7 @@
         getTableData();
         getBreadcrumbs();
 
-        c.selectedFieldsList = angular.copy(c.data.columns);
-        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable);
-        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
-            return !c.selectedFieldsList.some(
-                (selectedField) => selectedField.name === field.name,
-            );
-        });
+        syncColumnSelectorLists();
 
         if (c.data.canFilter) {
             c.filters = [];
@@ -473,6 +685,21 @@
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+
+                    .scm-table-sort-button {
+                        border: 0;
+                        background: transparent;
+                        font: inherit;
+                        color: inherit;
+                        padding: 0;
+                        cursor: pointer;
+                        text-align: left;
+                    }
+
+                    .scm-table-sort-button:focus-visible {
+                        outline: 2px solid var(--scm-color-int-blue);
+                        outline-offset: 2px;
+                    }
 
                     &amp;:first-child {
                         border-top-left-radius: var(--scm-border-radius-small);
@@ -545,7 +772,8 @@
 }
 
 .scm-table-cell--stack .scm-table-cell-block-group,
-.scm-table-cell--stack .scm-table-cell-block-link {
+.scm-table-cell--stack .scm-table-cell-block-link,
+.scm-table-cell--stack .scm-table-cell-block-button {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -556,7 +784,8 @@
 }
 
 .scm-table-cell--inline .scm-table-cell-block-group,
-.scm-table-cell--inline .scm-table-cell-block-link {
+.scm-table-cell--inline .scm-table-cell-block-link,
+.scm-table-cell--inline .scm-table-cell-block-button {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -582,9 +811,48 @@
     color: inherit;
 }
 
+.scm-table-cell-block-button {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
 .scm-table-cell-muted {
     color: var(--scm-color-gray);
     font-size: var(--scm-font-size-xsmall);
+}
+
+.scm-table-context-menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 160px;
+    background: var(--scm-color-sc-white);
+    border: 1px solid var(--scm-color-horizon);
+    border-radius: var(--scm-border-radius-small);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    padding: var(--scm-spacing-1);
+
+    .toolbar {
+        width: 100%;
+    }
+
+    .toolbar__item {
+        width: 100%;
+        justify-content: flex-start;
+        display: flex;
+        align-items: center;
+        gap: var(--scm-spacing-2);
+    }
+
+    .toolbar__item .icon,
+    .toolbar__item sdx-icon {
+        flex: 0 0 auto;
+    }
 }
 
 #controller-wrapper {
@@ -679,14 +947,143 @@
         <id>scm-table</id>
         <internal>false</internal>
         <link><![CDATA[function link(scope, element, attrs, controller) {
-  
-}]]></link>
+    var c = scope.c || controller;
+    if (!c) {
+        return;
+    }
+
+    c.closeDialogById = function (dialogId) {
+        if (!dialogId) {
+            return;
+        }
+
+        var rootElement = element && element[0];
+        var doc = rootElement && rootElement.ownerDocument;
+        var dialog = doc && doc.getElementById(dialogId);
+
+        if (!dialog || !rootElement || !rootElement.contains(dialog)) {
+            return;
+        }
+
+        if (!dialog || typeof dialog.close !== "function") {
+            return;
+        }
+
+        dialog.close();
+    };
+
+    function positionContextMenu() {
+        scope.$evalAsync(function () {
+            if (!c.contextMenu || !c.contextMenu.visible) {
+                return;
+            }
+
+            var menuElement = element[0].querySelector(
+                ".scm-table-context-menu",
+            );
+            if (!menuElement) {
+                return;
+            }
+
+            var margin = 8;
+            var maxX = window.innerWidth - menuElement.offsetWidth - margin;
+            var maxY = window.innerHeight - menuElement.offsetHeight - margin;
+
+            c.contextMenu.x = Math.max(margin, Math.min(c.contextMenu.x, maxX));
+            c.contextMenu.y = Math.max(margin, Math.min(c.contextMenu.y, maxY));
+        });
+    }
+
+    function onDocumentClick(event) {
+        if (!c.contextMenu || !c.contextMenu.visible) {
+            return;
+        }
+
+        var menuElement = element[0].querySelector(".scm-table-context-menu");
+        if (menuElement && menuElement.contains(event.target)) {
+            return;
+        }
+
+        scope.$evalAsync(function () {
+            c.closeContextMenu();
+        });
+    }
+
+    function getDialogById(dialogId) {
+        if (!dialogId) {
+            return null;
+        }
+
+        var rootElement = element && element[0];
+        var doc = rootElement && rootElement.ownerDocument;
+        var dialog = doc && doc.getElementById(dialogId);
+
+        if (!dialog || !rootElement || !rootElement.contains(dialog)) {
+            return null;
+        }
+
+        return dialog;
+    }
+
+    function onDocumentKeydown(event) {
+        var isEscape =
+            event.key === "Escape" ||
+            event.key === "Esc" ||
+            event.keyCode === 27;
+
+        if (!isEscape) {
+            return;
+        }
+
+        var settingsDialog = getDialogById(c.settingsDialogId);
+        var filtersDialog = getDialogById(c.filtersDialogId);
+
+        if (!settingsDialog && !filtersDialog) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        scope.$evalAsync(function () {
+            if (settingsDialog && typeof settingsDialog.close === "function") {
+                settingsDialog.close();
+            }
+
+            if (filtersDialog && typeof filtersDialog.close === "function") {
+                filtersDialog.close();
+            }
+        });
+    }
+
+    var unwatchContextMenu = scope.$watch(
+        function () {
+            return c.contextMenu && c.contextMenu.visible;
+        },
+        function (isVisible) {
+            if (isVisible) {
+                positionContextMenu();
+            }
+        },
+    );
+
+    document.addEventListener("click", onDocumentClick, true);
+    document.addEventListener("keydown", onDocumentKeydown, true);
+
+    scope.$on("$destroy", function () {
+        if (typeof unwatchContextMenu === "function") {
+            unwatchContextMenu();
+        }
+        document.removeEventListener("click", onDocumentClick, true);
+        document.removeEventListener("keydown", onDocumentKeydown, true);
+    });
+}
+]]></link>
         <name>scm-table</name>
         <option_schema/>
         <public>false</public>
         <roles/>
         <script><![CDATA[/**
- * scm-table-v2 widget server script.
+ * scm-table widget server script.
  *
  * This widget is initialized with the name of a Script Include that acts as a
  * data provider. The Script Include is resolved at runtime via JSUtil.getGlobal()
@@ -736,6 +1133,10 @@
  * getDefaultColumns()
  *   @return {Array<{name: string, label: string, default: boolean}>}
  *     Columns shown when no user preference exists.
+ *     Optional per-column keys:
+ *       - width     {string}
+ *       - minWidth  {string}
+ *       - maxWidth  {string}
  *
  * getDetailViewPage()
  *   @return {string} Portal page ID for the record detail view.
@@ -759,7 +1160,17 @@
  *
  * getIdField()
  *   @return {string} Field name used as the record identifier in the detail view URL.
-
+ *
+ * getContextMenuItems(record)
+ *   Optional. If defined, the table intercepts right-click on every row.
+ *   @param  {Object} record - Row data.
+ *   @return {Array<{ label: string, iconClass?: string, iconName?: string, action: Object }>}
+ *     Each action is a bag of effects — all properties are optional and combinable:
+ *       - clipboard  {string}  Text to write to the clipboard.
+ *       - href       {string}  URL to navigate to.
+ *       - target     {string}  Window target for href (e.g. "_blank"). Defaults to "_self".
+ *       - broadcast  {{ eventName: string, payload?: Object }}  AngularJS event to broadcast.
+ *
  * getCellContent(field, record)
  *   @param  {Object} field  - Column definition for the current cell.
  *   @param  {Object} record - Row data returned by getTableData().
@@ -784,7 +1195,7 @@
  *   @return {string} Page heading displayed above the table.
  *
  * getTableColumns()
- *   @return {Array<{name: string, label: string}>}
+ *   @return {Array<{name: string, label: string, width?: string, minWidth?: string, maxWidth?: string}>}
  *     Active columns to render (respects user preferences if applicable).
  *
  * getTableData({ filters, page })
@@ -821,7 +1232,7 @@
 
     const logger = new Logger({
         transactionId: transactionId,
-        source: "scm-table-v2.server.js",
+        source: "scm-table.server.js",
         includeTimeStamp: true,
         includeUserInfo: true,
         includeSessionId: true,
@@ -851,6 +1262,11 @@
             error: error.message,
             tableProviderScriptInclude: tableProviderScriptInclude,
         });
+        return;
+    }
+
+    if (!validateProviderContract(widgetHelper, logger)) {
+        data.redirectTo404 = true;
         return;
     }
 
@@ -887,7 +1303,7 @@
     }
 
     if (input && input.action === "getTableColumns") {
-        data.columns = widgetHelper.getTableColumns();
+        data.columns = normalizeColumns(widgetHelper.getTableColumns());
         return;
     }
 
@@ -896,21 +1312,43 @@
             "columns",
             JSON.stringify(widgetHelper.getDefaultColumns()),
         );
-        data.columns = widgetHelper.getDefaultColumns();
+        data.columns = normalizeColumns(widgetHelper.getDefaultColumns());
         return;
     }
 
     if (input && input.action === "getTableData") {
-        const columns = widgetHelper.getTableColumns();
+        const columns = normalizeColumns(widgetHelper.getTableColumns());
+
         if (typeof widgetHelper.getCellContent !== "function") {
-            throw new Error("Provider must implement getCellContent");
+            logger.error(
+                "Provider must implement getCellContent(field, record)",
+            );
+            data.records = [];
+            data.orderDirection = widgetHelper.getOrderDirection();
+            data.orderBy = widgetHelper.getOrderBy();
+            return;
         }
 
-        data.records = widgetHelper.getTableData({
+        const providerRecords = widgetHelper.getTableData({
             filters: input.filters,
             page: input.page,
         });
-        data.records = decorateCellContent(widgetHelper, data.records, columns);
+
+        if (!Array.isArray(providerRecords)) {
+            logger.error({
+                message: "Provider getTableData must return an array",
+                provider: tableProviderScriptInclude,
+                returnedType: typeof providerRecords,
+            });
+            data.records = [];
+        } else {
+            data.records = decorateRecords(
+                widgetHelper,
+                providerRecords,
+                columns,
+            );
+        }
+
         data.orderDirection = widgetHelper.getOrderDirection();
         data.orderBy = widgetHelper.getOrderBy();
         return;
@@ -930,15 +1368,19 @@
     data.canSavePreferences = widgetHelper.canSavePreferences();
 
     data.allColumnsAvailable = widgetHelper.getAllAvailableColumns();
-    data.columns = widgetHelper.getTableColumns();
+    data.columns = normalizeColumns(widgetHelper.getTableColumns());
 
     data.canConfigureColumns = widgetHelper.canConfigureColumns();
     data.showMetadata = widgetHelper.showTableMetadata();
     data.showAppliedFilters = widgetHelper.showAppliedFilters();
     data.primaryCellClickAction = widgetHelper.getPrimaryCellClickAction();
+    data.hasContextMenu =
+        typeof widgetHelper.getContextMenuItems === "function";
 })();
 
-function decorateCellContent(widgetHelper, records, columns) {
+function decorateRecords(widgetHelper, records, columns) {
+    var hasContextMenu = typeof widgetHelper.getContextMenuItems === "function";
+
     return (records || []).map(function (record) {
         var decoratedRecord = Object.assign({}, record);
         decoratedRecord.__cellContent = {};
@@ -950,36 +1392,222 @@ function decorateCellContent(widgetHelper, records, columns) {
             );
         }
 
+        if (hasContextMenu) {
+            decoratedRecord.__contextMenuItems = normalizeContextMenuItems(
+                widgetHelper.getContextMenuItems(record),
+            );
+        }
+
         return decoratedRecord;
     });
 }
 
 function normalizeCellContent(cellContent) {
+    var normalizedLayout = "stack";
+
     if (!cellContent) {
         return {
-            layout: "stack",
+            layout: normalizedLayout,
             blocks: [],
         };
     }
 
     if (Array.isArray(cellContent)) {
         return {
-            layout: "stack",
-            blocks: cellContent,
+            layout: normalizedLayout,
+            blocks: cellContent.map(normalizeCellBlock).filter(Boolean),
         };
     }
 
     if (cellContent.blocks && Array.isArray(cellContent.blocks)) {
+        if (cellContent.layout === "inline" || cellContent.layout === "stack") {
+            normalizedLayout = cellContent.layout;
+        }
+
         return {
-            layout: cellContent.layout || "stack",
-            blocks: cellContent.blocks,
+            layout: normalizedLayout,
+            blocks: cellContent.blocks.map(normalizeCellBlock).filter(Boolean),
         };
     }
 
     return {
-        layout: "stack",
-        blocks: [cellContent],
+        layout: normalizedLayout,
+        blocks: [normalizeCellBlock(cellContent)].filter(Boolean),
     };
+}
+
+function normalizeCellBlock(block) {
+    if (block == null) {
+        return null;
+    }
+
+    if (typeof block === "string" || typeof block === "number") {
+        return { value: String(block) };
+    }
+
+    if (typeof block !== "object") {
+        return null;
+    }
+
+    var normalized = {
+        value: String(block.value || ""),
+    };
+
+    if (typeof block.className === "string" && block.className) {
+        normalized.className = block.className;
+    }
+
+    if (typeof block.href === "string" && block.href) {
+        normalized.href = block.href;
+    }
+
+    return normalized;
+}
+
+function normalizeContextMenuItems(items) {
+    if (!Array.isArray(items)) {
+        return [];
+    }
+
+    return items.map(normalizeContextMenuItem).filter(Boolean);
+}
+
+function normalizeContextMenuItem(item) {
+    if (!item || typeof item !== "object") {
+        return null;
+    }
+
+    if (typeof item.label !== "string" || !item.label.trim()) {
+        return null;
+    }
+
+    if (!item.action || typeof item.action !== "object") {
+        return null;
+    }
+
+    var normalizedAction = {};
+
+    if (typeof item.action.clipboard === "string") {
+        normalizedAction.clipboard = item.action.clipboard;
+    }
+
+    if (typeof item.action.href === "string" && item.action.href) {
+        normalizedAction.href = item.action.href;
+        if (typeof item.action.target === "string" && item.action.target) {
+            normalizedAction.target = item.action.target;
+        }
+    }
+
+    if (
+        item.action.broadcast &&
+        typeof item.action.broadcast === "object" &&
+        typeof item.action.broadcast.eventName === "string" &&
+        item.action.broadcast.eventName
+    ) {
+        normalizedAction.broadcast = {
+            eventName: item.action.broadcast.eventName,
+            payload: item.action.broadcast.payload || {},
+        };
+    }
+
+    if (Object.keys(normalizedAction).length === 0) {
+        return null;
+    }
+
+    var normalizedItem = {
+        label: item.label,
+        action: normalizedAction,
+    };
+
+    if (typeof item.iconClass === "string" && item.iconClass) {
+        normalizedItem.iconClass = item.iconClass;
+    }
+
+    if (typeof item.iconName === "string" && item.iconName) {
+        normalizedItem.iconName = item.iconName;
+    }
+
+    return normalizedItem;
+}
+
+function validateProviderContract(widgetHelper, logger) {
+    var requiredMethods = [
+        "canCreate",
+        "canFilter",
+        "canSavePreferences",
+        "canConfigureColumns",
+        "getAllAvailableColumns",
+        "getAppliedFiltersInfoMessage",
+        "getBreadcrumbs",
+        "getChoiceValues",
+        "getDefaultColumns",
+        "getDetailViewPage",
+        "getFilterFields",
+        "getIdField",
+        "getPrimaryCellClickAction",
+        "getCellContent",
+        "getOrderBy",
+        "getOrderDirection",
+        "getPageTitle",
+        "getTableColumns",
+        "getTableData",
+        "getTableLimit",
+        "getTotalRecords",
+        "saveUserPreference",
+        "showAppliedFilters",
+        "showTableMetadata",
+    ];
+
+    var missingMethods = requiredMethods.filter(function (methodName) {
+        return typeof widgetHelper[methodName] !== "function";
+    });
+
+    if (missingMethods.length > 0) {
+        logger.error({
+            message: "Provider is missing required methods",
+            missingMethods: missingMethods,
+        });
+        return false;
+    }
+
+    return true;
+}
+
+function normalizeColumns(columns) {
+    if (!Array.isArray(columns)) {
+        return [];
+    }
+
+    return columns.map(normalizeColumn).filter(Boolean);
+}
+
+function normalizeColumn(column) {
+    if (!column || typeof column !== "object") {
+        return null;
+    }
+
+    if (typeof column.name !== "string" || !column.name.trim()) {
+        return null;
+    }
+
+    var normalized = {
+        name: column.name,
+        label: typeof column.label === "string" ? column.label : "",
+    };
+
+    if (typeof column.width === "string" && column.width) {
+        normalized.width = column.width;
+    }
+
+    if (typeof column.minWidth === "string" && column.minWidth) {
+        normalized.minWidth = column.minWidth;
+    }
+
+    if (typeof column.maxWidth === "string" && column.maxWidth) {
+        normalized.maxWidth = column.maxWidth;
+    }
+
+    return normalized;
 }
 ]]></script>
         <servicenow>false</servicenow>
@@ -987,14 +1615,14 @@ function normalizeCellContent(cellContent) {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 20:53:34</sys_created_on>
         <sys_id>22eb7fd693ad071040fcb6597bba107f</sys_id>
-        <sys_mod_count>21</sys_mod_count>
+        <sys_mod_count>42</sys_mod_count>
         <sys_name>scm-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_22eb7fd693ad071040fcb6597bba107f</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-20 23:14:47</sys_updated_on>
+        <sys_updated_on>2026-06-21 10:17:13</sys_updated_on>
         <template><![CDATA[<div ng-if="!data.redirectTo404">
     <div id="table-header" ng-if="data.title || data.showNewRecordButton">
         <h1 class="h1" ng-bind="::data.title" ng-if="::data.title"></h1>
@@ -1040,12 +1668,18 @@ function normalizeCellContent(cellContent) {
         <table>
             <thead ng-if="c.showTableHeader">
                 <tr>
-                    <th ng-repeat="field in c.data.columns">
-                        <span
+                    <th
+                        ng-repeat="field in c.data.columns"
+                        ng-style="c.getColumnStyle(field)"
+                        ng-attr-aria-sort="{{ c.data.orderBy === field.name ? (c.data.orderDirection === 'ASC' ? 'ascending' : 'descending') : 'none' }}"
+                    >
+                        <button
+                            type="button"
+                            class="scm-table-sort-button"
                             ng-click="c.sort(field.name)"
                             ng-bind="::field.label"
                             ng-if="::field.label"
-                        ></span>
+                        ></button>
                         <sdx-icon
                             ng-if="::field.label"
                             ng-show="c.data.orderBy === field.name && c.data.orderDirection === 'ASC'"
@@ -1065,15 +1699,17 @@ function normalizeCellContent(cellContent) {
                 <tr
                     ng-repeat="record in c.records track by $index"
                     ng-if="!c.showSpinner"
+                    scm-contextmenu="c.onRowContextMenu($event, record)"
                 >
                     <td
                         ng-repeat="field in c.data.columns"
                         class="scm-table-cell"
                         ng-class="'scm-table-cell--' + c.getCellLayout(record, field)"
+                        ng-style="c.getColumnStyle(field)"
                     >
                         <a
                             class="scm-table-cell-block-link"
-                            ng-if="c.getPrimaryCellHref(record) && $first"
+                            ng-if="c.shouldUsePrimaryCellLink(record, field, $first)"
                             ng-attr-href="{{ c.getPrimaryCellHref(record) }}"
                             ng-click="c.onPrimaryCellClick($event, record, field)"
                         >
@@ -1085,12 +1721,36 @@ function normalizeCellContent(cellContent) {
                                 ng-bind="block.value"
                             ></span>
                         </a>
-                        <span
-                            ng-if="!c.getPrimaryCellHref(record) || !$first"
-                            class="scm-table-cell-block-group"
+                        <button
+                            type="button"
+                            class="scm-table-cell-block-button"
+                            ng-if="c.shouldUsePrimaryCellEvent(record, field, $first)"
+                            ng-click="c.onPrimaryCellClick($event, record, field)"
                         >
                             <span
                                 ng-repeat="block in c.getCellBlocks(record, field) track by $index"
+                                class="scm-table-cell-block"
+                                ng-class="block.className"
+                                ng-attr-title="{{ block.value }}"
+                                ng-bind="block.value"
+                            ></span>
+                        </button>
+                        <span
+                            ng-if="!c.shouldUsePrimaryCellLink(record, field, $first) && !c.shouldUsePrimaryCellEvent(record, field, $first)"
+                            class="scm-table-cell-block-group"
+                        >
+                            <a
+                                ng-repeat="block in c.getCellBlocks(record, field) track by $index"
+                                ng-if="c.getBlockHref(block)"
+                                class="scm-table-cell-block scm-table-cell-block-link"
+                                ng-attr-href="{{ c.getBlockHref(block) }}"
+                                ng-class="block.className"
+                                ng-attr-title="{{ block.value }}"
+                                ng-bind="block.value"
+                            ></a>
+                            <span
+                                ng-repeat="block in c.getCellBlocks(record, field) track by $index"
+                                ng-if="!c.getBlockHref(block)"
                                 class="scm-table-cell-block"
                                 ng-class="block.className"
                                 ng-attr-title="{{ block.value }}"
@@ -1103,6 +1763,35 @@ function normalizeCellContent(cellContent) {
         </table>
     </div>
     <sdx-loading-spinner ng-if="c.showSpinner"></sdx-loading-spinner>
+
+    <div
+        class="scm-table-context-menu"
+        ng-if="c.contextMenu.visible"
+        ng-style="{ top: c.contextMenu.y + 'px', left: c.contextMenu.x + 'px' }"
+    >
+        <div class="toolbar toolbar--vertical" role="menu">
+            <button
+                type="button"
+                class="toolbar__item item--show"
+                ng-repeat="item in c.contextMenu.items track by $index"
+                ng-click="c.onContextMenuItemClick(item)"
+                role="menuitem"
+            >
+                <i
+                    class="icon"
+                    ng-if="item.iconClass"
+                    ng-class="item.iconClass"
+                    aria-hidden="true"
+                ></i>
+                <sdx-icon
+                    ng-if="!item.iconClass && item.iconName"
+                    ng-attr-icon-name="{{ item.iconName }}"
+                    size="1"
+                ></sdx-icon>
+                <span class="toolbar__label" ng-bind="item.label"></span>
+            </button>
+        </div>
+    </div>
 </div>
 ]]></template>
     </sp_widget>
