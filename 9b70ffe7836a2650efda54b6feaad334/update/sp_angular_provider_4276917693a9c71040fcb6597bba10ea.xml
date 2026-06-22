@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmTableRowActionsService</name>
+        <script><![CDATA[function scmTableRowActionsService() {
+    "use strict";
+
+    function hasRowClickAction(clickAction) {
+        return (
+            clickAction &&
+            (clickAction.target === "firstColumn" ||
+                clickAction.target === "row")
+        );
+    }
+
+    function getActionHref(record, actionConfig, sanitizer) {
+        if (
+            !actionConfig ||
+            actionConfig.type !== "link" ||
+            !actionConfig.urlField ||
+            !sanitizer
+        ) {
+            return undefined;
+        }
+
+        return sanitizer.sanitizeHref(record && record[actionConfig.urlField]);
+    }
+
+    function hasAnyBlockHref(blocks, sanitizer) {
+        if (!Array.isArray(blocks) || !sanitizer) {
+            return false;
+        }
+
+        return blocks.some(function (block) {
+            return !!(
+                block &&
+                block.href &&
+                sanitizer.sanitizeHref(block.href)
+            );
+        });
+    }
+
+    function shouldHandleRowClick(options) {
+        options = options || {};
+
+        var clickAction = options.clickAction;
+        var isFirstColumn = !!options.isFirstColumn;
+        var hasAnyBlockHrefValue = !!options.hasAnyBlockHref;
+
+        if (!hasRowClickAction(clickAction)) {
+            return false;
+        }
+
+        if (clickAction.target === "firstColumn" && !isFirstColumn) {
+            return false;
+        }
+
+        if (hasAnyBlockHrefValue) {
+            return false;
+        }
+
+        return true;
+    }
+
+    function shouldIgnoreRowClickTarget(target) {
+        if (!target || typeof target.closest !== "function") {
+            return false;
+        }
+
+        return !!target.closest("a, button, input, select, textarea");
+    }
+
+    function resolveContextMenuPosition(event) {
+        var x = event && event.clientX;
+        var y = event && event.clientY;
+
+        if ((x === 0 && y === 0) || (x == null && y == null)) {
+            var target = event && (event.currentTarget || event.target);
+            if (target && target.getBoundingClientRect) {
+                var rect = target.getBoundingClientRect();
+                x = rect.left + 12;
+                y = rect.top + 12;
+            }
+        }
+
+        return {
+            x: x || 12,
+            y: y || 12,
+        };
+    }
+
+    function fallbackCopyText(text, documentRef) {
+        if (!documentRef || !documentRef.body) {
+            return;
+        }
+
+        try {
+            var textarea = documentRef.createElement("textarea");
+            textarea.value = text;
+            textarea.setAttribute("readonly", "");
+            textarea.style.position = "fixed";
+            textarea.style.top = "-9999px";
+            documentRef.body.appendChild(textarea);
+            textarea.select();
+            documentRef.execCommand("copy");
+            documentRef.body.removeChild(textarea);
+        } catch (error) {
+            // Best-effort fallback; no-op if browser blocks legacy copy APIs.
+        }
+    }
+
+    function writeToClipboard(value, options) {
+        options = options || {};
+
+        var navigatorRef = options.navigatorRef;
+        var windowRef = options.windowRef;
+        var documentRef = options.documentRef;
+        var text = value == null ? "" : String(value);
+
+        if (
+            navigatorRef &&
+            navigatorRef.clipboard &&
+            windowRef &&
+            windowRef.isSecureContext
+        ) {
+            navigatorRef.clipboard.writeText(text).catch(function () {
+                fallbackCopyText(text, documentRef);
+            });
+            return;
+        }
+
+        fallbackCopyText(text, documentRef);
+    }
+
+    function executeContextMenuAction(options) {
+        options = options || {};
+
+        var action = options.action || {};
+        var sanitizer = options.sanitizer;
+        var windowRef = options.windowRef;
+        var rootScope = options.rootScope;
+        var navigatorRef = options.navigatorRef;
+        var documentRef = options.documentRef;
+
+        if (action.clipboard != null) {
+            writeToClipboard(action.clipboard, {
+                navigatorRef: navigatorRef,
+                windowRef: windowRef,
+                documentRef: documentRef,
+            });
+        }
+
+        if (action.href && sanitizer && windowRef) {
+            var safeHref = sanitizer.sanitizeHref(action.href);
+            if (!safeHref) {
+                return;
+            }
+
+            var target = sanitizer.sanitizeTarget(action.target);
+            var openedWindow = windowRef.open(safeHref, target);
+            if (openedWindow && target === "_blank") {
+                openedWindow.opener = null;
+            }
+        }
+
+        if (
+            action.broadcast &&
+            rootScope &&
+            typeof rootScope.$broadcast === "function"
+        ) {
+            rootScope.$broadcast(
+                action.broadcast.eventName,
+                action.broadcast.payload || {},
+            );
+        }
+    }
+
+    function runRowClickAction(options) {
+        options = options || {};
+
+        var event = options.event;
+        var record = options.record;
+        var clickAction = options.clickAction || {};
+        var action = clickAction.action || {};
+        var getActionHrefFn = options.getActionHref;
+        var dispatchRowClickEventFn = options.dispatchRowClickEvent;
+        var windowRef = options.windowRef;
+
+        if (!action.type) {
+            return;
+        }
+
+        if (action.type === "event" && action.eventName) {
+            if (event && typeof event.preventDefault === "function") {
+                event.preventDefault();
+            }
+
+            if (typeof dispatchRowClickEventFn === "function") {
+                dispatchRowClickEventFn(action, record, event);
+            }
+            return;
+        }
+
+        if (action.type === "link") {
+            if (typeof getActionHrefFn !== "function") {
+                return;
+            }
+
+            var href = getActionHrefFn(record, action);
+
+            if (!href) {
+                if (event && typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                return;
+            }
+
+            if (clickAction.target === "row" && windowRef) {
+                if (event && typeof event.preventDefault === "function") {
+                    event.preventDefault();
+                }
+                windowRef.location.assign(href);
+            }
+        }
+    }
+
+    return {
+        hasRowClickAction: hasRowClickAction,
+        getActionHref: getActionHref,
+        hasAnyBlockHref: hasAnyBlockHref,
+        shouldHandleRowClick: shouldHandleRowClick,
+        shouldIgnoreRowClickTarget: shouldIgnoreRowClickTarget,
+        resolveContextMenuPosition: resolveContextMenuPosition,
+        writeToClipboard: writeToClipboard,
+        executeContextMenuAction: executeContextMenuAction,
+        runRowClickAction: runRowClickAction,
+    };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:07:40</sys_created_on>
+        <sys_id>4276917693a9c71040fcb6597bba10ea</sys_id>
+        <sys_mod_count>3</sys_mod_count>
+        <sys_name>scmTableRowActionsService</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_4276917693a9c71040fcb6597bba10ea</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:06:18</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>

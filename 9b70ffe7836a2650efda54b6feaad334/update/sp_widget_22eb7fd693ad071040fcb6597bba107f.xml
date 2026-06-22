@@ -1,7 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sp_widget">
     <sp_widget action="INSERT_OR_UPDATE">
         <category>custom</category>
-        <client_script><![CDATA[api.controller = function ($sce, spUtil, $rootScope, $scope, scmTableFilter) {
+        <client_script><![CDATA[api.controller = function (
+    spUtil,
+    $rootScope,
+    $scope,
+    scmTableFilter,
+    scmTableFiltersCoordinatorService,
+    scmTableColumnSearchService,
+    scmTableAppliedFiltersService,
+    scmTablePreferencesService,
+    scmTableSavedFiltersService,
+    scmTableViewStateService,
+    scmTableRowActionsSanitizer,
+    scmTableRowActionsService,
+    scmTableOrchestrationService,
+    scmTableColumnsCoordinatorService,
+) {
     const c = this;
     const OPERATOR_OPTIONS = {
         reference: [
@@ -32,7 +47,6 @@
             { value: "is_not_empty", label: "is not empty" },
         ],
     };
-    const COLUMN_SEARCH_OPERATORS = ["starts_with", "is", "contains"];
 
     if (c.data.redirectTo404) {
         return;
@@ -43,7 +57,6 @@
         savePreference("limit", c.data.limit)
             .then(() => {
                 c.page = 1;
-                getTotalRecords();
                 getTableData();
             })
             .catch(() => {
@@ -54,10 +67,11 @@
     c.closeDialogById = angular.noop;
     c.filterFieldMap = {};
     c.choiceValuesCache = {};
+    c.referenceDisplayCache = {};
     c.choiceValueRequestState = {};
     c.columnSearchRequestId = 0;
     c.tableDataRequestId = 0;
-    c.totalRecordsRequestId = 0;
+    c.appliedFiltersInfoRequestId = 0;
 
     const deregisterRefreshListener = $rootScope.$on(
         "scmTable:refresh",
@@ -72,8 +86,7 @@
                 return;
             }
 
-            getTotalRecords();
-            getTableData();
+            getTableData({ includeTotalRecords: true });
         },
     );
 
@@ -86,26 +99,41 @@
     init();
 
     c.goToFirstPage = function () {
-        c.page = 1;
+        const nextPage = scmTableOrchestrationService.getFirstPage();
+        if (nextPage === c.page) {
+            return;
+        }
+
+        c.page = nextPage;
         getTableData();
     };
 
     c.goToPreviousPage = function () {
-        if (c.page > 1) {
-            c.page -= 1;
+        const nextPage = scmTableOrchestrationService.getPreviousPage(c.page);
+        if (nextPage !== c.page) {
+            c.page = nextPage;
             getTableData();
         }
     };
 
     c.goToNextPage = function () {
-        if (c.page < c.totalPages) {
-            c.page += 1;
+        const nextPage = scmTableOrchestrationService.getNextPage(
+            c.page,
+            c.totalPages,
+        );
+        if (nextPage !== c.page) {
+            c.page = nextPage;
             getTableData();
         }
     };
 
     c.goToLastPage = function () {
-        c.page = c.totalPages;
+        const nextPage = scmTableOrchestrationService.getLastPage(c.totalPages);
+        if (nextPage === c.page) {
+            return;
+        }
+
+        c.page = nextPage;
         getTableData();
     };
 
@@ -134,43 +162,41 @@
     };
 
     c.addField = function () {
-        c.selectedFieldsList.push(c.fieldToAdd);
-        const index = c.unselectedFieldsList.findIndex(
-            (field) => field.name === c.fieldToAdd.name,
-        );
-        c.unselectedFieldsList.splice(index, 1);
-        c.fieldToAdd = null;
+        const nextState = scmTableViewStateService.addField({
+            selectedFieldsList: c.selectedFieldsList,
+            unselectedFieldsList: c.unselectedFieldsList,
+            fieldToAdd: c.fieldToAdd,
+        });
+
+        c.selectedFieldsList = nextState.selectedFieldsList;
+        c.unselectedFieldsList = nextState.unselectedFieldsList;
+        c.fieldToAdd = nextState.fieldToAdd;
     };
 
     c.removeField = function () {
-        c.unselectedFieldsList.push(c.fieldToRemove);
-        const index = c.selectedFieldsList.findIndex(
-            (field) => field.name === c.fieldToRemove.name,
-        );
-        c.selectedFieldsList.splice(index, 1);
-        c.fieldToRemove = null;
+        const nextState = scmTableViewStateService.removeField({
+            selectedFieldsList: c.selectedFieldsList,
+            unselectedFieldsList: c.unselectedFieldsList,
+            fieldToRemove: c.fieldToRemove,
+        });
+
+        c.selectedFieldsList = nextState.selectedFieldsList;
+        c.unselectedFieldsList = nextState.unselectedFieldsList;
+        c.fieldToRemove = nextState.fieldToRemove;
     };
 
     c.moveFieldUp = function () {
-        const index = c.selectedFieldsList.findIndex(
-            (field) => field.name === c.fieldToRemove.name,
+        c.selectedFieldsList = scmTableViewStateService.moveFieldUp(
+            c.selectedFieldsList,
+            c.fieldToRemove,
         );
-        if (index > 0) {
-            const temp = c.selectedFieldsList[index - 1];
-            c.selectedFieldsList[index - 1] = c.selectedFieldsList[index];
-            c.selectedFieldsList[index] = temp;
-        }
     };
 
     c.moveFieldDown = function () {
-        const index = c.selectedFieldsList.findIndex(
-            (field) => field.name === c.fieldToRemove.name,
+        c.selectedFieldsList = scmTableViewStateService.moveFieldDown(
+            c.selectedFieldsList,
+            c.fieldToRemove,
         );
-        if (index < c.selectedFieldsList.length - 1) {
-            const temp = c.selectedFieldsList[index + 1];
-            c.selectedFieldsList[index + 1] = c.selectedFieldsList[index];
-            c.selectedFieldsList[index] = temp;
-        }
     };
 
     c.saveListView = function () {
@@ -202,17 +228,14 @@
 
     c.revertListViewToDefault = function () {
         c.revertingListView = true;
-        c.server
-            .get({
-                action: "revertListViewToDefault",
+        scmTablePreferencesService
+            .revertListViewToDefault({
+                server: c.server,
                 transactionId: c.data.transactionId,
                 tableProviderScriptInclude: c.data.tableProviderScriptInclude,
             })
-            .then((response) => {
-                c.data.columns = response.data.columns;
-                syncColumnSelectorLists();
-                syncColumnSearchTermsFromAppliedFilters();
-                ensureChoiceValuesForColumnSearch();
+            .then((columns) => {
+                applyColumnsState(columns);
                 c.revertingListView = false;
                 c.closeDialogById(c.settingsDialogId);
                 getTableData();
@@ -223,12 +246,18 @@
     };
 
     c.getFirstRecordIndex = function () {
-        return (c.page - 1) * parseInt(c.data.limit, 10) + 1;
+        return scmTableViewStateService.getFirstRecordIndex(
+            c.page,
+            c.data.limit,
+        );
     };
 
     c.getLastRecordIndex = function () {
-        const last = c.page * parseInt(c.data.limit, 10);
-        return last > c.totalRecords ? c.totalRecords : last;
+        return scmTableViewStateService.getLastRecordIndex(
+            c.page,
+            c.data.limit,
+            c.totalRecords,
+        );
     };
 
     c.applyFilters = function () {
@@ -239,8 +268,7 @@
             syncColumnSearchTermsFromAppliedFilters();
 
             c.page = 1;
-            getTotalRecords();
-            getTableData();
+            getTableData({ includeTotalRecords: true });
             getAppliedFiltersInfoMessage();
             c.closeDialogById(c.filtersDialogId);
         });
@@ -253,13 +281,94 @@
         });
     };
 
+    c.confirmSaveFilter = function () {
+        if (!c.saveFilterName || !c.saveFilterName.trim()) {
+            return;
+        }
+
+        c.saveFilterError = "";
+        c.savingFilter = true;
+
+        scmTableSavedFiltersService
+            .saveFilter({
+                server: c.server,
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                filterName: c.saveFilterName.trim(),
+                filters: getAppliedFiltersForRequests(),
+            })
+            .then((savedFilters) => {
+                c.savedFilters = savedFilters;
+                c.savingFilter = false;
+                c.saveFilterName = "";
+            })
+            .catch(() => {
+                c.savingFilter = false;
+                c.saveFilterError =
+                    "We could not save the filter. Please try again.";
+            });
+    };
+
+    c.applySavedFilter = function (filter) {
+        if (!filter || !Array.isArray(filter.filters)) {
+            return;
+        }
+
+        const nextAppliedFilters = filter.filters;
+
+        resolveReferenceFilterDisplayValues(nextAppliedFilters).then(() => {
+            c.appliedFilters = nextAppliedFilters;
+            syncColumnSearchTermsFromAppliedFilters();
+            c.page = 1;
+            getTableData({ includeTotalRecords: true });
+            getAppliedFiltersInfoMessage();
+        });
+    };
+
+    c.deleteSavedFilter = function (filter) {
+        if (!filter) {
+            return;
+        }
+
+        scmTableSavedFiltersService
+            .deleteFilter({
+                server: c.server,
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                filterId: filter.id,
+            })
+            .then((savedFilters) => {
+                c.savedFilters = savedFilters;
+            });
+    };
+
+    c.toggleDefaultFilter = function (filter) {
+        if (!filter) {
+            return;
+        }
+
+        const newDefaultId = filter.isDefault ? null : filter.id;
+
+        scmTableSavedFiltersService
+            .setDefaultFilter({
+                server: c.server,
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                filterId: newDefaultId,
+            })
+            .then((savedFilters) => {
+                c.savedFilters = savedFilters;
+            });
+    };
+
     c.removeAllFilters = function () {
         c.appliedFilters = [];
-        c.filters = [scmTableFilter.createEmptyFilterCondition()];
+        c.filters = [
+            scmTableFiltersCoordinatorService.createEmptyFilterCondition(),
+        ];
         syncColumnSearchTermsFromAppliedFilters();
         c.page = 1;
-        getTotalRecords();
-        getTableData();
+        getTableData({ includeTotalRecords: true });
         getAppliedFiltersInfoMessage();
         c.closeDialogById(c.filtersDialogId);
     };
@@ -294,24 +403,10 @@
     };
 
     c.getColumnSearchControlType = function (fieldName) {
-        var fieldConfig = c.filterFieldMap[fieldName];
-        if (!fieldConfig || !fieldConfig.type) {
-            return "none";
-        }
-
-        if (fieldConfig.type === "string") {
-            return "string";
-        }
-
-        if (fieldConfig.type === "choice") {
-            return "choice";
-        }
-
-        if (fieldConfig.type === "reference") {
-            return "reference";
-        }
-
-        return "none";
+        return scmTableColumnSearchService.getColumnSearchControlType(
+            fieldName,
+            c.filterFieldMap,
+        );
     };
 
     c.getColumnSearchChoiceOptions = function (fieldName) {
@@ -322,8 +417,12 @@
         return c.filterFieldMap[fieldName] || {};
     };
 
+    c.isColumnSearchDisabled = function (fieldName) {
+        return isColumnSearchDisabled(fieldName);
+    };
+
     c.shouldShowColumnSearchRow = function () {
-        return c.data.canFilter && !hasAmbiguousColumnSearchState();
+        return c.data.canFilter;
     };
 
     c.removeFilterCondition = function (conditionIndex) {
@@ -399,29 +498,39 @@
         resolveReferenceFilterDisplayValues(c.filters || []);
     };
 
+    c.onOpenSaveFilterDialog = function () {
+        c.saveFilterName = "";
+        c.saveFilterError = "";
+    };
+
+    c.onOpenBookmarksDialog = function () {
+        scmTableSavedFiltersService
+            .getSavedFilters({
+                server: c.server,
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            })
+            .then((savedFilters) => {
+                c.savedFilters = savedFilters;
+            });
+    };
+
     c.getRowClickAction = function () {
         return c.data.rowClickAction || { target: "none", action: {} };
     };
 
     c.hasRowClickAction = function () {
-        const clickAction = c.getRowClickAction();
-        return (
-            clickAction &&
-            (clickAction.target === "firstColumn" ||
-                clickAction.target === "row")
+        return scmTableRowActionsService.hasRowClickAction(
+            c.getRowClickAction(),
         );
     };
 
     c.getActionHref = function (record, actionConfig) {
-        if (
-            !actionConfig ||
-            actionConfig.type !== "link" ||
-            !actionConfig.urlField
-        ) {
-            return undefined;
-        }
-
-        return sanitizeHref(record?.[actionConfig.urlField]);
+        return scmTableRowActionsService.getActionHref(
+            record,
+            actionConfig,
+            scmTableRowActionsSanitizer,
+        );
     };
 
     c.getRowClickHref = function (record) {
@@ -432,19 +541,11 @@
     c.shouldHandleRowClick = function (record, field, isFirstColumn) {
         const clickAction = c.getRowClickAction();
 
-        if (!c.hasRowClickAction()) {
-            return false;
-        }
-
-        if (clickAction.target === "firstColumn" && !isFirstColumn) {
-            return false;
-        }
-
-        if (c.hasAnyBlockHref(record, field)) {
-            return false;
-        }
-
-        return true;
+        return scmTableRowActionsService.shouldHandleRowClick({
+            clickAction: clickAction,
+            isFirstColumn: isFirstColumn,
+            hasAnyBlockHref: c.hasAnyBlockHref(record, field),
+        });
     };
 
     c.shouldHandleWholeRowClick = function () {
@@ -467,13 +568,16 @@
     };
 
     c.getBlockHref = function (block) {
-        return block && block.href ? sanitizeHref(block.href) : undefined;
+        return block && block.href
+            ? scmTableRowActionsSanitizer.sanitizeHref(block.href)
+            : undefined;
     };
 
     c.hasAnyBlockHref = function (record, field) {
-        return c
-            .getCellBlocks(record, field)
-            .some((block) => !!c.getBlockHref(block));
+        return scmTableRowActionsService.hasAnyBlockHref(
+            c.getCellBlocks(record, field),
+            scmTableRowActionsSanitizer,
+        );
     };
 
     c.onTableRowClick = function ($event, record) {
@@ -481,8 +585,11 @@
             return;
         }
 
-        const target = $event && $event.target;
-        if (target && target.closest("a, button, input, select, textarea")) {
+        if (
+            scmTableRowActionsService.shouldIgnoreRowClickTarget(
+                $event && $event.target,
+            )
+        ) {
             return;
         }
 
@@ -497,23 +604,13 @@
         const items = record.__contextMenuItems || [];
         if (!items.length) return false;
 
-        let x = $event.clientX;
-        let y = $event.clientY;
-
-        // Keyboard-triggered context menus can arrive without pointer coordinates.
-        if ((x === 0 && y === 0) || (x == null && y == null)) {
-            const target = $event.currentTarget || $event.target;
-            if (target && target.getBoundingClientRect) {
-                const rect = target.getBoundingClientRect();
-                x = rect.left + 12;
-                y = rect.top + 12;
-            }
-        }
+        const position =
+            scmTableRowActionsService.resolveContextMenuPosition($event);
 
         c.contextMenu = {
             visible: true,
-            x: x || 12,
-            y: y || 12,
+            x: position.x,
+            y: position.y,
             items: items,
             record: record,
         };
@@ -531,189 +628,59 @@
         const action = item.action;
         if (!action) return;
 
-        if (action.clipboard != null) {
-            writeToClipboard(action.clipboard);
-        }
-
-        if (action.href) {
-            const safeHref = sanitizeHref(action.href);
-            if (!safeHref) {
-                return;
-            }
-
-            const target = sanitizeTarget(action.target);
-            const openedWindow = window.open(safeHref, target);
-            if (openedWindow && target === "_blank") {
-                openedWindow.opener = null;
-            }
-        }
-
-        if (action.broadcast) {
-            $rootScope.$broadcast(
-                action.broadcast.eventName,
-                action.broadcast.payload || {},
-            );
-        }
+        scmTableRowActionsService.executeContextMenuAction({
+            action: action,
+            sanitizer: scmTableRowActionsSanitizer,
+            rootScope: $rootScope,
+            navigatorRef: navigator,
+            windowRef: window,
+            documentRef: document,
+        });
     };
 
     c.onRowClick = function ($event, record) {
         runRowClickAction($event, record);
     };
 
-    function runRowClickAction($event, record) {
-        const clickAction = c.getRowClickAction();
-        const action = clickAction.action || {};
-
-        if (!action.type) {
-            return;
-        }
-
-        if (action.type === "event" && action.eventName) {
-            $event.preventDefault();
-            dispatchRowClickEvent(action, record, $event);
-            return;
-        }
-
-        if (action.type === "link") {
-            const href = c.getActionHref(record, action);
-
-            if (!href) {
-                $event.preventDefault();
-                return;
-            }
-
-            if (clickAction.target === "row") {
-                $event.preventDefault();
-                window.location.assign(href);
-            }
-        }
-    }
-
-    function writeToClipboard(value) {
-        const text = value == null ? "" : String(value);
-
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).catch(() => {
-                fallbackCopyText(text);
-            });
-            return;
-        }
-
-        fallbackCopyText(text);
-    }
-
-    function fallbackCopyText(text) {
-        try {
-            const textarea = document.createElement("textarea");
-            textarea.value = text;
-            textarea.setAttribute("readonly", "");
-            textarea.style.position = "fixed";
-            textarea.style.top = "-9999px";
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand("copy");
-            document.body.removeChild(textarea);
-        } catch (error) {
-            // Best-effort fallback; no-op if browser blocks legacy copy APIs.
-        }
-    }
-
     c.getColumnStyle = function (field) {
-        const style = {};
+        return scmTableViewStateService.getColumnStyle(field);
+    };
 
-        if (field.width) {
-            style.width = field.width;
-        }
-
-        if (field.minWidth) {
-            style.minWidth = field.minWidth;
-        }
-
-        if (field.maxWidth) {
-            style.maxWidth = field.maxWidth;
-        }
-
-        return Object.keys(style).length > 0 ? style : undefined;
+    c.getCellStyle = function (field) {
+        return scmTableViewStateService.getCellStyle(field);
     };
 
     function getTableColumns() {
-        return c.server
-            .get({
-                action: "getTableColumns",
+        return scmTableColumnsCoordinatorService
+            .fetchColumnsState({
+                server: c.server,
                 transactionId: c.data.transactionId,
                 tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                allColumnsAvailable: c.data.allColumnsAvailable,
+                appliedFilters: c.appliedFilters || [],
+                filterFieldMap: c.filterFieldMap,
+                getChoiceOptionsForField: getChoiceOptionsForField,
+                loadChoiceValues: loadChoiceValues,
             })
-            .then((response) => {
-                c.data.columns = response.data.columns;
-                syncColumnSelectorLists();
-                syncColumnSearchTermsFromAppliedFilters();
-                ensureChoiceValuesForColumnSearch();
-                c.showTableHeader =
-                    (c.data.columns || []).filter((field) => field.label)
-                        .length > 0;
+            .then((state) => {
+                applyColumnsCoordinatorState(state);
             });
     }
 
     function syncColumnSelectorLists() {
-        c.selectedFieldsList = angular.copy(c.data.columns || []);
-        c.unselectedFieldsList = angular.copy(c.data.allColumnsAvailable || []);
-        c.unselectedFieldsList = c.unselectedFieldsList.filter((field) => {
-            return !c.selectedFieldsList.some(
-                (selectedField) => selectedField.name === field.name,
-            );
-        });
+        const nextState = scmTableViewStateService.syncColumnSelectorLists(
+            c.data.columns,
+            c.data.allColumnsAvailable,
+        );
 
-        c.fieldToAdd = null;
-        c.fieldToRemove = null;
+        c.selectedFieldsList = nextState.selectedFieldsList;
+        c.unselectedFieldsList = nextState.unselectedFieldsList;
+        c.fieldToAdd = nextState.fieldToAdd;
+        c.fieldToRemove = nextState.fieldToRemove;
     }
 
     function buildDialogFilters() {
         return scmTableFilter.buildDialogFilters(c.filters);
-    }
-
-    function parseColumnSearchInput(rawValue) {
-        var value = String(rawValue == null ? "" : rawValue).trim();
-
-        if (!value) {
-            return null;
-        }
-
-        if (value.charAt(0) === "=") {
-            var isValue = value.substring(1).trim();
-            return isValue ? { operator: "is", value: isValue } : null;
-        }
-
-        if (value.charAt(0) === "*") {
-            var containsValue = value.substring(1).trim();
-            return containsValue
-                ? { operator: "contains", value: containsValue }
-                : null;
-        }
-
-        return { operator: "starts_with", value: value };
-    }
-
-    function toColumnSearchInputValue(filter) {
-        if (!filter || !filter.operator) {
-            return "";
-        }
-
-        var value = String(filter.value == null ? "" : filter.value);
-        var operator = String(filter.operator).toLowerCase().trim();
-
-        if (operator === "is") {
-            return "=" + value;
-        }
-
-        if (operator === "contains") {
-            return "*" + value;
-        }
-
-        if (operator === "starts_with") {
-            return value;
-        }
-
-        return "";
     }
 
     function getChoiceOptionsForField(fieldName, fallbackOptions) {
@@ -743,337 +710,138 @@
     }
 
     function ensureChoiceValuesForColumnSearch() {
-        var requests = [];
-
-        (c.data.columns || []).forEach((column) => {
-            var fieldName = column && column.name;
-            if (!fieldName) {
-                return;
-            }
-
-            var fieldConfig = c.filterFieldMap[fieldName];
-            if (!fieldConfig || fieldConfig.type !== "choice") {
-                return;
-            }
-
-            var cachedOptions = getChoiceOptionsForField(fieldName);
-            if (cachedOptions.length) {
-                return;
-            }
-
-            var tempFilter = {
-                field: fieldName,
-                type: "choice",
-                choiceValues: [],
-            };
-
-            requests.push(
-                loadChoiceValues(tempFilter).then(() => {
-                    if (c.filterFieldMap[fieldName]) {
-                        c.filterFieldMap[fieldName].choiceValues = angular.copy(
-                            tempFilter.choiceValues || [],
-                        );
-                    }
-                }),
-            );
-        });
-
-        return Promise.all(requests);
-    }
-
-    function canManageAsColumnSearchFilter(filter) {
-        if (!filter || !filter.field) {
-            return false;
-        }
-
-        if (filter.source !== "column_search") {
-            return false;
-        }
-
-        if (
-            filter.type !== "string" &&
-            filter.type !== "choice" &&
-            filter.type !== "reference"
-        ) {
-            return false;
-        }
-
-        var operator = String(filter.operator || "")
-            .toLowerCase()
-            .trim();
-
-        if (filter.type === "choice" || filter.type === "reference") {
-            if (operator !== "is") {
-                return false;
-            }
-
-            return filter.value != null && String(filter.value) !== "";
-        }
-
-        if (!COLUMN_SEARCH_OPERATORS.includes(operator)) {
-            return false;
-        }
-
-        if (!filter.value || String(filter.value).trim() === "") {
-            return false;
-        }
-
-        return (c.data.columns || []).some((column) => {
-            return column && column.name === filter.field;
-        });
+        return scmTableColumnsCoordinatorService.ensureChoiceValuesForColumnSearch(
+            {
+                columns: c.data.columns || [],
+                filterFieldMap: c.filterFieldMap,
+                getChoiceOptionsForField: getChoiceOptionsForField,
+                loadChoiceValues: loadChoiceValues,
+            },
+        );
     }
 
     function applyColumnSearchToAppliedFilters() {
-        var currentFilters = Array.isArray(c.appliedFilters)
-            ? c.appliedFilters.slice()
-            : [];
-        var baseFilters = currentFilters.filter((filter) => {
-            return !canManageAsColumnSearchFilter(filter);
-        });
-
-        var nextColumnFilters = [];
-        var columnFields = c.data.columns || [];
-
-        columnFields.forEach((column) => {
-            var fieldName = column && column.name;
-            if (!fieldName) {
-                return;
-            }
-
-            var fieldConfig = c.filterFieldMap[fieldName];
-            if (!fieldConfig) {
-                return;
-            }
-
-            var controlType = c.getColumnSearchControlType(fieldName);
-            if (controlType === "none") {
-                return;
-            }
-
-            var selectedValue =
-                c.columnSearchTerms && c.columnSearchTerms[fieldName];
-
-            if (controlType === "choice") {
-                if (selectedValue == null || String(selectedValue) === "") {
-                    return;
-                }
-
-                var choiceOptions = getChoiceOptionsForField(fieldName);
-                var matchedChoice = (choiceOptions || []).find((choice) => {
-                    return String(choice.value) === String(selectedValue);
-                });
-
-                nextColumnFilters.push({
-                    field: fieldName,
-                    label: fieldConfig.label || column.label || fieldName,
-                    type: "choice",
-                    logicalOperator: "and",
-                    value: String(selectedValue),
-                    valueTo: "",
-                    operator: "is",
-                    choiceValues: angular.copy(choiceOptions),
-                    referenceTable: fieldConfig.referenceTable,
-                    referenceSearchField: fieldConfig.referenceSearchField,
-                    displayField: fieldConfig.displayField,
-                    searchFields: fieldConfig.searchFields,
-                    displayFields: fieldConfig.displayFields,
-                    referenceQualifier: fieldConfig.referenceQualifier,
-                    displayValue: matchedChoice
-                        ? matchedChoice.label || ""
-                        : "",
-                    source: "column_search",
-                });
-
-                return;
-            }
-
-            if (controlType === "reference") {
-                if (selectedValue == null || String(selectedValue) === "") {
-                    return;
-                }
-
-                nextColumnFilters.push({
-                    field: fieldName,
-                    label: fieldConfig.label || column.label || fieldName,
-                    type: "reference",
-                    logicalOperator: "and",
-                    value: String(selectedValue),
-                    valueTo: "",
-                    operator: "is",
-                    choiceValues: [],
-                    referenceTable: fieldConfig.referenceTable,
-                    referenceSearchField: fieldConfig.referenceSearchField,
-                    displayField: fieldConfig.displayField,
-                    searchFields: fieldConfig.searchFields,
-                    displayFields: fieldConfig.displayFields,
-                    referenceQualifier: fieldConfig.referenceQualifier,
-                    displayValue: "",
-                    source: "column_search",
-                });
-
-                return;
-            }
-
-            var parsed = parseColumnSearchInput(
-                c.columnSearchTerms && c.columnSearchTerms[fieldName],
-            );
-
-            if (!parsed) {
-                return;
-            }
-
-            nextColumnFilters.push({
-                field: fieldName,
-                label: fieldConfig.label || column.label || fieldName,
-                type: "string",
-                logicalOperator: "and",
-                value: parsed.value,
-                valueTo: "",
-                operator: parsed.operator,
-                choiceValues: fieldConfig.choiceValues || [],
-                referenceTable: fieldConfig.referenceTable,
-                referenceSearchField: fieldConfig.referenceSearchField,
-                displayField: fieldConfig.displayField,
-                searchFields: fieldConfig.searchFields,
-                displayFields: fieldConfig.displayFields,
-                referenceQualifier: fieldConfig.referenceQualifier,
-                displayValue: "",
-                source: "column_search",
+        c.appliedFilters =
+            scmTableColumnSearchService.buildAppliedFiltersFromColumnSearch({
+                appliedFilters: c.appliedFilters,
+                columns: c.data.columns || [],
+                filterFieldMap: c.filterFieldMap,
+                columnSearchTerms: c.columnSearchTerms || {},
+                getControlType: c.getColumnSearchControlType,
+                getChoiceOptionsForField: getChoiceOptionsForField,
+                incompatibleFieldMap: getIncompatibleColumnSearchFieldMap(),
             });
-        });
-
-        if (baseFilters.length > 0 && nextColumnFilters.length > 0) {
-            baseFilters[baseFilters.length - 1].logicalOperator = "and";
-        }
-
-        c.appliedFilters = baseFilters.concat(nextColumnFilters);
-
-        if (c.appliedFilters.length > 0) {
-            c.appliedFilters[0].logicalOperator = "and";
-        }
 
         restoreFilterConditionsFromApplied();
 
         c.page = 1;
-        getTotalRecords();
-        getTableData();
+        getTableData({ includeTotalRecords: true });
         getAppliedFiltersInfoMessage();
     }
 
     function syncColumnSearchTermsFromAppliedFilters() {
-        var nextTerms = {};
-        var trackedFields = {};
-
-        (c.data.columns || []).forEach((column) => {
-            if (column && column.name) {
-                nextTerms[column.name] = "";
-            }
-        });
-
-        (c.appliedFilters || []).forEach((filter) => {
-            if (!canManageAsColumnSearchFilter(filter)) {
-                return;
-            }
-
-            var fieldName = filter.field;
-            if (!(fieldName in nextTerms)) {
-                return;
-            }
-
-            trackedFields[fieldName] = trackedFields[fieldName] || 0;
-            trackedFields[fieldName] += 1;
-
-            if (trackedFields[fieldName] > 1) {
-                nextTerms[fieldName] = "";
-                return;
-            }
-
-            if (filter.type === "choice" || filter.type === "reference") {
-                nextTerms[fieldName] = String(filter.value || "");
-                return;
-            }
-
-            nextTerms[fieldName] = toColumnSearchInputValue(filter);
-        });
-
-        c.columnSearchTerms = nextTerms;
+        c.columnSearchTerms =
+            scmTableColumnSearchService.syncColumnSearchTermsFromAppliedFilters(
+                {
+                    columns: c.data.columns || [],
+                    appliedFilters: c.appliedFilters || [],
+                },
+            );
     }
 
-    function hasAmbiguousColumnSearchState() {
-        var filters = Array.isArray(c.appliedFilters) ? c.appliedFilters : [];
+    function getIncompatibleColumnSearchFieldMap() {
+        return scmTableColumnSearchService.getIncompatibleColumnSearchFields({
+            appliedFilters: c.appliedFilters || [],
+            columns: c.data.columns || [],
+        });
+    }
 
-        if (filters.length <= 1) {
-            return false;
-        }
-
-        var fieldCounts = {};
-
-        for (var i = 0; i < filters.length; i++) {
-            var filter = filters[i];
-            if (!filter || !filter.field) {
-                continue;
-            }
-
-            // Any OR chain should hide column search, matching backend behavior.
-            if (
-                i < filters.length - 1 &&
-                String(filter.logicalOperator || "and")
-                    .toLowerCase()
-                    .trim() === "or"
-            ) {
-                return true;
-            }
-
-            if (!canManageAsColumnSearchFilter(filter)) {
-                continue;
-            }
-
-            fieldCounts[filter.field] = (fieldCounts[filter.field] || 0) + 1;
-            if (fieldCounts[filter.field] > 1) {
-                return true;
-            }
-        }
-
-        return false;
+    function isColumnSearchDisabled(fieldName) {
+        var incompatibleFieldMap = getIncompatibleColumnSearchFieldMap();
+        return scmTableColumnSearchService.isColumnSearchDisabled(
+            fieldName,
+            incompatibleFieldMap,
+        );
     }
 
     function getAppliedFiltersForRequests() {
         return scmTableFilter.getAppliedFiltersForRequests(c.appliedFilters);
     }
 
-    function getTableData() {
-        var requestId = (c.tableDataRequestId || 0) + 1;
-        c.tableDataRequestId = requestId;
+    function updateTotalPages() {
+        c.totalPages = scmTableOrchestrationService.computeTotalPages(
+            c.totalRecords,
+            c.data.limit,
+        );
+    }
 
-        c.showSpinner = true;
-        return c.server
-            .get({
-                action: "getTableData",
-                transactionId: c.data.transactionId,
-                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                page: c.page,
-                filters: getAppliedFiltersForRequests(),
-            })
-            .then((response) => {
-                if (requestId !== c.tableDataRequestId) {
-                    return;
+    function getTableData(options) {
+        options = options || {};
+        var includeTotalRecords = !!options.includeTotalRecords;
+
+        return scmTableOrchestrationService.refreshTableData({
+            currentRequestId: c.tableDataRequestId,
+            setRequestId: function (requestId) {
+                c.tableDataRequestId = requestId;
+            },
+            getCurrentRequestId: function () {
+                return c.tableDataRequestId;
+            },
+            setLoading: function (isLoading) {
+                c.showSpinner = isLoading;
+            },
+            server: c.server,
+            transactionId: c.data.transactionId,
+            tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+            page: c.page,
+            filters: getAppliedFiltersForRequests(),
+            includeTotalRecords: includeTotalRecords,
+            onSuccess: function (result) {
+                c.records = result.records;
+                c.data.orderBy = result.orderBy;
+                c.data.orderDirection = result.orderDirection;
+
+                if (
+                    result.includeTotalRecords &&
+                    typeof result.totalRecords === "number"
+                ) {
+                    c.totalRecords = result.totalRecords;
                 }
 
-                c.records = response.data.records;
-                c.data.orderBy = response.data.orderBy;
-                c.data.orderDirection = response.data.orderDirection;
-            })
-            .catch(() => {
-                if (requestId !== c.tableDataRequestId) {
-                    return;
-                }
-
+                updateTotalPages();
+            },
+            onError: function () {
                 c.records = [];
+            },
+        });
+    }
+
+    function applyColumnsCoordinatorState(state) {
+        if (!state) {
+            return;
+        }
+
+        c.data.columns = state.columns || [];
+        c.selectedFieldsList = state.selectedFieldsList;
+        c.unselectedFieldsList = state.unselectedFieldsList;
+        c.fieldToAdd = state.fieldToAdd;
+        c.fieldToRemove = state.fieldToRemove;
+        c.columnSearchTerms = state.columnSearchTerms || {};
+        c.showTableHeader = state.showTableHeader;
+    }
+
+    function applyColumnsState(columns) {
+        return scmTableColumnsCoordinatorService
+            .buildColumnsState({
+                columns: columns || [],
+                allColumnsAvailable: c.data.allColumnsAvailable,
+                appliedFilters: c.appliedFilters || [],
+                filterFieldMap: c.filterFieldMap,
+                getChoiceOptionsForField: getChoiceOptionsForField,
+                loadChoiceValues: loadChoiceValues,
             })
-            .finally(() => {
-                if (requestId === c.tableDataRequestId) {
-                    c.showSpinner = false;
-                }
+            .then((state) => {
+                applyColumnsCoordinatorState(state);
             });
     }
 
@@ -1090,66 +858,49 @@
         });
     }
 
-    function getTotalRecords() {
-        var requestId = (c.totalRecordsRequestId || 0) + 1;
-        c.totalRecordsRequestId = requestId;
-
-        c.server
-            .get({
-                action: "getTotalRecords",
-                transactionId: c.data.transactionId,
-                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                filters: getAppliedFiltersForRequests(),
-            })
-            .then((response) => {
-                if (requestId !== c.totalRecordsRequestId) {
-                    return;
-                }
-
-                c.totalRecords = response.data.totalRecords;
-                const limit = parseInt(c.data.limit, 10) || 0;
-                c.totalPages =
-                    limit > 0 ? Math.ceil(c.totalRecords / limit) : 0;
-            })
-            .catch(() => {
-                if (requestId !== c.totalRecordsRequestId) {
-                    return;
-                }
-
-                c.totalRecords = 0;
-                c.totalPages = 0;
-            });
+    function runRowClickAction($event, record) {
+        scmTableRowActionsService.runRowClickAction({
+            event: $event,
+            record: record,
+            clickAction: c.getRowClickAction(),
+            getActionHref: c.getActionHref,
+            dispatchRowClickEvent: dispatchRowClickEvent,
+            windowRef: window,
+        });
     }
 
     function initializeFilters() {
-        c.filterFieldMap = scmTableFilter.buildFilterFieldMap(
-            c.data.filterFields,
-        );
+        var state = scmTableFiltersCoordinatorService.initializeFilters({
+            filterFields: c.data.filterFields,
+            appliedFilters: c.appliedFilters,
+            loadChoiceValues: loadChoiceValues,
+        });
 
-        restoreFilterConditionsFromApplied();
-    }
-
-    function createEmptyFilterCondition() {
-        return scmTableFilter.createEmptyFilterCondition();
+        c.filterFieldMap = state.filterFieldMap;
+        c.filters = state.filters;
     }
 
     function populateConditionFromField(condition, fieldConfig) {
-        scmTableFilter.populateConditionFromField(condition, fieldConfig, {
+        scmTableFiltersCoordinatorService.populateConditionFromField({
+            condition: condition,
+            fieldConfig: fieldConfig,
             loadChoiceValues: loadChoiceValues,
         });
     }
 
     function restoreFilterConditionsFromApplied() {
-        c.filters = scmTableFilter.restoreFilterConditionsFromApplied({
-            appliedFilters: c.appliedFilters,
-            filterFieldMap: c.filterFieldMap,
-            createEmptyFilterCondition: createEmptyFilterCondition,
-            populateConditionFromField: populateConditionFromField,
-        });
+        c.filters =
+            scmTableFiltersCoordinatorService.restoreFilterConditionsFromApplied(
+                {
+                    appliedFilters: c.appliedFilters,
+                    filterFieldMap: c.filterFieldMap,
+                    loadChoiceValues: loadChoiceValues,
+                },
+            );
     }
 
     function loadChoiceValues(filter) {
-        return scmTableFilter.loadChoiceValues({
+        return scmTableFiltersCoordinatorService.loadChoiceValues({
             server: c.server,
             transactionId: c.data.transactionId,
             tableProviderScriptInclude: c.data.tableProviderScriptInclude,
@@ -1160,10 +911,9 @@
     }
 
     function savePreference(preferenceName, preferenceValue) {
-        if (!c.data.canSavePreferences) return Promise.resolve();
-
-        return c.server.get({
-            action: "savePreference",
+        return scmTablePreferencesService.savePreference({
+            canSavePreferences: c.data.canSavePreferences,
+            server: c.server,
             transactionId: c.data.transactionId,
             tableProviderScriptInclude: c.data.tableProviderScriptInclude,
             preferenceName: preferenceName,
@@ -1172,151 +922,80 @@
     }
 
     function getAppliedFiltersInfoMessage() {
-        c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
-        c.server
-            .get({
-                action: "getAppliedFiltersInfoMessage",
-                transactionId: c.data.transactionId,
-                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-                appliedFilters: getAppliedFiltersForRequests(),
-            })
-            .then((response) => {
-                const htmlContent = response.data.appliedFiltersHtml || "";
-                c.appliedFiltersHtml = sanitizeTrustedHtml(htmlContent);
-            })
-            .catch(() => {
-                c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
-            });
-    }
-
-    function resolveReferenceFilterDisplayValues(filters) {
-        return scmTableFilter.resolveReferenceFilterDisplayValues({
+        return scmTableAppliedFiltersService.refreshAppliedFiltersHtml({
+            currentRequestId: c.appliedFiltersInfoRequestId,
+            setRequestId: function (requestId) {
+                c.appliedFiltersInfoRequestId = requestId;
+            },
+            getCurrentRequestId: function () {
+                return c.appliedFiltersInfoRequestId;
+            },
+            setHtml: function (html) {
+                c.appliedFiltersHtml = html;
+            },
             server: c.server,
             transactionId: c.data.transactionId,
             tableProviderScriptInclude: c.data.tableProviderScriptInclude,
-            filters: filters,
+            appliedFilters: getAppliedFiltersForRequests(),
         });
     }
 
-    function sanitizeTrustedHtml(html) {
-        if (!html) {
-            return $sce.trustAsHtml("<span></span>");
-        }
-
-        if (typeof DOMParser === "undefined") {
-            return $sce.trustAsHtml("<span></span>");
-        }
-
-        const parser = new DOMParser();
-        const parsed = parser.parseFromString(String(html), "text/html");
-
-        parsed
-            .querySelectorAll("script, iframe, object, embed")
-            .forEach((node) => {
-                node.remove();
-            });
-
-        parsed.querySelectorAll("*").forEach((node) => {
-            Array.from(node.attributes).forEach((attribute) => {
-                const name = attribute.name.toLowerCase();
-                const value = String(attribute.value || "").toLowerCase();
-
-                if (name.indexOf("on") === 0) {
-                    node.removeAttribute(attribute.name);
-                }
-
-                if (
-                    (name === "href" || name === "src") &&
-                    value.indexOf("javascript:") === 0
-                ) {
-                    node.removeAttribute(attribute.name);
-                }
-            });
-        });
-
-        return $sce.trustAsHtml(parsed.body.innerHTML || "<span></span>");
-    }
-
-    function sanitizeHref(rawHref) {
-        if (!rawHref) {
-            return undefined;
-        }
-
-        const href = String(rawHref).trim();
-        if (!href) {
-            return undefined;
-        }
-
-        // Block explicitly unsafe schemes.
-        if (/^(javascript:|data:|vbscript:)/i.test(href)) {
-            return undefined;
-        }
-
-        // Allow safe in-portal and relative routes.
-        if (
-            href.startsWith("?") ||
-            href.startsWith("/") ||
-            href.startsWith("#")
-        ) {
-            return href;
-        }
-
-        // Allow explicit safe schemes only.
-        if (/^(https?:|mailto:|tel:)/i.test(href)) {
-            return href;
-        }
-
-        // Allow remaining non-schemed relative URLs like "id=contacts".
-        if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
-            return href;
-        }
-
-        return undefined;
-    }
-
-    function sanitizeTarget(rawTarget) {
-        const target = String(rawTarget || "_self").trim();
-        return ["_self", "_blank", "_parent", "_top"].includes(target)
-            ? target
-            : "_self";
+    function resolveReferenceFilterDisplayValues(filters) {
+        return scmTableFiltersCoordinatorService.resolveReferenceFilterDisplayValues(
+            {
+                server: c.server,
+                transactionId: c.data.transactionId,
+                tableProviderScriptInclude: c.data.tableProviderScriptInclude,
+                filters: filters,
+                referenceDisplayCache: c.referenceDisplayCache,
+            },
+        );
     }
 
     function init() {
-        c.totalRecords = 0;
-        c.totalPages = 0;
-        c.page = 1;
-        c.records = [];
-
-        c.fieldToAdd = null;
-        c.fieldToRemove = null;
+        const initialState = scmTableOrchestrationService.createInitialState();
+        c.totalRecords = initialState.totalRecords;
+        c.totalPages = initialState.totalPages;
+        c.page = initialState.page;
+        c.records = initialState.records;
+        c.fieldToAdd = initialState.fieldToAdd;
+        c.fieldToRemove = initialState.fieldToRemove;
 
         c.settingsDialogId = spUtil.createUid("xxxx-xxxx");
         c.filtersDialogId = spUtil.createUid("xxxx-xxxx");
+        c.saveFilterDialogId = spUtil.createUid("xxxx-xxxx");
+        c.bookmarksDialogId = spUtil.createUid("xxxx-xxxx");
         c.limitSelectId = spUtil.createUid("xxxx-xxxx");
 
-        c.filterFieldMap = scmTableFilter.buildFilterFieldMap(
-            c.data.filterFields,
-        );
-        c.appliedFilters = [];
-        c.appliedFiltersHtml = $sce.trustAsHtml("<span></span>");
+        c.filterFieldMap =
+            scmTableFiltersCoordinatorService.buildFilterFieldMap(
+                c.data.filterFields,
+            );
+
+        c.appliedFilters =
+            Array.isArray(c.data.defaultAppliedFilters) &&
+            c.data.defaultAppliedFilters.length > 0
+                ? c.data.defaultAppliedFilters
+                : [];
+        c.appliedFiltersHtml = scmTableAppliedFiltersService.emptyHtml();
         c.columnSearchTerms = {};
+        c.savedFilters = [];
+        c.saveFilterName = "";
+        c.savingFilter = false;
 
-        getTotalRecords();
-        getTableData();
+        getTableData({ includeTotalRecords: true });
 
-        syncColumnSelectorLists();
+        if (c.appliedFilters.length > 0) {
+            getAppliedFiltersInfoMessage();
+        }
 
         if (c.data.canFilter) {
             c.filters = [];
             initializeFilters();
             resolveReferenceFilterDisplayValues(c.filters);
-            ensureChoiceValuesForColumnSearch();
         }
 
-        syncColumnSearchTermsFromAppliedFilters();
-
-        c.showTableHeader =
-            (c.data.columns || []).filter((field) => field.label).length > 0;
+        applyColumnsState(c.data.columns || []);
     }
 };
 ]]></client_script>
@@ -1371,6 +1050,7 @@
                         padding: 0;
                         cursor: pointer;
                         text-align: left;
+                        outline: none;
                     }
 
                     .scm-table-sort-button:focus-visible {
@@ -1577,6 +1257,26 @@
     font-size: var(--scm-font-size-xsmall);
 }
 
+.scm-table-cell--align-right .scm-table-cell-block-group,
+.scm-table-cell--align-right .scm-table-cell-block-link,
+.scm-table-cell--align-right .scm-table-cell-block-button {
+    align-items: flex-end;
+}
+
+.scm-table-cell--align-right .scm-table-cell-block {
+    text-align: right;
+}
+
+.scm-table-cell--align-center .scm-table-cell-block-group,
+.scm-table-cell--align-center .scm-table-cell-block-link,
+.scm-table-cell--align-center .scm-table-cell-block-button {
+    align-items: center;
+}
+
+.scm-table-cell--align-center .scm-table-cell-block {
+    text-align: center;
+}
+
 .scm-table-context-menu {
     position: fixed;
     z-index: 9999;
@@ -1639,6 +1339,115 @@
 
     sdx-dialog sdx-dialog-toggle sdx-icon:hover {
         color: var(--scm-color-int-blue-active);
+    }
+}
+
+/* Scoped compact search-row controls for scm-table widget only. */
+.scm-table-widget {
+    #table-wrapper table.scm-table--overlay-room {
+        margin-bottom: 220px;
+    }
+
+    #table-wrapper table {
+        thead {
+            position: relative;
+            z-index: 40;
+        }
+
+        tbody {
+            position: relative;
+            z-index: 1;
+        }
+    }
+
+    #table-wrapper table thead .scm-table-column-search-row {
+        position: relative;
+        z-index: 80;
+
+        th {
+            position: relative;
+            z-index: 90;
+            overflow: visible;
+            padding-top: var(--scm-spacing-05, 4px);
+            padding-bottom: var(--scm-spacing-05, 4px);
+        }
+
+        .scm-table-column-search-input {
+            font-size: var(--scm-font-size-small, 14px);
+            line-height: 20px;
+        }
+
+        input.scm-table-column-search-input,
+        select.scm-table-column-search-select,
+        .scm-table-column-search-reference .scm-reference-input {
+            min-height: 34px;
+            height: 34px;
+            padding-top: 4px;
+            padding-bottom: 4px;
+        }
+
+        input.scm-table-column-search-input--text {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            border: 1px solid var(--scm-color-gray-tint-4);
+            border-radius: var(--scm-border-radius-small);
+            background-color: var(--scm-color-sc-white);
+            color: var(--scm-color-gray) !important;
+            font-weight: var(--scm-font-weight-regular) !important;
+            font-size: var(--scm-font-size-small, 14px);
+            line-height: 20px;
+            padding-left: var(--scm-padding-3);
+            padding-right: var(--scm-padding-3);
+            outline: none;
+            box-shadow: none;
+        }
+
+        input.scm-table-column-search-input--text,
+        input.scm-table-column-search-input--text:focus,
+        input.scm-table-column-search-input--text:active {
+            color: var(--scm-color-gray) !important;
+            font-weight: var(--scm-font-weight-regular) !important;
+        }
+
+        input.scm-table-column-search-input--text::placeholder {
+            color: var(--scm-color-gray-tint-5);
+            opacity: 1;
+        }
+
+        input.scm-table-column-search-input--text:focus,
+        input.scm-table-column-search-input--text:focus-visible {
+            border-color: var(--scm-color-int-blue);
+            box-shadow: 0 0 0 1px var(--scm-color-int-blue);
+        }
+
+        .scm-table-column-search-select {
+            font-size: var(--scm-font-size-small, 14px);
+            font-weight: var(--scm-font-weight-regular);
+            line-height: 20px;
+            padding-left: var(--scm-padding-2);
+            padding-right: var(--scm-padding-2);
+        }
+
+        .scm-table-column-search-reference .scm-reference-input {
+            font-size: var(--scm-font-size-small, 14px);
+            font-weight: var(--scm-font-weight-regular);
+            line-height: 20px;
+            letter-spacing: 0;
+        }
+
+        .scm-table-column-search-reference,
+        .scm-table-column-search-reference scm-ref-picker {
+            position: relative;
+            z-index: 120;
+            overflow: visible;
+        }
+
+        .scm-table-column-search-reference .scm-reference-dropdown-container,
+        .scm-table-column-search-reference .scm-autocomplete-list {
+            position: absolute;
+            z-index: 9999 !important;
+        }
     }
 }
 
@@ -2080,562 +1889,78 @@
         return;
     }
 
-    if (!validateProviderContract(widgetHelper, logger)) {
+    const contractValidator = new TableProviderContractValidator();
+    if (!contractValidator.validate(widgetHelper, logger)) {
         data.redirectTo404 = true;
         return;
     }
 
-    if (input && input.action === "savePreference") {
-        if (!widgetHelper.canSavePreferences()) return;
+    const sanitizer = new TableRowActionsSanitizer();
+    const normalizer = new TableContractNormalizer({
+        logger: logger,
+    });
+    const recordEnricher = new TableWidgetRecordEnricher({
+        normalizer: normalizer,
+        sanitizer: sanitizer,
+    });
+    const referenceResolver = new TableReferenceResolver();
+    const actionRouter = new TableWidgetActionRouter({
+        widgetHelper: widgetHelper,
+        input: input || {},
+        data: data,
+        normalizer: normalizer,
+        logger: logger,
+        tableProviderScriptInclude: tableProviderScriptInclude,
+        helpers: {
+            decorateRecords: function (provider, records, columns) {
+                return recordEnricher.decorateRecords(
+                    provider,
+                    records,
+                    columns,
+                );
+            },
+            resolveReferenceDisplayValuesForFilters: function (filters) {
+                referenceResolver.resolveReferenceDisplayValuesForFilters(
+                    filters,
+                );
+            },
+            getReferenceDisplayValue: function (tableName, sysId) {
+                return referenceResolver.getReferenceDisplayValue(
+                    tableName,
+                    sysId,
+                );
+            },
+        },
+    });
 
-        widgetHelper.saveUserPreference(
-            input.preferenceName,
-            input.preferenceValue,
-        );
+    if (actionRouter.route()) {
         return;
     }
 
-    if (input && input.action === "getAppliedFiltersInfoMessage") {
-        const filtersForMessage = resolveEffectiveFilters(input.appliedFilters);
+    const stateBuilder = new TableWidgetStateBuilder({
+        widgetHelper: widgetHelper,
+        normalizer: normalizer,
+        logger: logger,
+    });
 
-        data.appliedFiltersHtml =
-            widgetHelper.getAppliedFiltersInfoMessage(filtersForMessage);
-        return;
-    }
-
-    if (input && input.action === "getTotalRecords") {
-        const effectiveFiltersForCount = resolveEffectiveFilters(input.filters);
-
-        data.totalRecords = widgetHelper.getTotalRecords(
-            effectiveFiltersForCount,
-        );
-        return;
-    }
-
-    if (input && input.action === "getChoiceValues") {
-        data.choiceValues = widgetHelper.getChoiceValues(input.fieldName);
-        return;
-    }
-
-    if (input && input.action === "getReferenceDisplayValue") {
-        data.displayValue = getReferenceDisplayValue(input.table, input.sysId);
-        return;
-    }
-
-    if (input && input.action === "getTableColumns") {
-        data.columns = normalizeColumns(widgetHelper.getTableColumns());
-        return;
-    }
-
-    if (input && input.action === "revertListViewToDefault") {
-        widgetHelper.saveUserPreference(
-            "columns",
-            JSON.stringify(widgetHelper.getDefaultColumns()),
-        );
-        data.columns = normalizeColumns(widgetHelper.getDefaultColumns());
-        return;
-    }
-
-    if (input && input.action === "getTableData") {
-        const columns = normalizeColumns(widgetHelper.getTableColumns());
-        const effectiveFilters = resolveEffectiveFilters(input.filters);
-
-        if (typeof widgetHelper.getCellContent !== "function") {
-            logger.error(
-                "Provider must implement getCellContent(field, record)",
-            );
-            data.records = [];
-            data.orderDirection = widgetHelper.getOrderDirection();
-            data.orderBy = widgetHelper.getOrderBy();
-            return;
-        }
-
-        const providerRecords = widgetHelper.getTableData({
-            filters: effectiveFilters,
-            page: input.page,
-        });
-
-        if (!Array.isArray(providerRecords)) {
-            logger.error({
-                message: "Provider getTableData must return an array",
-                provider: tableProviderScriptInclude,
-                returnedType: typeof providerRecords,
-            });
-            data.records = [];
-        } else {
-            data.records = decorateRecords(
-                widgetHelper,
-                providerRecords,
-                columns,
-            );
-        }
-
-        data.orderDirection = widgetHelper.getOrderDirection();
-        data.orderBy = widgetHelper.getOrderBy();
-        return;
-    }
-
-    data.title = widgetHelper.getPageTitle();
-
-    data.showNewRecordButton = widgetHelper.canCreate();
-
-    data.detailViewPage = widgetHelper.getDetailViewPage();
-    data.idField = widgetHelper.getIdField();
-
-    data.canFilter = widgetHelper.canFilter();
-    data.filterFields = buildUnifiedFilterFields(
-        widgetHelper.getAllAvailableColumns(),
-        widgetHelper.getFilterFields(),
-    );
-
-    if (data.canFilter && data.filterFields.length === 0) {
-        data.canFilter = false;
-    }
-
-    data.limit = widgetHelper.getTableLimit();
-
-    data.canSavePreferences = widgetHelper.canSavePreferences();
-
-    data.allColumnsAvailable = widgetHelper.getAllAvailableColumns();
-    data.columns = normalizeColumns(widgetHelper.getTableColumns());
-
-    data.canConfigureColumns = widgetHelper.canConfigureColumns();
-    data.showMetadata = widgetHelper.showTableMetadata();
-    data.showAppliedFilters = widgetHelper.showAppliedFilters();
-    data.rowClickAction =
-        typeof widgetHelper.getRowClickAction === "function"
-            ? widgetHelper.getRowClickAction()
-            : { target: "none", action: {} };
-    data.hasContextMenu =
-        typeof widgetHelper.getContextMenuItems === "function";
+    const initialState = stateBuilder.buildInitialState();
+    Object.assign(data, initialState);
 })();
-
-function decorateRecords(widgetHelper, records, columns) {
-    var hasContextMenu = typeof widgetHelper.getContextMenuItems === "function";
-    var rowClickAction =
-        typeof widgetHelper.getRowClickAction === "function"
-            ? widgetHelper.getRowClickAction()
-            : {};
-    var clickAction = rowClickAction.action || {};
-
-    return (records || []).map(function (record) {
-        var decoratedRecord = Object.assign({}, record);
-        decoratedRecord.__cellContent = {};
-
-        for (var i = 0; i < columns.length; i++) {
-            var field = columns[i];
-            decoratedRecord.__cellContent[field.name] = normalizeCellContent(
-                widgetHelper.getCellContent(field, record),
-            );
-        }
-
-        if (hasContextMenu) {
-            decoratedRecord.__contextMenuItems = normalizeContextMenuItems(
-                widgetHelper.getContextMenuItems(record),
-            );
-        }
-
-        // Ensure custom providers returning plain objects preserve link fields.
-        if (clickAction.type === "link" && clickAction.urlField) {
-            var urlField = clickAction.urlField;
-            if (
-                !decoratedRecord.hasOwnProperty(urlField) &&
-                record.hasOwnProperty(urlField)
-            ) {
-                decoratedRecord[urlField] = record[urlField];
-            }
-        }
-
-        return decoratedRecord;
-    });
-}
-
-function normalizeCellContent(cellContent) {
-    var normalizedLayout = "stack";
-
-    if (!cellContent) {
-        return {
-            layout: normalizedLayout,
-            blocks: [],
-        };
-    }
-
-    if (Array.isArray(cellContent)) {
-        return {
-            layout: normalizedLayout,
-            blocks: cellContent.map(normalizeCellBlock).filter(Boolean),
-        };
-    }
-
-    if (cellContent.blocks && Array.isArray(cellContent.blocks)) {
-        if (cellContent.layout === "inline" || cellContent.layout === "stack") {
-            normalizedLayout = cellContent.layout;
-        }
-
-        return {
-            layout: normalizedLayout,
-            blocks: cellContent.blocks.map(normalizeCellBlock).filter(Boolean),
-        };
-    }
-
-    return {
-        layout: normalizedLayout,
-        blocks: [normalizeCellBlock(cellContent)].filter(Boolean),
-    };
-}
-
-function normalizeCellBlock(block) {
-    if (block == null) {
-        return null;
-    }
-
-    if (typeof block === "string" || typeof block === "number") {
-        return { value: String(block) };
-    }
-
-    if (typeof block !== "object") {
-        return null;
-    }
-
-    var normalized = {
-        value: String(block.value || ""),
-    };
-
-    if (typeof block.className === "string" && block.className) {
-        normalized.className = block.className;
-    }
-
-    if (typeof block.href === "string" && block.href) {
-        var safeBlockHref = sanitizeHref(block.href);
-        if (safeBlockHref) {
-            normalized.href = safeBlockHref;
-        }
-    }
-
-    return normalized;
-}
-
-function normalizeContextMenuItems(items) {
-    if (!Array.isArray(items)) {
-        return [];
-    }
-
-    return items.map(normalizeContextMenuItem).filter(Boolean);
-}
-
-function normalizeContextMenuItem(item) {
-    if (!item || typeof item !== "object") {
-        return null;
-    }
-
-    if (typeof item.label !== "string" || !item.label.trim()) {
-        return null;
-    }
-
-    if (!item.action || typeof item.action !== "object") {
-        return null;
-    }
-
-    var normalizedAction = {};
-
-    if (typeof item.action.clipboard === "string") {
-        normalizedAction.clipboard = item.action.clipboard;
-    }
-
-    if (typeof item.action.href === "string" && item.action.href) {
-        var safeActionHref = sanitizeHref(item.action.href);
-        if (safeActionHref) {
-            normalizedAction.href = safeActionHref;
-        }
-
-        if (
-            normalizedAction.href &&
-            typeof item.action.target === "string" &&
-            item.action.target
-        ) {
-            normalizedAction.target = sanitizeTarget(item.action.target);
-        }
-    }
-
-    if (
-        item.action.broadcast &&
-        typeof item.action.broadcast === "object" &&
-        typeof item.action.broadcast.eventName === "string" &&
-        item.action.broadcast.eventName
-    ) {
-        normalizedAction.broadcast = {
-            eventName: item.action.broadcast.eventName,
-            payload: item.action.broadcast.payload || {},
-        };
-    }
-
-    if (Object.keys(normalizedAction).length === 0) {
-        return null;
-    }
-
-    var normalizedItem = {
-        label: item.label,
-        action: normalizedAction,
-    };
-
-    if (typeof item.iconClass === "string" && item.iconClass) {
-        normalizedItem.iconClass = item.iconClass;
-    }
-
-    if (typeof item.iconName === "string" && item.iconName) {
-        normalizedItem.iconName = item.iconName;
-    }
-
-    return normalizedItem;
-}
-
-function validateProviderContract(widgetHelper, logger) {
-    var requiredMethods = [
-        "canCreate",
-        "canFilter",
-        "canSavePreferences",
-        "canConfigureColumns",
-        "getAllAvailableColumns",
-        "getAppliedFiltersInfoMessage",
-        "getChoiceValues",
-        "getDefaultColumns",
-        "getDetailViewPage",
-        "getFilterFields",
-        "getIdField",
-        "getRowClickAction",
-        "getCellContent",
-        "getOrderBy",
-        "getOrderDirection",
-        "getPageTitle",
-        "getTableColumns",
-        "getTableData",
-        "getTableLimit",
-        "getTotalRecords",
-        "saveUserPreference",
-        "showAppliedFilters",
-        "showTableMetadata",
-    ];
-
-    var missingMethods = requiredMethods.filter(function (methodName) {
-        return typeof widgetHelper[methodName] !== "function";
-    });
-
-    if (missingMethods.length > 0) {
-        logger.error({
-            message: "Provider is missing required methods",
-            missingMethods: missingMethods,
-        });
-        return false;
-    }
-
-    return true;
-}
-
-function resolveEffectiveFilters(filters) {
-    return Array.isArray(filters) ? filters : [];
-}
-
-function normalizeColumns(columns) {
-    if (!Array.isArray(columns)) {
-        return [];
-    }
-
-    return columns.map(normalizeColumn).filter(Boolean);
-}
-
-function normalizeColumn(column) {
-    if (!column || typeof column !== "object") {
-        return null;
-    }
-
-    if (typeof column.name !== "string" || !column.name.trim()) {
-        return null;
-    }
-
-    var normalized = {
-        name: column.name,
-        label: typeof column.label === "string" ? column.label : "",
-    };
-
-    if (typeof column.width === "string" && column.width) {
-        normalized.width = column.width;
-    }
-
-    if (typeof column.minWidth === "string" && column.minWidth) {
-        normalized.minWidth = column.minWidth;
-    }
-
-    if (typeof column.maxWidth === "string" && column.maxWidth) {
-        normalized.maxWidth = column.maxWidth;
-    }
-
-    if (typeof column.sourceField === "string" && column.sourceField) {
-        normalized.sourceField = column.sourceField;
-    }
-
-    if (typeof column.useDisplayValue === "boolean") {
-        normalized.useDisplayValue = column.useDisplayValue;
-    }
-
-    return normalized;
-}
-
-function buildUnifiedFilterFields(allColumns, configuredFilterFields) {
-    var configuredMap = {};
-    var configured = normalizeFilterFields(configuredFilterFields);
-
-    for (var i = 0; i < configured.length; i++) {
-        configuredMap[configured[i].field] = configured[i];
-    }
-
-    var unified = [];
-    var normalizedAllColumns = normalizeColumns(allColumns);
-
-    for (var j = 0; j < normalizedAllColumns.length; j++) {
-        var column = normalizedAllColumns[j];
-        if (!column || !column.name) {
-            continue;
-        }
-
-        if (configuredMap[column.name]) {
-            unified.push(configuredMap[column.name]);
-            continue;
-        }
-
-        unified.push({
-            field: column.name,
-            label: column.label || column.name,
-            type: "string",
-        });
-    }
-
-    // Keep explicitly configured filter fields that are not present in columns.
-    for (var k = 0; k < configured.length; k++) {
-        var configuredField = configured[k];
-        var existsInUnified = unified.some(function (item) {
-            return item.field === configuredField.field;
-        });
-
-        if (!existsInUnified) {
-            unified.push(configuredField);
-        }
-    }
-
-    return unified;
-}
-
-function normalizeFilterFields(filterFields) {
-    if (!Array.isArray(filterFields)) {
-        return [];
-    }
-
-    return filterFields
-        .map(normalizeFilterField)
-        .filter(Boolean);
-}
-
-function normalizeFilterField(filterField) {
-    if (!filterField || typeof filterField !== "object") {
-        return null;
-    }
-
-    var fieldName =
-        typeof filterField.field === "string" ? filterField.field.trim() : "";
-
-    if (!fieldName) {
-        return null;
-    }
-
-    var normalized = Object.assign({}, filterField);
-    normalized.field = fieldName;
-    normalized.label =
-        typeof filterField.label === "string" && filterField.label
-            ? filterField.label
-            : fieldName;
-    normalized.type =
-        typeof filterField.type === "string" && filterField.type
-            ? filterField.type
-            : "string";
-
-    return normalized;
-}
-
-function getReferenceDisplayValue(tableName, sysId) {
-    if (!tableName || !sysId) {
-        return "";
-    }
-
-    try {
-        var gr = new GlideRecord(tableName);
-        if (gr.get(sysId)) {
-            return gr.getDisplayValue() || "";
-        }
-    } catch (error) {
-        // Return empty string on lookup failures to keep client flow resilient.
-    }
-
-    return "";
-}
-
-function sanitizeHref(rawHref) {
-    if (!rawHref) {
-        return "";
-    }
-
-    var href = String(rawHref).trim();
-    if (!href) {
-        return "";
-    }
-
-    if (/^(javascript:|data:|vbscript:)/i.test(href)) {
-        return "";
-    }
-
-    if (
-        href.indexOf("?") === 0 ||
-        href.indexOf("/") === 0 ||
-        href.indexOf("#") === 0
-    ) {
-        return href;
-    }
-
-    if (/^(https?:|mailto:|tel:)/i.test(href)) {
-        return href;
-    }
-
-    if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
-        return href;
-    }
-
-    return "";
-}
-
-function sanitizeTarget(rawTarget) {
-    var target = String(rawTarget || "_self").trim();
-    var allowedTargets = {
-        _self: true,
-        _blank: true,
-        _parent: true,
-        _top: true,
-    };
-
-    return allowedTargets[target] ? target : "_self";
-}
 ]]></script>
         <servicenow>false</servicenow>
         <sys_class_name>sp_widget</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 20:53:34</sys_created_on>
         <sys_id>22eb7fd693ad071040fcb6597bba107f</sys_id>
-        <sys_mod_count>105</sys_mod_count>
+        <sys_mod_count>151</sys_mod_count>
         <sys_name>scm-table</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_widget_22eb7fd693ad071040fcb6597bba107f</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 21:25:25</sys_updated_on>
-        <template><![CDATA[<div ng-if="!data.redirectTo404">
+        <sys_updated_on>2026-06-22 20:12:11</sys_updated_on>
+        <template><![CDATA[<div class="scm-table-widget" ng-if="!data.redirectTo404">
     <div id="table-header" ng-if="data.title || data.showNewRecordButton">
         <h1 class="h1" ng-bind="::data.title" ng-if="::data.title"></h1>
         <sdx-button
@@ -2658,6 +1983,10 @@ function sanitizeTarget(rawTarget) {
                 ng-if="::data.canFilter"
                 src="'scm-table-filters'"
             ></ng-include>
+            <ng-include
+                ng-if="data.canFilter && data.canSaveFilters"
+                src="'scm-table-bookmarks'"
+            ></ng-include>
         </div>
         <ng-include
             ng-if="::data.showMetadata"
@@ -2671,10 +2000,16 @@ function sanitizeTarget(rawTarget) {
     >
         <div id="applied-filters-list">
             <span ng-bind-html="c.appliedFiltersHtml"></span>
+            <ng-include
+                ng-if="data.canFilter && data.canSaveFilters"
+                src="'scm-table-save-filter-dialog'"
+            ></ng-include>
         </div>
     </div>
     <div id="table-wrapper">
-        <table>
+        <table
+            ng-class="{ 'scm-table--overlay-room': c.shouldShowColumnSearchRow() && (c.records || []).length < 6 }"
+        >
             <thead ng-if="c.showTableHeader">
                 <tr>
                     <th
@@ -2712,21 +2047,18 @@ function sanitizeTarget(rawTarget) {
                         ng-repeat="field in c.data.columns"
                         ng-style="c.getColumnStyle(field)"
                     >
-                        <sdx-input
+                        <input
                             ng-if="c.getColumnSearchControlType(field.name) === 'string'"
                             type="text"
-                            label=""
-                            class="scm-table-column-search-input"
-                            sr-hint="Column search"
+                            class="input scm-table-column-search-input scm-table-column-search-input--text"
                             ng-model="c.columnSearchTerms[field.name]"
-                            change-callback="sdxInputHandler(this)"
-                            scm-model-provider
                             ng-click="$event.stopPropagation()"
                             ng-keyup="c.onColumnSearchKeyUp($event)"
-                            ng-attr-placeholder="Search {{ field.label || field.name }}"
+                            ng-disabled="c.isColumnSearchDisabled(field.name)"
+                            ng-attr-placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
                             aria-label="Column search"
                             title="Syntax: text = starts with, =text = is, *text = contains. Press Enter to search"
-                        ></sdx-input>
+                        />
                         <select
                             ng-if="c.getColumnSearchControlType(field.name) === 'choice'"
                             class="input scm-table-column-search-input scm-table-column-search-select"
@@ -2734,10 +2066,13 @@ function sanitizeTarget(rawTarget) {
                             ng-model="c.columnSearchTerms[field.name]"
                             ng-change="c.onColumnSearchChange()"
                             ng-click="$event.stopPropagation()"
+                            ng-disabled="c.isColumnSearchDisabled(field.name)"
                             aria-label="Column search"
                         >
                             <option value="">
-                                Select {{ field.label || field.name }}
+                                {{ c.isColumnSearchDisabled(field.name) ?
+                                'Search disabled by filters' : ('Select ' +
+                                (field.label || field.name)) }}
                             </option>
                             <option
                                 ng-repeat="choice in c.getColumnSearchChoiceOptions(field.name) track by choice.value"
@@ -2747,7 +2082,7 @@ function sanitizeTarget(rawTarget) {
                             </option>
                         </select>
                         <div
-                            ng-if="c.getColumnSearchControlType(field.name) === 'reference'"
+                            ng-if="c.getColumnSearchControlType(field.name) === 'reference' && !c.isColumnSearchDisabled(field.name)"
                             class="scm-table-column-search-reference"
                             ng-click="$event.stopPropagation()"
                         >
@@ -2756,7 +2091,7 @@ function sanitizeTarget(rawTarget) {
                                 table="{{ c.getColumnSearchReferenceConfig(field.name).referenceTable }}"
                                 display-field="{{ c.getColumnSearchReferenceConfig(field.name).displayField }}"
                                 search-fields="{{ c.getColumnSearchReferenceConfig(field.name).searchFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
-                                placeholder="Search {{ field.label || field.name }}"
+                                placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
                                 reference-qualifier="{{ c.getColumnSearchReferenceConfig(field.name).referenceQualifier }}"
                                 page-size="{{ c.getColumnSearchReferenceConfig(field.name).pageSize }}"
                                 minimum-input-length="{{ c.getColumnSearchReferenceConfig(field.name).minimumInputLength || 3 }}"
@@ -2767,6 +2102,15 @@ function sanitizeTarget(rawTarget) {
                                 ng-change="c.onColumnSearchChange()"
                             ></scm-ref-picker>
                         </div>
+                        <input
+                            ng-if="c.getColumnSearchControlType(field.name) === 'reference' && c.isColumnSearchDisabled(field.name)"
+                            type="text"
+                            class="input scm-table-column-search-input"
+                            value=""
+                            disabled
+                            ng-attr-placeholder="Search disabled by filters"
+                            aria-label="Column search disabled"
+                        />
                         <input
                             ng-if="c.getColumnSearchControlType(field.name) === 'none'"
                             type="text"
@@ -2789,8 +2133,8 @@ function sanitizeTarget(rawTarget) {
                     <td
                         ng-repeat="field in c.data.columns"
                         class="scm-table-cell"
-                        ng-class="'scm-table-cell--' + c.getCellLayout(record, field)"
-                        ng-style="c.getColumnStyle(field)"
+                        ng-class="['scm-table-cell--' + c.getCellLayout(record, field), 'scm-table-cell--align-' + (field.align || 'left')]"
+                        ng-style="c.getCellStyle(field)"
                     >
                         <a
                             class="scm-table-cell-block-link"

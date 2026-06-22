@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableRowActionsSanitizer</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableRowActionsSanitizer</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var TableRowActionsSanitizer = Class.create();
+TableRowActionsSanitizer.prototype = {
+    sanitizeHref: function (rawHref) {
+        if (!rawHref) {
+            return "";
+        }
+
+        var href = String(rawHref).trim();
+        if (!href) {
+            return "";
+        }
+
+        // Block explicitly unsafe schemes
+        if (/^(javascript:|data:|vbscript:)/i.test(href)) {
+            return "";
+        }
+
+        // Allow safe in-portal and relative routes
+        if (
+            href.indexOf("?") === 0 ||
+            href.indexOf("/") === 0 ||
+            href.indexOf("#") === 0
+        ) {
+            return href;
+        }
+
+        // Allow explicit safe schemes only
+        if (/^(https?:|mailto:|tel:)/i.test(href)) {
+            return href;
+        }
+
+        // Allow remaining non-schemed relative URLs like "id=contacts"
+        if (!/^[a-zA-Z][a-zA-Z\d+.-]*:/.test(href)) {
+            return href;
+        }
+
+        return "";
+    },
+
+    sanitizeTarget: function (rawTarget) {
+        var target = String(rawTarget || "_self").trim();
+        var allowedTargets = {
+            _self: true,
+            _blank: true,
+            _parent: true,
+            _top: true,
+        };
+
+        return allowedTargets[target] ? target : "_self";
+    },
+
+    type: "TableRowActionsSanitizer",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 21:42:02</sys_created_on>
+        <sys_id>25905d3a9369c71040fcb6597bba108f</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>TableRowActionsSanitizer</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_25905d3a9369c71040fcb6597bba108f</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:20:20</sys_updated_on>
+    </sys_script_include>
+</record_update>

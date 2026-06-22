@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableWidgetStateBuilder</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableWidgetStateBuilder</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var TableWidgetStateBuilder = Class.create();
+TableWidgetStateBuilder.prototype = {
+    initialize: function (options) {
+        options = options || {};
+        this.widgetHelper = options.widgetHelper;
+        this.normalizer =
+            options.normalizer ||
+            new TableContractNormalizer({ logger: options.logger });
+        this.logger = options.logger;
+    },
+
+    buildInitialState: function () {
+        var widgetHelper = this.widgetHelper;
+        var normalizer = this.normalizer;
+
+        if (!widgetHelper) {
+            return {};
+        }
+
+        var state = {
+            title: widgetHelper.getPageTitle(),
+            showNewRecordButton: widgetHelper.canCreate(),
+            detailViewPage: widgetHelper.getDetailViewPage(),
+            idField: widgetHelper.getIdField(),
+            canFilter: widgetHelper.canFilter(),
+            filterFields: normalizer.buildUnifiedFilterFields(
+                widgetHelper.getAllAvailableColumns(),
+                widgetHelper.getFilterFields(),
+            ),
+            limit: widgetHelper.getTableLimit(),
+            canSavePreferences: widgetHelper.canSavePreferences(),
+            allColumnsAvailable: widgetHelper.getAllAvailableColumns(),
+            columns: normalizer.normalizeColumns(
+                widgetHelper.getTableColumns(),
+            ),
+            canConfigureColumns: widgetHelper.canConfigureColumns(),
+            showMetadata: widgetHelper.showTableMetadata(),
+            showAppliedFilters: widgetHelper.showAppliedFilters(),
+            rowClickAction:
+                typeof widgetHelper.getRowClickAction === "function"
+                    ? widgetHelper.getRowClickAction()
+                    : { target: "none", action: {} },
+            hasContextMenu:
+                typeof widgetHelper.getContextMenuItems === "function",
+            canSaveFilters:
+                typeof widgetHelper.canSaveFilters === "function"
+                    ? widgetHelper.canSaveFilters()
+                    : typeof widgetHelper.getSavedFilters === "function",
+            defaultAppliedFilters:
+                typeof widgetHelper.getDefaultAppliedFilters === "function"
+                    ? widgetHelper.getDefaultAppliedFilters() || []
+                    : [],
+        };
+
+        // Disable filtering if no filter fields are available.
+        if (state.canFilter && state.filterFields.length === 0) {
+            state.canFilter = false;
+        }
+
+        return state;
+    },
+
+    type: "TableWidgetStateBuilder",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:12:46</sys_created_on>
+        <sys_id>fc9c514793a94b1040fcb6597bba103b</sys_id>
+        <sys_mod_count>3</sys_mod_count>
+        <sys_name>TableWidgetStateBuilder</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_fc9c514793a94b1040fcb6597bba103b</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 18:09:03</sys_updated_on>
+    </sys_script_include>
+</record_update>

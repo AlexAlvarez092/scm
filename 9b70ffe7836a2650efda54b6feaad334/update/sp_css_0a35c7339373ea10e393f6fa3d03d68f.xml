@@ -49,6 +49,13 @@ a {
     }
 }
 
+*:focus,
+*:focus-visible,
+*:focus-within {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
 .scm-table-fields-selector-selected {
     background-color: var(--scm-color-int-blue);
     color: var(--scm-color-sc-white);
@@ -69,14 +76,14 @@ a {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-09-12 12:44:19</sys_created_on>
         <sys_id>0a35c7339373ea10e393f6fa3d03d68f</sys_id>
-        <sys_mod_count>13</sys_mod_count>
+        <sys_mod_count>16</sys_mod_count>
         <sys_name>scm-main</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_css_0a35c7339373ea10e393f6fa3d03d68f</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2025-12-12 20:44:38</sys_updated_on>
+        <sys_updated_on>2026-06-22 12:48:47</sys_updated_on>
         <turn_off_scss_compilation>false</turn_off_scss_compilation>
     </sp_css>
 </record_update>

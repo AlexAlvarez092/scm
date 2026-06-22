@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableWidgetRecordEnricher</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableWidgetRecordEnricher</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var TableWidgetRecordEnricher = Class.create();
+TableWidgetRecordEnricher.prototype = {
+    initialize: function (options) {
+        options = options || {};
+        this.normalizer = options.normalizer;
+        this.sanitizer = options.sanitizer;
+    },
+
+    decorateRecords: function (widgetHelper, records, columns) {
+        var normalizer = this.normalizer;
+        var sanitizer = this.sanitizer;
+        var hasContextMenu =
+            typeof widgetHelper.getContextMenuItems === "function";
+        var rowClickAction =
+            typeof widgetHelper.getRowClickAction === "function"
+                ? widgetHelper.getRowClickAction()
+                : {};
+        var clickAction = rowClickAction.action || {};
+
+        return (records || []).map(function (record) {
+            var decoratedRecord = Object.assign({}, record);
+            decoratedRecord.__cellContent = {};
+
+            for (var i = 0; i < columns.length; i++) {
+                var field = columns[i];
+                decoratedRecord.__cellContent[field.name] =
+                    normalizer.normalizeCellContent(
+                        widgetHelper.getCellContent(field, record),
+                        sanitizer,
+                    );
+            }
+
+            if (hasContextMenu) {
+                decoratedRecord.__contextMenuItems =
+                    normalizer.normalizeContextMenuItems(
+                        widgetHelper.getContextMenuItems(record),
+                        sanitizer,
+                    );
+            }
+
+            // Preserve provider-level link fields in plain object records.
+            if (clickAction.type === "link" && clickAction.urlField) {
+                var urlField = clickAction.urlField;
+                if (
+                    !decoratedRecord.hasOwnProperty(urlField) &&
+                    record.hasOwnProperty(urlField)
+                ) {
+                    decoratedRecord[urlField] = record[urlField];
+                }
+            }
+
+            return decoratedRecord;
+        });
+    },
+
+    type: "TableWidgetRecordEnricher",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:11:45</sys_created_on>
+        <sys_id>3c5c990793a94b1040fcb6597bba10db</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>TableWidgetRecordEnricher</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_3c5c990793a94b1040fcb6597bba10db</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:11:45</sys_updated_on>
+    </sys_script_include>
+</record_update>

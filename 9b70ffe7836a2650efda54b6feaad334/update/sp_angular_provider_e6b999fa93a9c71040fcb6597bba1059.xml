@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmTableViewStateService</name>
+        <script><![CDATA[function scmTableViewStateService() {
+    "use strict";
+
+    function syncColumnSelectorLists(columns, allColumnsAvailable) {
+        var selectedFieldsList = angular.copy(columns || []);
+        var unselectedFieldsList = angular.copy(allColumnsAvailable || []);
+
+        unselectedFieldsList = unselectedFieldsList.filter(function (field) {
+            return !selectedFieldsList.some(function (selectedField) {
+                return selectedField.name === field.name;
+            });
+        });
+
+        return {
+            selectedFieldsList: selectedFieldsList,
+            unselectedFieldsList: unselectedFieldsList,
+            fieldToAdd: null,
+            fieldToRemove: null,
+        };
+    }
+
+    function addField(state) {
+        state = state || {};
+        var selectedFieldsList = (state.selectedFieldsList || []).slice();
+        var unselectedFieldsList = (state.unselectedFieldsList || []).slice();
+        var fieldToAdd = state.fieldToAdd || null;
+
+        if (!fieldToAdd || !fieldToAdd.name) {
+            return {
+                selectedFieldsList: selectedFieldsList,
+                unselectedFieldsList: unselectedFieldsList,
+                fieldToAdd: fieldToAdd,
+            };
+        }
+
+        selectedFieldsList.push(fieldToAdd);
+        var index = unselectedFieldsList.findIndex(function (field) {
+            return field.name === fieldToAdd.name;
+        });
+
+        if (index > -1) {
+            unselectedFieldsList.splice(index, 1);
+        }
+
+        return {
+            selectedFieldsList: selectedFieldsList,
+            unselectedFieldsList: unselectedFieldsList,
+            fieldToAdd: null,
+        };
+    }
+
+    function removeField(state) {
+        state = state || {};
+        var selectedFieldsList = (state.selectedFieldsList || []).slice();
+        var unselectedFieldsList = (state.unselectedFieldsList || []).slice();
+        var fieldToRemove = state.fieldToRemove || null;
+
+        if (!fieldToRemove || !fieldToRemove.name) {
+            return {
+                selectedFieldsList: selectedFieldsList,
+                unselectedFieldsList: unselectedFieldsList,
+                fieldToRemove: fieldToRemove,
+            };
+        }
+
+        unselectedFieldsList.push(fieldToRemove);
+        var index = selectedFieldsList.findIndex(function (field) {
+            return field.name === fieldToRemove.name;
+        });
+
+        if (index > -1) {
+            selectedFieldsList.splice(index, 1);
+        }
+
+        return {
+            selectedFieldsList: selectedFieldsList,
+            unselectedFieldsList: unselectedFieldsList,
+            fieldToRemove: null,
+        };
+    }
+
+    function moveFieldUp(selectedFieldsList, fieldToRemove) {
+        var nextSelected = (selectedFieldsList || []).slice();
+        var field = fieldToRemove || null;
+
+        if (!field || !field.name) {
+            return nextSelected;
+        }
+
+        var index = nextSelected.findIndex(function (item) {
+            return item.name === field.name;
+        });
+
+        if (index > 0) {
+            var temp = nextSelected[index - 1];
+            nextSelected[index - 1] = nextSelected[index];
+            nextSelected[index] = temp;
+        }
+
+        return nextSelected;
+    }
+
+    function moveFieldDown(selectedFieldsList, fieldToRemove) {
+        var nextSelected = (selectedFieldsList || []).slice();
+        var field = fieldToRemove || null;
+
+        if (!field || !field.name) {
+            return nextSelected;
+        }
+
+        var index = nextSelected.findIndex(function (item) {
+            return item.name === field.name;
+        });
+
+        if (index > -1 && index < nextSelected.length - 1) {
+            var temp = nextSelected[index + 1];
+            nextSelected[index + 1] = nextSelected[index];
+            nextSelected[index] = temp;
+        }
+
+        return nextSelected;
+    }
+
+    function getFirstRecordIndex(page, limit) {
+        return (page - 1) * parseInt(limit, 10) + 1;
+    }
+
+    function getLastRecordIndex(page, limit, totalRecords) {
+        var last = page * parseInt(limit, 10);
+        return last > totalRecords ? totalRecords : last;
+    }
+
+    function shouldShowTableHeader(columns) {
+        return (
+            (columns || []).filter(function (field) {
+                return field && field.label;
+            }).length > 0
+        );
+    }
+
+    function getColumnStyle(field) {
+        field = field || {};
+        var style = {};
+
+        if (field.width) {
+            style.width = field.width;
+        }
+
+        if (field.minWidth) {
+            style.minWidth = field.minWidth;
+        }
+
+        if (field.maxWidth) {
+            style.maxWidth = field.maxWidth;
+        }
+
+        return Object.keys(style).length > 0 ? style : undefined;
+    }
+
+    function getCellStyle(field) {
+        var style = getColumnStyle(field) || {};
+        style.textAlign = (field && field.align) || "left";
+        return style;
+    }
+
+    return {
+        syncColumnSelectorLists: syncColumnSelectorLists,
+        addField: addField,
+        removeField: removeField,
+        moveFieldUp: moveFieldUp,
+        moveFieldDown: moveFieldDown,
+        getFirstRecordIndex: getFirstRecordIndex,
+        getLastRecordIndex: getLastRecordIndex,
+        shouldShowTableHeader: shouldShowTableHeader,
+        getColumnStyle: getColumnStyle,
+        getCellStyle: getCellStyle,
+    };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:21:58</sys_created_on>
+        <sys_id>e6b999fa93a9c71040fcb6597bba1059</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scmTableViewStateService</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_e6b999fa93a9c71040fcb6597bba1059</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:06:22</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>

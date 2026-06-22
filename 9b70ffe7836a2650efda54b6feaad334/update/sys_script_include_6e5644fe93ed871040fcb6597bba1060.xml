@@ -9,20 +9,8 @@
         <mobile_callable>false</mobile_callable>
         <name>TableQueryBuilder</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[/**
- * TableQueryBuilder
- *
- * Responsible for constructing encoded filter clauses for GlideRecord queries.
- * Handles all operator mappings, date normalization, and reference field resolution.
- *
- * @class
- */
-var TableQueryBuilder = Class.create();
+        <script><![CDATA[var TableQueryBuilder = Class.create();
 TableQueryBuilder.prototype = {
-    /**
-     * Operator mappings for GlideRecord encoded queries.
-     * Maps logical operators to their GlideRecord equivalents.
-     */
     OPERATOR_MAP: {
         is: "=",
         on: "=",
@@ -47,9 +35,6 @@ TableQueryBuilder.prototype = {
         is_less_than: "<",
     },
 
-    /**
-     * Human-readable labels for filter operators.
-     */
     OPERATOR_LABELS: {
         is: "is",
         is_not: "is not",
@@ -84,12 +69,6 @@ TableQueryBuilder.prototype = {
         this.configObject = params.configObject || {};
     },
 
-    /**
-     * Build an encoded filter clause for a single filter.
-     *
-     * @param {Object} filter
-     * @return {string} Encoded query clause or empty string if invalid
-     */
     buildEncodedFilterClause: function (filter) {
         if (!filter || !filter.field) {
             return "";
@@ -111,7 +90,6 @@ TableQueryBuilder.prototype = {
             ) {
                 operator = "contains";
             }
-
         }
 
         if (
@@ -180,15 +158,6 @@ TableQueryBuilder.prototype = {
         return queryField + encodedOperator + String(value);
     },
 
-    /**
-     * Build an encoded date filter clause.
-     *
-     * @param {string} queryField
-     * @param {string} operator
-     * @param {string} value
-     * @param {string} valueTo
-     * @return {string|null}
-     */
     buildDateEncodedClause: function (queryField, operator, value, valueTo) {
         var normalized = this.normalizeDateValue(value);
         var normalizedTo = this.normalizeDateValue(valueTo);
@@ -240,13 +209,6 @@ TableQueryBuilder.prototype = {
         return null;
     },
 
-    /**
-     * Normalize a date value from multiple formats.
-     * Supports: DD.MM.YYYY and YYYY-MM-DD
-     *
-     * @param {string} value
-     * @return {Object|null} {date, start, end} or null if invalid
-     */
     normalizeDateValue: function (value) {
         if (value == null || String(value) === "") {
             return null;
@@ -284,12 +246,6 @@ TableQueryBuilder.prototype = {
         };
     },
 
-    /**
-     * Check if an operator requires a value.
-     *
-     * @param {string} operator
-     * @return {boolean}
-     */
     operatorNeedsValue: function (operator) {
         operator = String(operator || "").toLowerCase();
 
@@ -300,23 +256,11 @@ TableQueryBuilder.prototype = {
         );
     },
 
-    /**
-     * Get human-readable label for an operator.
-     *
-     * @param {string} operator
-     * @return {string}
-     */
     getOperatorLabel: function (operator) {
         var key = String(operator || "is").toLowerCase();
         return this.OPERATOR_LABELS[key] || key || "is";
     },
 
-    /**
-     * Check if operator is a reference text search operator.
-     *
-     * @param {string} operator
-     * @return {boolean}
-     */
     isReferenceTextOperator: function (operator) {
         return (
             operator === "contains" ||
@@ -326,13 +270,6 @@ TableQueryBuilder.prototype = {
         );
     },
 
-    /**
-     * Resolve the query field for reference text search.
-     *
-     * @param {Object} filter
-     * @param {string} operator
-     * @return {string}
-     */
     resolveReferenceTextQueryField: function (filter, operator) {
         var baseField = filter.field;
         var referenceSearchField = this.resolveReferenceSearchField(filter);
@@ -348,12 +285,6 @@ TableQueryBuilder.prototype = {
         return baseField + "." + referenceSearchField;
     },
 
-    /**
-     * Get the search field to use for reference filtering.
-     *
-     * @param {Object} filter
-     * @return {string}
-     */
     resolveReferenceSearchField: function (filter) {
         var map = this.getReferenceSearchFieldMap() || {};
         var mappedField = filter && filter.field ? map[filter.field] : "";
@@ -384,11 +315,6 @@ TableQueryBuilder.prototype = {
         return filter.displayField || "name";
     },
 
-    /**
-     * Get reference search field map from config.
-     *
-     * @return {Object}
-     */
     getReferenceSearchFieldMap: function () {
         return this.configObject.reference_search_field_map || {};
     },
@@ -400,13 +326,13 @@ TableQueryBuilder.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-21 16:17:43</sys_created_on>
         <sys_id>6e5644fe93ed871040fcb6597bba1060</sys_id>
-        <sys_mod_count>5</sys_mod_count>
+        <sys_mod_count>6</sys_mod_count>
         <sys_name>TableQueryBuilder</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_6e5644fe93ed871040fcb6597bba1060</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 21:11:23</sys_updated_on>
+        <sys_updated_on>2026-06-22 17:20:24</sys_updated_on>
     </sys_script_include>
 </record_update>

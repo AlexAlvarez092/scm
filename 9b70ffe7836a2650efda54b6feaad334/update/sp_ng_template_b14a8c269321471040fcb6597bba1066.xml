@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:56:41</sys_created_on>
         <sys_id>b14a8c269321471040fcb6597bba1066</sys_id>
-        <sys_mod_count>37</sys_mod_count>
+        <sys_mod_count>40</sys_mod_count>
         <sys_name>scm-table-filters</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_b14a8c269321471040fcb6597bba1066</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 21:14:13</sys_updated_on>
+        <sys_updated_on>2026-06-22 17:38:03</sys_updated_on>
         <template><![CDATA[<sdx-dialog
     label="Filter records"
     id="{{c.filtersDialogId}}"
@@ -260,10 +260,10 @@
                 ></sdx-button>
                 <sdx-button
                     theme="transparent"
-                    icon-name="icon-save"
+                    icon-name="icon-check-mark"
                     icon-size="2"
                     ng-click="c.applyFilters()"
-                    label="Save"
+                    label="Apply"
                 ></sdx-button>
             </div>
         </div>

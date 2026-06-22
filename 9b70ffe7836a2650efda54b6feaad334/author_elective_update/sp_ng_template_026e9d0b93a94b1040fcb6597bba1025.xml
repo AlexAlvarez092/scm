@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="DELETE">
+        <id>scm-table-column-search</id>
+        <sp_widget display_value="scm-table">22eb7fd693ad071040fcb6597bba107f</sp_widget>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:20:52</sys_created_on>
+        <sys_id>026e9d0b93a94b1040fcb6597bba1025</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>scm-table-column-search</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_026e9d0b93a94b1040fcb6597bba1025</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:32:26</sys_updated_on>
+        <template><![CDATA[<tr class="scm-table-column-search-row" ng-if="c.shouldShowColumnSearchRow()">
+    <th ng-repeat="field in c.data.columns" ng-style="c.getColumnStyle(field)">
+        <input
+            ng-if="c.getColumnSearchControlType(field.name) === 'string'"
+            type="text"
+            class="input scm-table-column-search-input scm-table-column-search-input--text"
+            ng-model="c.columnSearchTerms[field.name]"
+            ng-click="$event.stopPropagation()"
+            ng-keyup="c.onColumnSearchKeyUp($event)"
+            ng-disabled="c.isColumnSearchDisabled(field.name)"
+            ng-attr-placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
+            aria-label="Column search"
+            title="Syntax: text = starts with, =text = is, *text = contains. Press Enter to search"
+        />
+        <select
+            ng-if="c.getColumnSearchControlType(field.name) === 'choice'"
+            class="input scm-table-column-search-input scm-table-column-search-select"
+            ng-class="{ 'scm-table-column-search-select--placeholder': !c.columnSearchTerms[field.name] }"
+            ng-model="c.columnSearchTerms[field.name]"
+            ng-change="c.onColumnSearchChange()"
+            ng-click="$event.stopPropagation()"
+            ng-disabled="c.isColumnSearchDisabled(field.name)"
+            aria-label="Column search"
+        >
+            <option value="">
+                {{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by
+                filters' : ('Select ' + (field.label || field.name)) }}
+            </option>
+            <option
+                ng-repeat="choice in c.getColumnSearchChoiceOptions(field.name) track by choice.value"
+                ng-value="choice.value"
+            >
+                {{ choice.label }}
+            </option>
+        </select>
+        <div
+            ng-if="c.getColumnSearchControlType(field.name) === 'reference' && !c.isColumnSearchDisabled(field.name)"
+            class="scm-table-column-search-reference"
+            ng-click="$event.stopPropagation()"
+        >
+            <scm-ref-picker
+                label=""
+                table="{{ c.getColumnSearchReferenceConfig(field.name).referenceTable }}"
+                display-field="{{ c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                search-fields="{{ c.getColumnSearchReferenceConfig(field.name).searchFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
+                reference-qualifier="{{ c.getColumnSearchReferenceConfig(field.name).referenceQualifier }}"
+                page-size="{{ c.getColumnSearchReferenceConfig(field.name).pageSize }}"
+                minimum-input-length="{{ c.getColumnSearchReferenceConfig(field.name).minimumInputLength || 3 }}"
+                display-fields="{{ c.getColumnSearchReferenceConfig(field.name).displayFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                order-by="{{ c.getColumnSearchReferenceConfig(field.name).orderBy }}"
+                order-direction="{{ c.getColumnSearchReferenceConfig(field.name).orderDirection }}"
+                ng-model="c.columnSearchTerms[field.name]"
+                ng-change="c.onColumnSearchChange()"
+            ></scm-ref-picker>
+        </div>
+        <input
+            ng-if="c.getColumnSearchControlType(field.name) === 'reference' && c.isColumnSearchDisabled(field.name)"
+            type="text"
+            class="input scm-table-column-search-input"
+            value=""
+            disabled
+            ng-attr-placeholder="Search disabled by filters"
+            aria-label="Column search disabled"
+        />
+        <input
+            ng-if="c.getColumnSearchControlType(field.name) === 'none'"
+            type="text"
+            class="input scm-table-column-search-input"
+            value=""
+            disabled
+            ng-attr-placeholder="Search not available"
+            aria-label="Column search unavailable"
+        />
+    </th>
+</tr>
+<!-- <style>
+    .scm-table-column-search-row {
+        height: auto;
+        position: relative;
+        z-index: 20;
+
+        th {
+            padding-top: var(--scm-spacing-1);
+            padding-bottom: var(--scm-spacing-1);
+            overflow: visible;
+            height: auto;
+            white-space: normal;
+        }
+
+        .scm-table-column-search-input {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            font-size: var(--scm-font-size-medium);
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+        }
+
+        .scm-table-column-search-reference {
+            position: relative;
+            z-index: 50;
+        }
+
+        .scm-table-column-search-reference scm-ref-picker {
+            display: block;
+            position: relative;
+            z-index: 60;
+        }
+
+        .scm-table-column-search-select {
+            color: var(--scm-color-gray);
+            height: var(--scm-reference-input-height);
+            padding: var(--scm-spacing-1) var(--scm-padding-4);
+            font-size: 18px;
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+        }
+
+        .scm-table-column-search-select--placeholder {
+            color: var(--scm-color-gray-tint-5);
+        }
+
+        .scm-table-column-search-select option {
+            color: var(--scm-color-gray);
+        }
+
+        .scm-table-column-search-reference .scm-reference-input {
+            font-size: 18px;
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+            padding-top: var(--scm-spacing-1);
+            padding-bottom: var(--scm-spacing-1);
+        }
+
+        .scm-table-column-search-reference .scm-reference-input::placeholder {
+            color: var(--scm-color-gray-tint-5);
+        }
+
+        .scm-table-column-search-reference .scm-reference-dropdown-container,
+        .scm-table-column-search-reference .scm-autocomplete-list {
+            z-index: 70;
+        }
+    }
+</style> -->
+]]></template>
+    </sp_ng_template>
+    <sys_update_version action="INSERT_OR_UPDATE">
+        <action>DELETE</action>
+        <application display_value="SCM">9b70ffe7836a2650efda54b6feaad334</application>
+        <file_path/>
+        <instance_id>aa52a6313be58754baf6048aa4e45a6a</instance_id>
+        <instance_name>dev407643</instance_name>
+        <name>sp_ng_template_026e9d0b93a94b1040fcb6597bba1025</name>
+        <payload>&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;record_update table="sp_ng_template"&gt;&lt;sp_ng_template action="INSERT_OR_UPDATE"&gt;&lt;id&gt;scm-table-column-search&lt;/id&gt;&lt;sp_widget display_value="scm-table"&gt;22eb7fd693ad071040fcb6597bba107f&lt;/sp_widget&gt;&lt;sys_class_name&gt;sp_ng_template&lt;/sys_class_name&gt;&lt;sys_created_by&gt;admin&lt;/sys_created_by&gt;&lt;sys_created_on&gt;2026-06-22 17:20:52&lt;/sys_created_on&gt;&lt;sys_id&gt;026e9d0b93a94b1040fcb6597bba1025&lt;/sys_id&gt;&lt;sys_mod_count&gt;2&lt;/sys_mod_count&gt;&lt;sys_name&gt;scm-table-column-search&lt;/sys_name&gt;&lt;sys_package display_value="SCM" source="x_680259_scm"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_package&gt;&lt;sys_policy/&gt;&lt;sys_scope display_value="SCM"&gt;9b70ffe7836a2650efda54b6feaad334&lt;/sys_scope&gt;&lt;sys_update_name&gt;sp_ng_template_026e9d0b93a94b1040fcb6597bba1025&lt;/sys_update_name&gt;&lt;sys_updated_by&gt;admin&lt;/sys_updated_by&gt;&lt;sys_updated_on&gt;2026-06-22 17:32:26&lt;/sys_updated_on&gt;&lt;template&gt;&lt;![CDATA[&lt;tr class="scm-table-column-search-row" ng-if="c.shouldShowColumnSearchRow()"&gt;
+    &lt;th ng-repeat="field in c.data.columns" ng-style="c.getColumnStyle(field)"&gt;
+        &lt;input
+            ng-if="c.getColumnSearchControlType(field.name) === 'string'"
+            type="text"
+            class="input scm-table-column-search-input scm-table-column-search-input--text"
+            ng-model="c.columnSearchTerms[field.name]"
+            ng-click="$event.stopPropagation()"
+            ng-keyup="c.onColumnSearchKeyUp($event)"
+            ng-disabled="c.isColumnSearchDisabled(field.name)"
+            ng-attr-placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
+            aria-label="Column search"
+            title="Syntax: text = starts with, =text = is, *text = contains. Press Enter to search"
+        /&gt;
+        &lt;select
+            ng-if="c.getColumnSearchControlType(field.name) === 'choice'"
+            class="input scm-table-column-search-input scm-table-column-search-select"
+            ng-class="{ 'scm-table-column-search-select--placeholder': !c.columnSearchTerms[field.name] }"
+            ng-model="c.columnSearchTerms[field.name]"
+            ng-change="c.onColumnSearchChange()"
+            ng-click="$event.stopPropagation()"
+            ng-disabled="c.isColumnSearchDisabled(field.name)"
+            aria-label="Column search"
+        &gt;
+            &lt;option value=""&gt;
+                {{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by
+                filters' : ('Select ' + (field.label || field.name)) }}
+            &lt;/option&gt;
+            &lt;option
+                ng-repeat="choice in c.getColumnSearchChoiceOptions(field.name) track by choice.value"
+                ng-value="choice.value"
+            &gt;
+                {{ choice.label }}
+            &lt;/option&gt;
+        &lt;/select&gt;
+        &lt;div
+            ng-if="c.getColumnSearchControlType(field.name) === 'reference' &amp;&amp; !c.isColumnSearchDisabled(field.name)"
+            class="scm-table-column-search-reference"
+            ng-click="$event.stopPropagation()"
+        &gt;
+            &lt;scm-ref-picker
+                label=""
+                table="{{ c.getColumnSearchReferenceConfig(field.name).referenceTable }}"
+                display-field="{{ c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                search-fields="{{ c.getColumnSearchReferenceConfig(field.name).searchFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                placeholder="{{ c.isColumnSearchDisabled(field.name) ? 'Search disabled by filters' : ('Search ' + (field.label || field.name)) }}"
+                reference-qualifier="{{ c.getColumnSearchReferenceConfig(field.name).referenceQualifier }}"
+                page-size="{{ c.getColumnSearchReferenceConfig(field.name).pageSize }}"
+                minimum-input-length="{{ c.getColumnSearchReferenceConfig(field.name).minimumInputLength || 3 }}"
+                display-fields="{{ c.getColumnSearchReferenceConfig(field.name).displayFields || c.getColumnSearchReferenceConfig(field.name).displayField }}"
+                order-by="{{ c.getColumnSearchReferenceConfig(field.name).orderBy }}"
+                order-direction="{{ c.getColumnSearchReferenceConfig(field.name).orderDirection }}"
+                ng-model="c.columnSearchTerms[field.name]"
+                ng-change="c.onColumnSearchChange()"
+            &gt;&lt;/scm-ref-picker&gt;
+        &lt;/div&gt;
+        &lt;input
+            ng-if="c.getColumnSearchControlType(field.name) === 'reference' &amp;&amp; c.isColumnSearchDisabled(field.name)"
+            type="text"
+            class="input scm-table-column-search-input"
+            value=""
+            disabled
+            ng-attr-placeholder="Search disabled by filters"
+            aria-label="Column search disabled"
+        /&gt;
+        &lt;input
+            ng-if="c.getColumnSearchControlType(field.name) === 'none'"
+            type="text"
+            class="input scm-table-column-search-input"
+            value=""
+            disabled
+            ng-attr-placeholder="Search not available"
+            aria-label="Column search unavailable"
+        /&gt;
+    &lt;/th&gt;
+&lt;/tr&gt;
+&lt;!-- &lt;style&gt;
+    .scm-table-column-search-row {
+        height: auto;
+        position: relative;
+        z-index: 20;
+
+        th {
+            padding-top: var(--scm-spacing-1);
+            padding-bottom: var(--scm-spacing-1);
+            overflow: visible;
+            height: auto;
+            white-space: normal;
+        }
+
+        .scm-table-column-search-input {
+            width: 100%;
+            min-width: 0;
+            box-sizing: border-box;
+            font-size: var(--scm-font-size-medium);
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+        }
+
+        .scm-table-column-search-reference {
+            position: relative;
+            z-index: 50;
+        }
+
+        .scm-table-column-search-reference scm-ref-picker {
+            display: block;
+            position: relative;
+            z-index: 60;
+        }
+
+        .scm-table-column-search-select {
+            color: var(--scm-color-gray);
+            height: var(--scm-reference-input-height);
+            padding: var(--scm-spacing-1) var(--scm-padding-4);
+            font-size: 18px;
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+        }
+
+        .scm-table-column-search-select--placeholder {
+            color: var(--scm-color-gray-tint-5);
+        }
+
+        .scm-table-column-search-select option {
+            color: var(--scm-color-gray);
+        }
+
+        .scm-table-column-search-reference .scm-reference-input {
+            font-size: 18px;
+            font-weight: 300;
+            line-height: 24px;
+            letter-spacing: 0.1px;
+            padding-top: var(--scm-spacing-1);
+            padding-bottom: var(--scm-spacing-1);
+        }
+
+        .scm-table-column-search-reference .scm-reference-input::placeholder {
+            color: var(--scm-color-gray-tint-5);
+        }
+
+        .scm-table-column-search-reference .scm-reference-dropdown-container,
+        .scm-table-column-search-reference .scm-autocomplete-list {
+            z-index: 70;
+        }
+    }
+&lt;/style&gt; --&gt;
+]]&gt;&lt;/template&gt;&lt;/sp_ng_template&gt;&lt;/record_update&gt;</payload>
+        <payload_hash>1441117816</payload_hash>
+        <record_name>scm-table-column-search</record_name>
+        <reverted_from/>
+        <source>25b09b869369831040fcb6597bba1008</source>
+        <source_table>sys_update_set</source_table>
+        <state>previous</state>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:32:26</sys_created_on>
+        <sys_id>b511654b93a94b1040fcb6597bba1059</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_recorded_at>19ef06401c50000001</sys_recorded_at>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:32:26</sys_updated_on>
+        <type>Angular ng-template</type>
+        <update_guid>7511654b4aa94b104af9171dd3a5f358</update_guid>
+        <update_guid_history>7511654b4aa94b104af9171dd3a5f358:1441117816,715f5d8bf6a94b108c193aadf85f6439:-186900479,147e114b7aa94b10325b79ea9366ad67:-1986742007</update_guid_history>
+    </sys_update_version>
+    <sys_metadata_delete action="INSERT_OR_UPDATE">
+        <sys_audit_delete display_value="scm-table-column-search">2371a5cf93a94b1040fcb6597bba104f</sys_audit_delete>
+        <sys_class_name>sys_metadata_delete</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:34:11</sys_created_on>
+        <sys_db_object display_value="" name="sp_ng_template">sp_ng_template</sys_db_object>
+        <sys_id>0c0e93c9da774adc8104e6c5c1df5fe4</sys_id>
+        <sys_metadata>026e9d0b93a94b1040fcb6597bba1025</sys_metadata>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scm-table-column-search</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_parent/>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_scope_delete display_value="">83b7f3fc190d455c81dd1390d8a475c4</sys_scope_delete>
+        <sys_update_name>sp_ng_template_026e9d0b93a94b1040fcb6597bba1025</sys_update_name>
+        <sys_update_version display_value="sp_ng_template_026e9d0b93a94b1040fcb6597bba1025">b511654b93a94b1040fcb6597bba1059</sys_update_version>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:34:11</sys_updated_on>
+    </sys_metadata_delete>
+</record_update>

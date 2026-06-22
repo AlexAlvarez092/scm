@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableContractNormalizer</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableContractNormalizer</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var TableContractNormalizer = Class.create();
+TableContractNormalizer.prototype = {
+    initialize: function (options) {
+        options = options || {};
+        this.logger = options.logger || null;
+    },
+
+    resolveEffectiveFilters: function (filters) {
+        return Array.isArray(filters) ? filters : [];
+    },
+
+    normalizeColumns: function (columns) {
+        if (!Array.isArray(columns)) {
+            if (this.logger) {
+                this.logger.warn(
+                    "TableContractNormalizer.normalizeColumns expected array",
+                );
+            }
+            return [];
+        }
+
+        var self = this;
+        return columns
+            .map(function (column) {
+                return self.normalizeColumn(column);
+            })
+            .filter(Boolean);
+    },
+
+    normalizeColumn: function (column) {
+        if (!column || typeof column !== "object") {
+            return null;
+        }
+
+        if (typeof column.name !== "string" || !column.name.trim()) {
+            return null;
+        }
+
+        var normalized = {
+            name: column.name,
+            label: typeof column.label === "string" ? column.label : "",
+        };
+
+        if (typeof column.width === "string" && column.width) {
+            normalized.width = column.width;
+        }
+
+        if (typeof column.minWidth === "string" && column.minWidth) {
+            normalized.minWidth = column.minWidth;
+        }
+
+        if (typeof column.maxWidth === "string" && column.maxWidth) {
+            normalized.maxWidth = column.maxWidth;
+        }
+
+        if (typeof column.sourceField === "string" && column.sourceField) {
+            normalized.sourceField = column.sourceField;
+        }
+
+        if (typeof column.useDisplayValue === "boolean") {
+            normalized.useDisplayValue = column.useDisplayValue;
+        }
+
+        return normalized;
+    },
+
+    buildUnifiedFilterFields: function (allColumns, configuredFilterFields) {
+        var configuredMap = {};
+        var configured = this.normalizeFilterFields(configuredFilterFields);
+
+        for (var i = 0; i < configured.length; i++) {
+            configuredMap[configured[i].field] = configured[i];
+        }
+
+        var unified = [];
+        var normalizedAllColumns = this.normalizeColumns(allColumns);
+
+        for (var j = 0; j < normalizedAllColumns.length; j++) {
+            var column = normalizedAllColumns[j];
+            if (!column || !column.name) {
+                continue;
+            }
+
+            if (configuredMap[column.name]) {
+                unified.push(configuredMap[column.name]);
+                continue;
+            }
+
+            unified.push({
+                field: column.name,
+                label: column.label || column.name,
+                type: "string",
+            });
+        }
+
+        for (var k = 0; k < configured.length; k++) {
+            var configuredField = configured[k];
+            var existsInUnified = unified.some(function (item) {
+                return item.field === configuredField.field;
+            });
+
+            if (!existsInUnified) {
+                unified.push(configuredField);
+            }
+        }
+
+        return unified;
+    },
+
+    normalizeFilterFields: function (filterFields) {
+        if (!Array.isArray(filterFields)) {
+            if (this.logger) {
+                this.logger.warn(
+                    "TableContractNormalizer.normalizeFilterFields expected array",
+                );
+            }
+            return [];
+        }
+
+        var self = this;
+        return filterFields
+            .map(function (filterField) {
+                return self.normalizeFilterField(filterField);
+            })
+            .filter(Boolean);
+    },
+
+    normalizeFilterField: function (filterField) {
+        if (!filterField || typeof filterField !== "object") {
+            return null;
+        }
+
+        var fieldName =
+            typeof filterField.field === "string"
+                ? filterField.field.trim()
+                : "";
+
+        if (!fieldName) {
+            return null;
+        }
+
+        var normalized = Object.assign({}, filterField);
+        normalized.field = fieldName;
+        normalized.label =
+            typeof filterField.label === "string" && filterField.label
+                ? filterField.label
+                : fieldName;
+        normalized.type =
+            typeof filterField.type === "string" && filterField.type
+                ? filterField.type
+                : "string";
+
+        return normalized;
+    },
+
+    normalizeCellContent: function (cellContent, sanitizer) {
+        var normalizedLayout = "stack";
+        var self = this;
+
+        if (!cellContent) {
+            return {
+                layout: normalizedLayout,
+                blocks: [],
+            };
+        }
+
+        if (Array.isArray(cellContent)) {
+            return {
+                layout: normalizedLayout,
+                blocks: cellContent
+                    .map(function (block) {
+                        return self.normalizeCellBlock(block, sanitizer);
+                    })
+                    .filter(Boolean),
+            };
+        }
+
+        if (cellContent.blocks && Array.isArray(cellContent.blocks)) {
+            if (
+                cellContent.layout === "inline" ||
+                cellContent.layout === "stack"
+            ) {
+                normalizedLayout = cellContent.layout;
+            }
+
+            return {
+                layout: normalizedLayout,
+                blocks: cellContent.blocks
+                    .map(function (block) {
+                        return self.normalizeCellBlock(block, sanitizer);
+                    })
+                    .filter(Boolean),
+            };
+        }
+
+        return {
+            layout: normalizedLayout,
+            blocks: [this.normalizeCellBlock(cellContent, sanitizer)].filter(
+                Boolean,
+            ),
+        };
+    },
+
+    normalizeCellBlock: function (block, sanitizer) {
+        if (block == null) {
+            return null;
+        }
+
+        if (typeof block === "string" || typeof block === "number") {
+            return { value: String(block) };
+        }
+
+        if (typeof block !== "object") {
+            return null;
+        }
+
+        var normalized = {
+            value: String(block.value || ""),
+        };
+
+        if (typeof block.className === "string" && block.className) {
+            normalized.className = block.className;
+        }
+
+        if (typeof block.href === "string" && block.href && sanitizer) {
+            var safeBlockHref = sanitizer.sanitizeHref(block.href);
+            if (safeBlockHref) {
+                normalized.href = safeBlockHref;
+            }
+        }
+
+        return normalized;
+    },
+
+    normalizeContextMenuItems: function (items, sanitizer) {
+        if (!Array.isArray(items)) {
+            if (this.logger) {
+                this.logger.warn(
+                    "TableContractNormalizer.normalizeContextMenuItems expected array",
+                );
+            }
+            return [];
+        }
+
+        var self = this;
+        return items
+            .map(function (item) {
+                return self.normalizeContextMenuItem(item, sanitizer);
+            })
+            .filter(Boolean);
+    },
+
+    normalizeContextMenuItem: function (item, sanitizer) {
+        if (!item || typeof item !== "object") {
+            return null;
+        }
+
+        if (typeof item.label !== "string" || !item.label.trim()) {
+            return null;
+        }
+
+        if (!item.action || typeof item.action !== "object") {
+            return null;
+        }
+
+        var normalizedAction = {};
+
+        if (typeof item.action.clipboard === "string") {
+            normalizedAction.clipboard = item.action.clipboard;
+        }
+
+        if (
+            typeof item.action.href === "string" &&
+            item.action.href &&
+            sanitizer
+        ) {
+            var safeActionHref = sanitizer.sanitizeHref(item.action.href);
+            if (safeActionHref) {
+                normalizedAction.href = safeActionHref;
+            }
+
+            if (
+                normalizedAction.href &&
+                typeof item.action.target === "string" &&
+                item.action.target
+            ) {
+                normalizedAction.target = sanitizer.sanitizeTarget(
+                    item.action.target,
+                );
+            }
+        }
+
+        if (
+            item.action.broadcast &&
+            typeof item.action.broadcast === "object" &&
+            typeof item.action.broadcast.eventName === "string" &&
+            item.action.broadcast.eventName
+        ) {
+            normalizedAction.broadcast = {
+                eventName: item.action.broadcast.eventName,
+                payload: item.action.broadcast.payload || {},
+            };
+        }
+
+        if (Object.keys(normalizedAction).length === 0) {
+            return null;
+        }
+
+        var normalizedItem = {
+            label: item.label,
+            action: normalizedAction,
+        };
+
+        if (typeof item.iconClass === "string" && item.iconClass) {
+            normalizedItem.iconClass = item.iconClass;
+        }
+
+        if (typeof item.iconName === "string" && item.iconName) {
+            normalizedItem.iconName = item.iconName;
+        }
+
+        return normalizedItem;
+    },
+
+    type: "TableContractNormalizer",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:16:10</sys_created_on>
+        <sys_id>5f68117a93a9c71040fcb6597bba102d</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>TableContractNormalizer</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_5f68117a93a9c71040fcb6597bba102d</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 22:35:24</sys_updated_on>
+    </sys_script_include>
+</record_update>

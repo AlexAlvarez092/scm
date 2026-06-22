@@ -9,15 +9,7 @@
         <mobile_callable>false</mobile_callable>
         <name>TableHTMLGenerator</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[/**
- * TableHTMLGenerator
- *
- * Responsible for generating HTML representations of filter information.
- * Handles HTML escaping and filter display formatting.
- *
- * @class
- */
-var TableHTMLGenerator = Class.create();
+        <script><![CDATA[var TableHTMLGenerator = Class.create();
 TableHTMLGenerator.prototype = {
     initialize: function (params) {
         params = params || {};
@@ -25,12 +17,6 @@ TableHTMLGenerator.prototype = {
         this.queryBuilder = params.queryBuilder;
     },
 
-    /**
-     * Generate HTML string describing applied filters.
-     *
-     * @param {Array} appliedFilters
-     * @return {string} HTML string
-     */
     getAppliedFiltersInfoMessage: function (appliedFilters) {
         appliedFilters = appliedFilters || [];
         var htmlString = "";
@@ -40,7 +26,7 @@ TableHTMLGenerator.prototype = {
                 var filter = appliedFilters[i];
                 var isLastFilter = i === appliedFilters.length - 1;
 
-                // currentLogicalOp: qué operador une a ESTE filtro con el SIGUIENTE
+                // currentLogicalOp: what operator connects THIS filter with the NEXT one
                 var currentLogicalOp =
                     i < appliedFilters.length - 1
                         ? String(appliedFilters[i].logicalOperator || "and")
@@ -48,7 +34,7 @@ TableHTMLGenerator.prototype = {
                               .trim()
                         : null;
 
-                // prevLogicalOp: qué operador une al ANTERIOR con ESTE filtro
+                // prevLogicalOp: what operator connects the PREVIOUS filter with THIS one
                 var prevLogicalOp =
                     i > 0
                         ? String(appliedFilters[i - 1].logicalOperator || "and")
@@ -56,7 +42,7 @@ TableHTMLGenerator.prototype = {
                               .trim()
                         : null;
 
-                // Separador + abrir bracket al pasar de AND a OR
+                // Separator + open bracket when going from AND to OR
                 if (i > 0) {
                     if (prevLogicalOp === "and" && currentLogicalOp === "or") {
                         htmlString +=
@@ -98,24 +84,16 @@ TableHTMLGenerator.prototype = {
         return htmlString;
     },
 
-    /**
-     * Generate HTML for a single filter condition.
-     *
-     * @param {Object} filter
-     * @return {string} HTML string
-     */
     getFilterHtml: function (filter) {
         if (filter.type === "reference") {
-            var grRef = new GlideRecord(filter.referenceTable);
             var operatorLabel = this.queryBuilder.getOperatorLabel(
                 filter.operator,
             );
+
+            // Use displayValue if available (pre-resolved by server)
+            // Fallback to value if displayValue is not available
             var referenceDisplayValue =
                 filter.displayValue || filter.value || "";
-
-            if (grRef.get(filter.value)) {
-                referenceDisplayValue = grRef.getDisplayValue();
-            }
 
             if (this.queryBuilder.operatorNeedsValue(filter.operator)) {
                 /* prettier-ignore */
@@ -205,12 +183,6 @@ TableHTMLGenerator.prototype = {
         return "";
     },
 
-    /**
-     * Escape HTML special characters in a value.
-     *
-     * @param {*} value
-     * @return {string}
-     */
     escapeHtml: function (value) {
         return String(value == null ? "" : value)
             .replace(/&/g, "&amp;")
@@ -227,13 +199,13 @@ TableHTMLGenerator.prototype = {
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-21 16:18:14</sys_created_on>
         <sys_id>bf7604329321c71040fcb6597bba1053</sys_id>
-        <sys_mod_count>4</sys_mod_count>
+        <sys_mod_count>6</sys_mod_count>
         <sys_name>TableHTMLGenerator</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_bf7604329321c71040fcb6597bba1053</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 19:19:48</sys_updated_on>
+        <sys_updated_on>2026-06-22 17:20:25</sys_updated_on>
     </sys_script_include>
 </record_update>

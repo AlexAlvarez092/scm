@@ -10,7 +10,7 @@
         <name>CoreCompanyAdvancedSearch</name>
         <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var CoreCompanyAdvancedSearch = Class.create();
-CoreCompanyAdvancedSearch.prototype = Object.extendsObject(BaseTableProvider, {
+CoreCompanyAdvancedSearch.prototype = Object.extendsObject(TableProvider, {
     canCreate: function () {
         return false;
     },
@@ -68,13 +68,13 @@ answer = CoreCompanyAdvancedSearch;
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2025-12-07 12:31:18</sys_created_on>
         <sys_id>52ea7967c361321057b3d4fc05013172</sys_id>
-        <sys_mod_count>17</sys_mod_count>
+        <sys_mod_count>18</sys_mod_count>
         <sys_name>CoreCompanyAdvancedSearch</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_52ea7967c361321057b3d4fc05013172</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 18:30:50</sys_updated_on>
+        <sys_updated_on>2026-06-22 17:06:15</sys_updated_on>
     </sys_script_include>
 </record_update>

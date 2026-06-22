@@ -10,13 +10,14 @@
         <name>IncidentList</name>
         <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var IncidentList = Class.create();
+IncidentList.TABLE_FILTER_PROVIDER_ID = "incident_list";
 
 IncidentList.INCIDENT_MAIN_LIST_BREADCRUMB = [
     ...Constants.HOME_BREADCRUMB,
     { title: "Incidents", link: "?id=incidents" },
 ];
 
-IncidentList.prototype = Object.extendsObject(BaseTableProvider, {
+IncidentList.prototype = Object.extendsObject(TableProvider, {
     canCreate: function () {
         return false;
     },
@@ -40,6 +41,8 @@ IncidentList.prototype = Object.extendsObject(BaseTableProvider, {
             order_direction: "DESC",
             limit: "10",
             can_save_preferences: "true",
+            can_save_filters: "true",
+            table_filters_provider_id: IncidentList.TABLE_FILTER_PROVIDER_ID,
             fields_preference_name: "scm_portal.incidents.fields",
             order_by_preference_name: "scm_portal.incidents.order_by",
             order_direction_preference_name:
@@ -96,13 +99,13 @@ answer = IncidentList;
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 22:11:29</sys_created_on>
         <sys_id>50cd84ea9321471040fcb6597bba103a</sys_id>
-        <sys_mod_count>12</sys_mod_count>
+        <sys_mod_count>14</sys_mod_count>
         <sys_name>IncidentList</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_50cd84ea9321471040fcb6597bba103a</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 18:30:49</sys_updated_on>
+        <sys_updated_on>2026-06-22 18:09:01</sys_updated_on>
     </sys_script_include>
 </record_update>

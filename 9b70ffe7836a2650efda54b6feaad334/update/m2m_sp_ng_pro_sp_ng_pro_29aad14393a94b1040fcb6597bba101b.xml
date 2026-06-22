@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="m2m_sp_ng_pro_sp_ng_pro">
+    <m2m_sp_ng_pro_sp_ng_pro action="INSERT_OR_UPDATE">
+        <required_by display_value="scmTableFiltersCoordinatorService">57ba1d7e93a9c71040fcb6597bba1000</required_by>
+        <requires display_value="scmTableFilter">150804f29321c71040fcb6597bba10e8</requires>
+        <sys_class_name>m2m_sp_ng_pro_sp_ng_pro</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:04:18</sys_created_on>
+        <sys_id>29aad14393a94b1040fcb6597bba101b</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>scmTableFiltersCoordinatorService.scmTableFilter</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>m2m_sp_ng_pro_sp_ng_pro_29aad14393a94b1040fcb6597bba101b</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:04:18</sys_updated_on>
+    </m2m_sp_ng_pro_sp_ng_pro>
+</record_update>

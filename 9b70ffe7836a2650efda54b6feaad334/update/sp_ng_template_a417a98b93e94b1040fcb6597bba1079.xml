@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_ng_template">
+    <sp_ng_template action="INSERT_OR_UPDATE">
+        <id>scm-table-save-filter-dialog</id>
+        <sp_widget display_value="scm-table">22eb7fd693ad071040fcb6597bba107f</sp_widget>
+        <sys_class_name>sp_ng_template</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-22 17:58:49</sys_created_on>
+        <sys_id>a417a98b93e94b1040fcb6597bba1079</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>scm-table-save-filter-dialog</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_ng_template_a417a98b93e94b1040fcb6597bba1079</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 20:12:00</sys_updated_on>
+        <template><![CDATA[<sdx-dialog
+    label="Save current filter"
+    id="{{c.saveFilterDialogId}}"
+    class="align-header-center"
+>
+    <sdx-dialog-toggle>
+        <sdx-icon
+            icon-name="icon-save"
+            size="1"
+            id="scm-table-save-filter-icon"
+            title="Save current filter"
+            ng-click="c.onOpenSaveFilterDialog()"
+        ></sdx-icon>
+    </sdx-dialog-toggle>
+    <sdx-dialog-content>
+        <div class="scm-save-filter-dialog-form">
+            <sdx-input
+                type="text"
+                label="Filter name"
+                placeholder="Enter a name for this filter"
+                change-callback="sdxInputHandler(this)"
+                scm-model-provider
+                ng-model="c.saveFilterName"
+                ng-value="c.saveFilterName"
+            ></sdx-input>
+            <p
+                class="scm-save-filter-dialog-error"
+                ng-if="c.saveFilterError"
+                ng-bind="c.saveFilterError"
+            ></p>
+            <div class="scm-save-filter-dialog-actions">
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-close"
+                    icon-size="2"
+                    label="Cancel"
+                    ng-click="c.closeDialogById(c.saveFilterDialogId)"
+                    ng-disabled="c.savingFilter"
+                ></sdx-button>
+                <sdx-button
+                    theme="transparent"
+                    icon-name="icon-check-mark"
+                    icon-size="2"
+                    label="Save"
+                    ng-click="c.confirmSaveFilter()"
+                    ng-disabled="!c.saveFilterName || !c.saveFilterName.trim() || c.savingFilter"
+                ></sdx-button>
+            </div>
+        </div>
+    </sdx-dialog-content>
+</sdx-dialog>
+
+<style>
+    .scm-save-filter-dialog-form {
+        width: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: var(--scm-spacing-3);
+    }
+
+    .scm-save-filter-dialog-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: var(--scm-spacing-2);
+    }
+
+    .scm-save-filter-dialog-error {
+        margin: 0;
+        color: var(--sdx-color-functional-error, #c00);
+        font-size: var(--scm-font-size-small);
+    }
+</style>
+]]></template>
+    </sp_ng_template>
+</record_update>

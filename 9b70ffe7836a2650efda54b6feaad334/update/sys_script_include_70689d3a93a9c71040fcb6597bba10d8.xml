@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_680259_scm.TableWidgetActionRouter</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>TableWidgetActionRouter</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var TableWidgetActionRouter = Class.create();
+TableWidgetActionRouter.prototype = {
+    initialize: function (options) {
+        options = options || {};
+        this.widgetHelper = options.widgetHelper || null;
+        this.input = options.input || {};
+        this.data = options.data || {};
+        this.logger = options.logger || null;
+        this.normalizer =
+            options.normalizer ||
+            new TableContractNormalizer({
+                logger: this.logger,
+            });
+        this.helpers = options.helpers || {};
+        this.tableProviderScriptInclude =
+            options.tableProviderScriptInclude || "";
+    },
+
+    route: function () {
+        var action = this.input.action;
+        if (!action) {
+            return false;
+        }
+
+        if (action === "savePreference") {
+            if (!this.widgetHelper.canSavePreferences()) {
+                return true;
+            }
+
+            this.widgetHelper.saveUserPreference(
+                this.input.preferenceName,
+                this.input.preferenceValue,
+            );
+            return true;
+        }
+
+        if (action === "getAppliedFiltersInfoMessage") {
+            var filtersForMessage = this.normalizer.resolveEffectiveFilters(
+                this.input.appliedFilters,
+            );
+            if (
+                typeof this.helpers.resolveReferenceDisplayValuesForFilters ===
+                "function"
+            ) {
+                this.helpers.resolveReferenceDisplayValuesForFilters(
+                    filtersForMessage,
+                );
+            }
+
+            this.data.appliedFiltersHtml =
+                this.widgetHelper.getAppliedFiltersInfoMessage(
+                    filtersForMessage,
+                );
+            return true;
+        }
+
+        if (action === "getTotalRecords") {
+            var effectiveFiltersForCount =
+                this.normalizer.resolveEffectiveFilters(this.input.filters);
+            this.data.totalRecords = this.widgetHelper.getTotalRecords(
+                effectiveFiltersForCount,
+            );
+            return true;
+        }
+
+        if (action === "getChoiceValues") {
+            this.data.choiceValues = this.widgetHelper.getChoiceValues(
+                this.input.fieldName,
+            );
+            return true;
+        }
+
+        if (action === "getReferenceDisplayValue") {
+            if (typeof this.helpers.getReferenceDisplayValue === "function") {
+                this.data.displayValue = this.helpers.getReferenceDisplayValue(
+                    this.input.table,
+                    this.input.sysId,
+                );
+            } else {
+                this.data.displayValue = "";
+            }
+            return true;
+        }
+
+        if (action === "getTableColumns") {
+            this.data.columns = this.normalizer.normalizeColumns(
+                this.widgetHelper.getTableColumns(),
+            );
+            return true;
+        }
+
+        if (action === "revertListViewToDefault") {
+            this.widgetHelper.saveUserPreference(
+                "columns",
+                JSON.stringify(this.widgetHelper.getDefaultColumns()),
+            );
+            this.data.columns = this.normalizer.normalizeColumns(
+                this.widgetHelper.getDefaultColumns(),
+            );
+            return true;
+        }
+
+        if (action === "getTableData") {
+            this._handleGetTableData();
+            return true;
+        }
+
+        if (action === "getSavedFilters") {
+            if (typeof this.widgetHelper.getSavedFilters !== "function") {
+                this.data.savedFilters = [];
+                return true;
+            }
+            this.data.savedFilters = this.widgetHelper.getSavedFilters();
+            return true;
+        }
+
+        if (action === "saveFilter") {
+            if (typeof this.widgetHelper.saveFilter !== "function") {
+                this.data.savedFilters = [];
+                return true;
+            }
+            this.data.savedFilters = this.widgetHelper.saveFilter(
+                this.input.filterName,
+                this.normalizer.resolveEffectiveFilters(this.input.filters),
+            );
+            return true;
+        }
+
+        if (action === "deleteFilter") {
+            if (typeof this.widgetHelper.deleteFilter !== "function") {
+                this.data.savedFilters = [];
+                return true;
+            }
+            this.data.savedFilters = this.widgetHelper.deleteFilter(
+                this.input.filterId,
+            );
+            return true;
+        }
+
+        if (action === "setDefaultFilter") {
+            if (typeof this.widgetHelper.setDefaultFilter !== "function") {
+                this.data.savedFilters = [];
+                return true;
+            }
+            this.data.savedFilters = this.widgetHelper.setDefaultFilter(
+                this.input.filterId,
+            );
+            return true;
+        }
+
+        return false;
+    },
+
+    _handleGetTableData: function () {
+        var columns = this.normalizer.normalizeColumns(
+            this.widgetHelper.getTableColumns(),
+        );
+        var effectiveFilters = this.normalizer.resolveEffectiveFilters(
+            this.input.filters,
+        );
+        var includeTotalRecords = !!this.input.includeTotalRecords;
+
+        if (typeof this.widgetHelper.getCellContent !== "function") {
+            if (this.logger) {
+                this.logger.error(
+                    "Provider must implement getCellContent(field, record)",
+                );
+            }
+            this.data.records = [];
+            this.data.orderDirection = this.widgetHelper.getOrderDirection();
+            this.data.orderBy = this.widgetHelper.getOrderBy();
+            return;
+        }
+
+        var providerRecords = this.widgetHelper.getTableData({
+            filters: effectiveFilters,
+            page: this.input.page,
+        });
+
+        if (!Array.isArray(providerRecords)) {
+            if (this.logger) {
+                this.logger.error({
+                    message: "Provider getTableData must return an array",
+                    provider: this.tableProviderScriptInclude,
+                    returnedType: typeof providerRecords,
+                });
+            }
+            this.data.records = [];
+        } else if (typeof this.helpers.decorateRecords === "function") {
+            this.data.records = this.helpers.decorateRecords(
+                this.widgetHelper,
+                providerRecords,
+                columns,
+            );
+        } else {
+            this.data.records = providerRecords;
+        }
+
+        this.data.orderDirection = this.widgetHelper.getOrderDirection();
+        this.data.orderBy = this.widgetHelper.getOrderBy();
+
+        if (includeTotalRecords) {
+            this.data.totalRecords =
+                this.widgetHelper.getTotalRecords(effectiveFilters);
+        }
+    },
+
+    type: "TableWidgetActionRouter",
+};
+]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:16:00</sys_created_on>
+        <sys_id>70689d3a93a9c71040fcb6597bba10d8</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>TableWidgetActionRouter</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sys_script_include_70689d3a93a9c71040fcb6597bba10d8</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:59:42</sys_updated_on>
+    </sys_script_include>
+</record_update>

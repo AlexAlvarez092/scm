@@ -2,15 +2,15 @@
     <sys_script_include action="INSERT_OR_UPDATE">
         <access>package_private</access>
         <active>true</active>
-        <api_name>x_680259_scm.BaseTableProvider</api_name>
+        <api_name>x_680259_scm.TableProvider</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
         <description/>
         <mobile_callable>false</mobile_callable>
-        <name>BaseTableProvider</name>
+        <name>TableProvider</name>
         <sandbox_callable>false</sandbox_callable>
-        <script><![CDATA[var BaseTableProvider = Class.create();
-BaseTableProvider.prototype = {
+        <script><![CDATA[var TableProvider = Class.create();
+TableProvider.prototype = {
     initialize: function (params) {
         params = params || {};
 
@@ -32,6 +32,8 @@ BaseTableProvider.prototype = {
             orderDirection: this.configObject.order_direction_preference_name,
             limit: this.configObject.limit_preference_name,
         };
+
+        this.choiceValuesCache = {};
 
         // Initialize helper classes
         this.queryBuilder = new TableQueryBuilder({
@@ -88,6 +90,10 @@ BaseTableProvider.prototype = {
         return this.configObject.can_save_preferences === "true";
     },
 
+    canSaveFilters: function () {
+        return this.configObject.can_save_filters === "true";
+    },
+
     canConfigureColumns: function () {
         return (
             this.configObject.can_configure_columns === "true" ||
@@ -107,6 +113,18 @@ BaseTableProvider.prototype = {
         var choices = [];
 
         if (!fieldName) return choices;
+
+        if (Array.isArray(this.choiceValuesCache[fieldName])) {
+            return this.choiceValuesCache[fieldName];
+        }
+
+        var sessionCacheKey = this._getChoiceValuesSessionCacheKey(fieldName);
+        var cachedSessionChoices =
+            this._readChoiceValuesFromSession(sessionCacheKey);
+        if (Array.isArray(cachedSessionChoices)) {
+            this.choiceValuesCache[fieldName] = cachedSessionChoices;
+            return cachedSessionChoices;
+        }
 
         var glideTableHierarchy = new GlideTableHierarchy(
             this.configObject.table,
@@ -132,6 +150,9 @@ BaseTableProvider.prototype = {
 
             iterator++;
         } while (choices.length === 0 && iterator < hierarchy.length);
+
+        this.choiceValuesCache[fieldName] = choices;
+        this._writeChoiceValuesToSession(sessionCacheKey, choices);
 
         return choices;
     },
@@ -270,7 +291,7 @@ BaseTableProvider.prototype = {
 
             if (columns.length === 0) return records;
 
-            var grRecord = new GlideRecord(tableName);
+            var grRecord = new GlideRecordSecure(tableName);
             this._applyFilters(grRecord, filters);
             grRecord.setLimit(parseInt(limit, 10));
             grRecord.chooseWindow(firstRow, lastRow);
@@ -334,17 +355,113 @@ BaseTableProvider.prototype = {
         return parseInt(this.configObject.limit || 10, 10);
     },
 
+    getSavedFilters: function () {
+        if (!this.canSaveFilters()) {
+            return [];
+        }
+
+        var records = [];
+        var gr = this._getSavedFiltersGlideRecord();
+
+        gr.orderBy("title");
+        gr.query();
+
+        while (gr.next()) {
+            records.push(this._mapSavedFilterRecord(gr));
+        }
+
+        return records;
+    },
+
+    saveFilter: function (filterName, filters) {
+        if (!this.canSaveFilters() || !filterName) {
+            return this.getSavedFilters();
+        }
+
+        var gr = new GlideRecordSecure(Constants.TABLE_FILTERS_TABLE);
+        gr.initialize();
+        gr.setValue("title", String(filterName));
+        gr.setValue(
+            "filter",
+            JSON.stringify(Array.isArray(filters) ? filters : []),
+        );
+        gr.setValue("table", this.getTableFiltersProviderId());
+        gr.setValue("user", gs.getUserID());
+        gr.setValue("default", false);
+        gr.insert();
+
+        return this.getSavedFilters();
+    },
+
+    deleteFilter: function (filterId) {
+        if (!this.canSaveFilters() || !filterId) {
+            return this.getSavedFilters();
+        }
+
+        var gr = this._getSavedFiltersGlideRecord();
+        gr.addQuery("number", String(filterId));
+        gr.query();
+
+        while (gr.next()) {
+            gr.deleteRecord();
+        }
+
+        return this.getSavedFilters();
+    },
+
+    setDefaultFilter: function (filterId) {
+        if (!this.canSaveFilters()) {
+            return [];
+        }
+
+        var currentDefaults = this._getSavedFiltersGlideRecord();
+        currentDefaults.addQuery("default", true);
+        currentDefaults.query();
+
+        while (currentDefaults.next()) {
+            currentDefaults.setValue("default", false);
+            currentDefaults.update();
+        }
+
+        if (filterId) {
+            var target = this._getSavedFiltersGlideRecord();
+            target.addQuery("number", String(filterId));
+            target.query();
+
+            if (target.next()) {
+                target.setValue("default", true);
+                target.update();
+            }
+        }
+
+        return this.getSavedFilters();
+    },
+
+    getDefaultAppliedFilters: function () {
+        if (!this.canSaveFilters()) {
+            return [];
+        }
+
+        var gr = this._getSavedFiltersGlideRecord();
+        gr.addQuery("default", true);
+        gr.query();
+
+        if (!gr.next()) {
+            return [];
+        }
+
+        return this._parseSavedFilterValue(gr.getValue("filter"));
+    },
+
     getTotalRecords: function (filters) {
         filters = filters || [];
 
         try {
-            var gaRecord = new GlideAggregate(this.configObject.table);
-            this._applyFilters(gaRecord, filters);
-            gaRecord.addAggregate("COUNT");
-            gaRecord.query();
-            gaRecord.next();
+            var grRecord = new GlideRecordSecure(this.configObject.table);
+            this._applyFilters(grRecord, filters);
+            grRecord.query();
 
-            return parseInt(gaRecord.getAggregate("COUNT"), 10) || 0;
+            return parseInt(grRecord.getRowCount(), 10) || 0;
         } catch (error) {
             this.logger.error({
                 method: "getTotalRecords",
@@ -442,6 +559,84 @@ BaseTableProvider.prototype = {
         return this.htmlGenerator.escapeHtml(value);
     },
 
+    _getChoiceValuesSessionCacheKey: function (fieldName) {
+        /* prettier-ignore */
+        return ("x_680259_scm.choice_values." + String(this.configObject.table || "") + "." + String(fieldName || ""));
+    },
+
+    _readChoiceValuesFromSession: function (cacheKey) {
+        if (!cacheKey) {
+            return null;
+        }
+
+        try {
+            var rawValue = gs.getSession().getProperty(cacheKey);
+            if (!rawValue) {
+                return null;
+            }
+
+            var parsedValue = JSON.parse(rawValue);
+            return Array.isArray(parsedValue) ? parsedValue : null;
+        } catch (error) {
+            return null;
+        }
+    },
+
+    _writeChoiceValuesToSession: function (cacheKey, value) {
+        if (!cacheKey) {
+            return;
+        }
+
+        try {
+            gs.getSession().putProperty(cacheKey, JSON.stringify(value || []));
+        } catch (error) {
+            // Best-effort cache only.
+        }
+    },
+
+    getTableFiltersProviderId: function () {
+        if (this.configObject.table_filters_provider_id) {
+            return String(this.configObject.table_filters_provider_id);
+        }
+
+        if (this.configObject.table) {
+            return String(this.configObject.table);
+        }
+
+        return String(this.type || "table_provider");
+    },
+
+    _getSavedFiltersGlideRecord: function () {
+        var gr = new GlideRecordSecure(Constants.TABLE_FILTERS_TABLE);
+        gr.addQuery("table", this.getTableFiltersProviderId());
+        gr.addQuery("user", gs.getUserID());
+        return gr;
+    },
+
+    _mapSavedFilterRecord: function (gr) {
+        return {
+            id: gr.getValue("number"),
+            name: gr.getValue("title") || "",
+            filters: this._parseSavedFilterValue(gr.getValue("filter")),
+            isDefault:
+                gr.getValue("default") === "true" ||
+                gr.getValue("default") === "1",
+        };
+    },
+
+    _parseSavedFilterValue: function (serializedFilters) {
+        if (!serializedFilters) {
+            return [];
+        }
+
+        try {
+            var parsed = JSON.parse(serializedFilters);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    },
+
     _buildBaseRecord: function (glideRecord, columns) {
         return this.recordDecorator.buildBaseRecord(glideRecord, columns);
     },
@@ -462,20 +657,20 @@ BaseTableProvider.prototype = {
         return {};
     },
 
-    type: "BaseTableProvider",
+    type: "TableProvider",
 };
 ]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-21 09:55:58</sys_created_on>
         <sys_id>a7fe26aa9325871040fcb6597bba104e</sys_id>
-        <sys_mod_count>21</sys_mod_count>
-        <sys_name>BaseTableProvider</sys_name>
+        <sys_mod_count>25</sys_mod_count>
+        <sys_name>TableProvider</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sys_script_include_a7fe26aa9325871040fcb6597bba104e</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 21:11:24</sys_updated_on>
+        <sys_updated_on>2026-06-22 18:09:02</sys_updated_on>
     </sys_script_include>
 </record_update>

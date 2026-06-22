@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="a877a9cb93e94b1040fcb6597bba10f4" label="Table filters" max_length="40" name="x_680259_scm_table_filters" type="collection">
+        <element label="Filter" max_length="1024" name="filter" type="string"/>
+        <element label="Table" max_length="40" name="table" type="string"/>
+        <element label="User" max_length="32" name="user" reference="sys_user" type="reference"/>
+        <element attributes="ignore_filter_on_new=true" default="javascript:global.getNextObjNumberPadded();" label="Number" max_length="40" name="number" type="string"/>
+        <element label="Title" max_length="40" name="title" type="string"/>
+        <element label="Default" max_length="40" name="default" type="boolean"/>
+        <index name="index">
+            <element name="user"/>
+        </index>
+    </element>
+</database>

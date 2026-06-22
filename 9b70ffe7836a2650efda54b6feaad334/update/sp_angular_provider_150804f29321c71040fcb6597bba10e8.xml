@@ -4,6 +4,41 @@
         <script><![CDATA[function scmTableFilter(spUtil) {
     "use strict";
 
+    function readSessionCache(key) {
+        if (!key || typeof sessionStorage === "undefined") {
+            return null;
+        }
+
+        try {
+            var raw = sessionStorage.getItem(key);
+            return raw ? JSON.parse(raw) : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function writeSessionCache(key, value) {
+        if (!key || typeof sessionStorage === "undefined") {
+            return;
+        }
+
+        try {
+            sessionStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            // Best effort only.
+        }
+    }
+
+    function getChoiceValuesSessionKey(tableProviderScriptInclude, fieldName) {
+        /* prettier-ignore */
+        return ("scmTable.choiceValues::" + String(tableProviderScriptInclude || "") + "::" + String(fieldName || ""));
+    }
+
+    function getReferenceDisplaySessionKey(tableName, sysId) {
+        /* prettier-ignore */
+        return ("scmTable.referenceDisplay::" + String(tableName || "") + "::" + String(sysId || ""));
+    }
+
     function normalizeLogicalOperator(logicalOperator) {
         return String(logicalOperator || "and").toLowerCase() === "or"
             ? "or"
@@ -256,12 +291,8 @@
         var filter = options.filter;
         var choiceValuesCache = options.choiceValuesCache || {};
         var choiceValueRequestState = options.choiceValueRequestState || {};
-        var requestKey =
-            String(transactionId || "") +
-            "::" +
-            String(tableProviderScriptInclude || "") +
-            "::" +
-            String((filter && filter.field) || "");
+        /* prettier-ignore */
+        var requestKey = String(transactionId || "") + "::" + String(tableProviderScriptInclude || "") + "::" + String((filter && filter.field) || "");
         var requestId = (choiceValueRequestState[requestKey] || 0) + 1;
         choiceValueRequestState[requestKey] = requestId;
 
@@ -271,6 +302,17 @@
 
         if (choiceValuesCache[filter.field]) {
             filter.choiceValues = angular.copy(choiceValuesCache[filter.field]);
+            filter.loading = false;
+            return Promise.resolve(filter.choiceValues);
+        }
+
+        var sessionChoiceValues = readSessionCache(
+            getChoiceValuesSessionKey(tableProviderScriptInclude, filter.field),
+        );
+
+        if (Array.isArray(sessionChoiceValues) && sessionChoiceValues.length) {
+            choiceValuesCache[filter.field] = angular.copy(sessionChoiceValues);
+            filter.choiceValues = angular.copy(sessionChoiceValues);
             filter.loading = false;
             return Promise.resolve(filter.choiceValues);
         }
@@ -290,6 +332,13 @@
 
                 filter.choiceValues = response.data.choiceValues || [];
                 choiceValuesCache[filter.field] = angular.copy(
+                    filter.choiceValues,
+                );
+                writeSessionCache(
+                    getChoiceValuesSessionKey(
+                        tableProviderScriptInclude,
+                        filter.field,
+                    ),
                     filter.choiceValues,
                 );
                 filter.loading = false;
@@ -312,6 +361,7 @@
         var transactionId = options.transactionId;
         var tableProviderScriptInclude = options.tableProviderScriptInclude;
         var filters = options.filters || [];
+        var referenceDisplayCache = options.referenceDisplayCache || {};
 
         if (!server) {
             return Promise.resolve();
@@ -326,21 +376,74 @@
             );
         });
 
+        var pendingLookups = {};
+
         var requests = referenceFilters.map(function (filter) {
-            return server
-                .get({
-                    action: "getReferenceDisplayValue",
-                    transactionId: transactionId,
-                    tableProviderScriptInclude: tableProviderScriptInclude,
-                    table: filter.referenceTable,
-                    sysId: filter.value,
-                })
-                .then(function (response) {
-                    filter.displayValue = response.data.displayValue || "";
-                })
-                .catch(function () {
-                    filter.displayValue = filter.value || "";
-                });
+            /* prettier-ignore */
+            var cacheKey = String(filter.referenceTable || "") + "::" + String(filter.value || "");
+
+            if (filter.displayValue) {
+                referenceDisplayCache[cacheKey] = filter.displayValue;
+                writeSessionCache(
+                    getReferenceDisplaySessionKey(
+                        filter.referenceTable,
+                        filter.value,
+                    ),
+                    filter.displayValue,
+                );
+                return Promise.resolve();
+            }
+
+            if (referenceDisplayCache[cacheKey]) {
+                filter.displayValue = referenceDisplayCache[cacheKey];
+                return Promise.resolve();
+            }
+
+            var cachedDisplayValue = readSessionCache(
+                getReferenceDisplaySessionKey(
+                    filter.referenceTable,
+                    filter.value,
+                ),
+            );
+
+            if (typeof cachedDisplayValue === "string" && cachedDisplayValue) {
+                referenceDisplayCache[cacheKey] = cachedDisplayValue;
+                filter.displayValue = cachedDisplayValue;
+                return Promise.resolve();
+            }
+
+            if (!pendingLookups[cacheKey]) {
+                pendingLookups[cacheKey] = server
+                    .get({
+                        action: "getReferenceDisplayValue",
+                        transactionId: transactionId,
+                        tableProviderScriptInclude: tableProviderScriptInclude,
+                        table: filter.referenceTable,
+                        sysId: filter.value,
+                    })
+                    .then(function (response) {
+                        var resolvedDisplayValue =
+                            response.data.displayValue || filter.value || "";
+                        referenceDisplayCache[cacheKey] = resolvedDisplayValue;
+                        writeSessionCache(
+                            getReferenceDisplaySessionKey(
+                                filter.referenceTable,
+                                filter.value,
+                            ),
+                            resolvedDisplayValue,
+                        );
+                        return resolvedDisplayValue;
+                    })
+                    .catch(function () {
+                        var fallbackValue = filter.value || "";
+                        referenceDisplayCache[cacheKey] = fallbackValue;
+                        return fallbackValue;
+                    });
+            }
+
+            return pendingLookups[cacheKey].then(function (displayValue) {
+                filter.displayValue = displayValue;
+            });
         });
 
         return Promise.all(requests);
@@ -367,14 +470,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-21 16:24:58</sys_created_on>
         <sys_id>150804f29321c71040fcb6597bba10e8</sys_id>
-        <sys_mod_count>9</sys_mod_count>
+        <sys_mod_count>10</sys_mod_count>
         <sys_name>scmTableFilter</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_angular_provider_150804f29321c71040fcb6597bba10e8</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 21:11:26</sys_updated_on>
+        <sys_updated_on>2026-06-21 22:13:28</sys_updated_on>
         <type>service</type>
     </sp_angular_provider>
 </record_update>

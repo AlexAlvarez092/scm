@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmTableColumnSearchService</name>
+        <script><![CDATA[function scmTableColumnSearchService() {
+    "use strict";
+
+    var COLUMN_SEARCH_OPERATORS = ["starts_with", "is", "contains"];
+
+    function parseColumnSearchInput(rawValue) {
+        var value = String(rawValue == null ? "" : rawValue).trim();
+
+        if (!value) {
+            return null;
+        }
+
+        if (value.charAt(0) === "=") {
+            var isValue = value.substring(1).trim();
+            return isValue ? { operator: "is", value: isValue } : null;
+        }
+
+        if (value.charAt(0) === "*") {
+            var containsValue = value.substring(1).trim();
+            return containsValue
+                ? { operator: "contains", value: containsValue }
+                : null;
+        }
+
+        return { operator: "starts_with", value: value };
+    }
+
+    function toColumnSearchInputValue(filter) {
+        if (!filter || !filter.operator) {
+            return "";
+        }
+
+        var value = String(filter.value == null ? "" : filter.value);
+        var operator = String(filter.operator).toLowerCase().trim();
+
+        if (operator === "is") {
+            return "=" + value;
+        }
+
+        if (operator === "contains") {
+            return "*" + value;
+        }
+
+        if (operator === "starts_with") {
+            return value;
+        }
+
+        return "";
+    }
+
+    function canManageAsColumnSearchFilter(options) {
+        options = options || {};
+
+        var filter = options.filter;
+        var columns = options.columns || [];
+
+        if (filter.source !== "column_search") {
+            return false;
+        }
+
+        return canRepresentAsColumnSearchFilter({
+            filter: filter,
+            columns: columns,
+        });
+    }
+
+    function canRepresentAsColumnSearchFilter(options) {
+        options = options || {};
+
+        var filter = options.filter;
+        var columns = options.columns || [];
+
+        if (!filter || !filter.field) {
+            return false;
+        }
+
+        if (
+            filter.type !== "string" &&
+            filter.type !== "choice" &&
+            filter.type !== "reference"
+        ) {
+            return false;
+        }
+
+        var operator = String(filter.operator || "")
+            .toLowerCase()
+            .trim();
+
+        if (filter.type === "choice" || filter.type === "reference") {
+            if (operator !== "is") {
+                return false;
+            }
+
+            return filter.value != null && String(filter.value) !== "";
+        }
+
+        if (COLUMN_SEARCH_OPERATORS.indexOf(operator) === -1) {
+            return false;
+        }
+
+        if (!filter.value || String(filter.value).trim() === "") {
+            return false;
+        }
+
+        return columns.some(function (column) {
+            return column && column.name === filter.field;
+        });
+    }
+
+    function buildAppliedFiltersFromColumnSearch(options) {
+        options = options || {};
+
+        var appliedFilters = Array.isArray(options.appliedFilters)
+            ? options.appliedFilters
+            : [];
+        var columns = options.columns || [];
+        var filterFieldMap = options.filterFieldMap || {};
+        var columnSearchTerms = options.columnSearchTerms || {};
+        var getControlType = options.getControlType;
+        var getChoiceOptionsForField = options.getChoiceOptionsForField;
+        var incompatibleFieldMap =
+            options.incompatibleFieldMap ||
+            getIncompatibleColumnSearchFields({
+                appliedFilters: appliedFilters,
+                columns: columns,
+            });
+
+        var baseFilters = appliedFilters.filter(function (filter) {
+            var canRepresent = canRepresentAsColumnSearchFilter({
+                filter: filter,
+                columns: columns,
+            });
+
+            if (!canRepresent) {
+                return true;
+            }
+
+            return !!incompatibleFieldMap[filter.field];
+        });
+
+        var nextColumnFilters = [];
+
+        columns.forEach(function (column) {
+            var fieldName = column && column.name;
+            if (!fieldName) {
+                return;
+            }
+
+            if (incompatibleFieldMap[fieldName]) {
+                return;
+            }
+
+            var fieldConfig = filterFieldMap[fieldName];
+            if (!fieldConfig) {
+                return;
+            }
+
+            var controlType =
+                typeof getControlType === "function"
+                    ? getControlType(fieldName)
+                    : "none";
+            if (controlType === "none") {
+                return;
+            }
+
+            var selectedValue = columnSearchTerms[fieldName];
+
+            if (controlType === "choice") {
+                if (selectedValue == null || String(selectedValue) === "") {
+                    return;
+                }
+
+                var choiceOptions =
+                    typeof getChoiceOptionsForField === "function"
+                        ? getChoiceOptionsForField(fieldName)
+                        : [];
+                var matchedChoice = (choiceOptions || []).find(
+                    function (choice) {
+                        return String(choice.value) === String(selectedValue);
+                    },
+                );
+
+                nextColumnFilters.push({
+                    field: fieldName,
+                    label: fieldConfig.label || column.label || fieldName,
+                    type: "choice",
+                    logicalOperator: "and",
+                    value: String(selectedValue),
+                    valueTo: "",
+                    operator: "is",
+                    choiceValues: angular.copy(choiceOptions),
+                    referenceTable: fieldConfig.referenceTable,
+                    referenceSearchField: fieldConfig.referenceSearchField,
+                    displayField: fieldConfig.displayField,
+                    searchFields: fieldConfig.searchFields,
+                    displayFields: fieldConfig.displayFields,
+                    referenceQualifier: fieldConfig.referenceQualifier,
+                    displayValue: matchedChoice
+                        ? matchedChoice.label || ""
+                        : "",
+                    source: "column_search",
+                });
+
+                return;
+            }
+
+            if (controlType === "reference") {
+                if (selectedValue == null || String(selectedValue) === "") {
+                    return;
+                }
+
+                nextColumnFilters.push({
+                    field: fieldName,
+                    label: fieldConfig.label || column.label || fieldName,
+                    type: "reference",
+                    logicalOperator: "and",
+                    value: String(selectedValue),
+                    valueTo: "",
+                    operator: "is",
+                    choiceValues: [],
+                    referenceTable: fieldConfig.referenceTable,
+                    referenceSearchField: fieldConfig.referenceSearchField,
+                    displayField: fieldConfig.displayField,
+                    searchFields: fieldConfig.searchFields,
+                    displayFields: fieldConfig.displayFields,
+                    referenceQualifier: fieldConfig.referenceQualifier,
+                    displayValue: "",
+                    source: "column_search",
+                });
+
+                return;
+            }
+
+            var parsed = parseColumnSearchInput(columnSearchTerms[fieldName]);
+
+            if (!parsed) {
+                return;
+            }
+
+            nextColumnFilters.push({
+                field: fieldName,
+                label: fieldConfig.label || column.label || fieldName,
+                type: "string",
+                logicalOperator: "and",
+                value: parsed.value,
+                valueTo: "",
+                operator: parsed.operator,
+                choiceValues: fieldConfig.choiceValues || [],
+                referenceTable: fieldConfig.referenceTable,
+                referenceSearchField: fieldConfig.referenceSearchField,
+                displayField: fieldConfig.displayField,
+                searchFields: fieldConfig.searchFields,
+                displayFields: fieldConfig.displayFields,
+                referenceQualifier: fieldConfig.referenceQualifier,
+                displayValue: "",
+                source: "column_search",
+            });
+        });
+
+        if (baseFilters.length > 0 && nextColumnFilters.length > 0) {
+            baseFilters[baseFilters.length - 1].logicalOperator = "and";
+        }
+
+        var nextAppliedFilters = baseFilters.concat(nextColumnFilters);
+        if (nextAppliedFilters.length > 0) {
+            nextAppliedFilters[0].logicalOperator = "and";
+        }
+
+        return nextAppliedFilters;
+    }
+
+    function getIncompatibleColumnSearchFields(options) {
+        options = options || {};
+
+        var filters = Array.isArray(options.appliedFilters)
+            ? options.appliedFilters
+            : [];
+        var columns = options.columns || [];
+        var result = {};
+        var fieldCounts = {};
+
+        for (var i = 0; i < filters.length; i++) {
+            var filter = filters[i];
+            if (!filter || !filter.field) {
+                continue;
+            }
+
+            if (
+                canRepresentAsColumnSearchFilter({
+                    filter: filter,
+                    columns: columns,
+                })
+            ) {
+                var isManageable = canManageAsColumnSearchFilter({
+                    filter: filter,
+                    columns: columns,
+                });
+
+                if (filter.source === "column_search" && !isManageable) {
+                    result[filter.field] = true;
+                    continue;
+                }
+
+                fieldCounts[filter.field] =
+                    (fieldCounts[filter.field] || 0) + 1;
+                if (fieldCounts[filter.field] > 1) {
+                    result[filter.field] = true;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    function syncColumnSearchTermsFromAppliedFilters(options) {
+        options = options || {};
+
+        var columns = options.columns || [];
+        var appliedFilters = options.appliedFilters || [];
+
+        var nextTerms = {};
+        var trackedFields = {};
+
+        columns.forEach(function (column) {
+            if (column && column.name) {
+                nextTerms[column.name] = "";
+            }
+        });
+
+        appliedFilters.forEach(function (filter) {
+            if (
+                !canRepresentAsColumnSearchFilter({
+                    filter: filter,
+                    columns: columns,
+                })
+            ) {
+                return;
+            }
+
+            var fieldName = filter.field;
+            if (!(fieldName in nextTerms)) {
+                return;
+            }
+
+            trackedFields[fieldName] = trackedFields[fieldName] || 0;
+            trackedFields[fieldName] += 1;
+
+            if (trackedFields[fieldName] > 1) {
+                nextTerms[fieldName] = "";
+                return;
+            }
+
+            if (filter.type === "choice" || filter.type === "reference") {
+                nextTerms[fieldName] = String(filter.value || "");
+                return;
+            }
+
+            nextTerms[fieldName] = toColumnSearchInputValue(filter);
+        });
+
+        return nextTerms;
+    }
+
+    function hasAmbiguousColumnSearchState(options) {
+        return (
+            Object.keys(getIncompatibleColumnSearchFields(options || {}))
+                .length > 0
+        );
+    }
+
+    function getColumnSearchControlType(fieldName, filterFieldMap) {
+        var map = filterFieldMap || {};
+        var fieldConfig = map[fieldName];
+
+        if (!fieldConfig || !fieldConfig.type) {
+            return "none";
+        }
+
+        if (fieldConfig.type === "string") {
+            return "string";
+        }
+
+        if (fieldConfig.type === "choice") {
+            return "choice";
+        }
+
+        if (fieldConfig.type === "reference") {
+            return "reference";
+        }
+
+        return "none";
+    }
+
+    function isColumnSearchDisabled(fieldName, incompatibleFieldMap) {
+        if (!fieldName) {
+            return false;
+        }
+
+        var map = incompatibleFieldMap || {};
+        return !!map[fieldName];
+    }
+
+    function ensureChoiceValuesForColumnSearch(options) {
+        options = options || {};
+
+        var columns = options.columns || [];
+        var filterFieldMap = options.filterFieldMap || {};
+        var getChoiceOptionsForField = options.getChoiceOptionsForField;
+        var loadChoiceValues = options.loadChoiceValues;
+
+        if (typeof loadChoiceValues !== "function") {
+            return Promise.resolve([]);
+        }
+
+        var requests = [];
+
+        columns.forEach(function (column) {
+            var fieldName = column && column.name;
+            if (!fieldName) {
+                return;
+            }
+
+            var fieldConfig = filterFieldMap[fieldName];
+            if (!fieldConfig || fieldConfig.type !== "choice") {
+                return;
+            }
+
+            var cachedOptions =
+                typeof getChoiceOptionsForField === "function"
+                    ? getChoiceOptionsForField(fieldName)
+                    : [];
+
+            if (Array.isArray(cachedOptions) && cachedOptions.length) {
+                return;
+            }
+
+            var tempFilter = {
+                field: fieldName,
+                type: "choice",
+                choiceValues: [],
+            };
+
+            requests.push(
+                loadChoiceValues(tempFilter).then(function () {
+                    if (filterFieldMap[fieldName]) {
+                        filterFieldMap[fieldName].choiceValues = angular.copy(
+                            tempFilter.choiceValues || [],
+                        );
+                    }
+                }),
+            );
+        });
+
+        return Promise.all(requests);
+    }
+
+    return {
+        parseColumnSearchInput: parseColumnSearchInput,
+        toColumnSearchInputValue: toColumnSearchInputValue,
+        canManageAsColumnSearchFilter: canManageAsColumnSearchFilter,
+        buildAppliedFiltersFromColumnSearch:
+            buildAppliedFiltersFromColumnSearch,
+        syncColumnSearchTermsFromAppliedFilters:
+            syncColumnSearchTermsFromAppliedFilters,
+        getIncompatibleColumnSearchFields: getIncompatibleColumnSearchFields,
+        hasAmbiguousColumnSearchState: hasAmbiguousColumnSearchState,
+        getColumnSearchControlType: getColumnSearchControlType,
+        isColumnSearchDisabled: isColumnSearchDisabled,
+        ensureChoiceValuesForColumnSearch: ensureChoiceValuesForColumnSearch,
+    };
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:06:57</sys_created_on>
+        <sys_id>72465df293a9c71040fcb6597bba1041</sys_id>
+        <sys_mod_count>5</sys_mod_count>
+        <sys_name>scmTableColumnSearchService</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_72465df293a9c71040fcb6597bba1041</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-22 17:06:20</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>

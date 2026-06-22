@@ -6,14 +6,14 @@
         <sys_created_by>admin</sys_created_by>
         <sys_created_on>2026-06-20 21:58:06</sys_created_on>
         <sys_id>bbaa4c669321471040fcb6597bba102a</sys_id>
-        <sys_mod_count>3</sys_mod_count>
+        <sys_mod_count>6</sys_mod_count>
         <sys_name>scm-table-settings</sys_name>
         <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
         <sys_policy/>
         <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
         <sys_update_name>sp_ng_template_bbaa4c669321471040fcb6597bba102a</sys_update_name>
         <sys_updated_by>admin</sys_updated_by>
-        <sys_updated_on>2026-06-21 08:25:42</sys_updated_on>
+        <sys_updated_on>2026-06-22 17:38:25</sys_updated_on>
         <template><![CDATA[<sdx-dialog
     label="Please, choose the columns to include in the list"
     id="{{c.settingsDialogId}}"
@@ -145,12 +145,12 @@
                 ></sdx-loading-spinner>
                 <sdx-button
                     theme="transparent"
-                    icon-name="icon-save"
+                    icon-name="icon-check-mark"
                     icon-size="2"
                     ng-click="c.saveListView()"
                     ng-if="!c.savingListView"
                     ng-disabled="c.revertingListView || c.cancelingListView"
-                    label="Save"
+                    label="Apply"
                 ></sdx-button>
                 <sdx-loading-spinner
                     ng-if="c.savingListView"

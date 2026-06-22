@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sp_angular_provider">
+    <sp_angular_provider action="INSERT_OR_UPDATE">
+        <name>scmTableDataService</name>
+        <script><![CDATA[function scmTableDataService() {
+	"use strict";
+
+	function nextRequestId(currentRequestId) {
+		return (currentRequestId || 0) + 1;
+	}
+
+	function isLatestRequest(requestId, latestRequestId) {
+		return requestId === latestRequestId;
+	}
+
+	function computeTotalPages(totalRecords, limit) {
+		var parsedLimit = parseInt(limit, 10) || 0;
+		return parsedLimit > 0 ? Math.ceil((totalRecords || 0) / parsedLimit) : 0;
+	}
+
+	function getTableData(options) {
+		options = options || {};
+
+		var server = options.server;
+		if (!server) {
+			return Promise.reject(new Error("Missing server"));
+		}
+
+		return server.get({
+			action: "getTableData",
+			transactionId: options.transactionId,
+			tableProviderScriptInclude: options.tableProviderScriptInclude,
+			page: options.page,
+			filters: options.filters || [],
+			includeTotalRecords: !!options.includeTotalRecords,
+		});
+	}
+
+	function getTotalRecords(options) {
+		options = options || {};
+
+		var server = options.server;
+		if (!server) {
+			return Promise.reject(new Error("Missing server"));
+		}
+
+		return server.get({
+			action: "getTotalRecords",
+			transactionId: options.transactionId,
+			tableProviderScriptInclude: options.tableProviderScriptInclude,
+			filters: options.filters || [],
+		});
+	}
+
+	return {
+		nextRequestId: nextRequestId,
+		isLatestRequest: isLatestRequest,
+		computeTotalPages: computeTotalPages,
+		getTableData: getTableData,
+		getTotalRecords: getTotalRecords,
+	};
+}
+]]></script>
+        <sys_class_name>sp_angular_provider</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2026-06-21 22:05:42</sys_created_on>
+        <sys_id>4106153693a9c71040fcb6597bba1077</sys_id>
+        <sys_mod_count>1</sys_mod_count>
+        <sys_name>scmTableDataService</sys_name>
+        <sys_package display_value="SCM" source="x_680259_scm">9b70ffe7836a2650efda54b6feaad334</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="SCM">9b70ffe7836a2650efda54b6feaad334</sys_scope>
+        <sys_update_name>sp_angular_provider_4106153693a9c71040fcb6597bba1077</sys_update_name>
+        <sys_updated_by>admin</sys_updated_by>
+        <sys_updated_on>2026-06-21 22:18:47</sys_updated_on>
+        <type>service</type>
+    </sp_angular_provider>
+</record_update>
